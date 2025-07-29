@@ -11,20 +11,9 @@ Tasks are ordered by priority. Always work on tasks from the top of this list fi
 
 ### Medium Priority
 
-4. **Implement enum member sorting (FR3.5)**
-   - Only sort string enums (preserve numeric enum values)
-   - Add comprehensive tests
-   - File: `src/formatter.rs`
-
 5. **Implement member visibility ordering (FR2.2)**
    - Move exported members toward the top of the file
    - Build dependency graph to preserve correctness
-   - File: `src/formatter.rs`
-
-6. **Add JSX property sorting (FR3.6)**
-   - Sort JSX element properties alphabetically
-   - Keep `key` and `ref` props first
-   - Group event handlers
    - File: `src/formatter.rs`
 
 ### Low Priority
@@ -55,6 +44,8 @@ Tasks are ordered by priority. Always work on tasks from the top of this list fi
 - ✅ Implement function argument sorting (FR3.1) (2025-07-29)
 - ✅ Implement class member sorting (FR3.3) (2025-07-29)
 - ✅ Implement type member sorting (FR3.4) (2025-07-29)
+- ✅ Implement enum member sorting (FR3.5) (2025-07-29)
+- ✅ Add JSX property sorting (FR3.6) (2025-07-29)
 
 ## Task Guidelines
 

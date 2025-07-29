@@ -200,6 +200,84 @@ impl FormatterVisitor {
             _ => String::from("~other"), // Sort other types to the end
         }
     }
+
+    fn is_string_enum(&self, members: &[TsEnumMember]) -> bool {
+        // An enum is a string enum if ALL members have string literal initializers
+        // or if no members have numeric initializers
+        let mut has_string_init = false;
+        let mut has_numeric_init = false;
+        let mut has_no_init = false;
+
+        for member in members {
+            match &member.init {
+                Some(init) => match &**init {
+                    Expr::Lit(Lit::Str(_)) => has_string_init = true,
+                    Expr::Lit(Lit::Num(_)) => has_numeric_init = true,
+                    _ => return false, // Complex expression, don't sort
+                },
+                None => has_no_init = true,
+            }
+        }
+
+        // Don't sort if we have both string and numeric initializers
+        if has_string_init && has_numeric_init {
+            return false;
+        }
+
+        // Don't sort if we have numeric initializers or implicit numeric values
+        if has_numeric_init || has_no_init {
+            return false;
+        }
+
+        // Only sort if all members have string initializers
+        has_string_init
+    }
+
+    fn sort_enum_members(&self, members: &mut Vec<TsEnumMember>) {
+        members.sort_by(|a, b| {
+            let key_a = a.id.as_ident()
+                .map(|ident| ident.sym.to_string())
+                .unwrap_or_default();
+            let key_b = b.id.as_ident()
+                .map(|ident| ident.sym.to_string())
+                .unwrap_or_default();
+            key_a.cmp(&key_b)
+        });
+    }
+
+    fn sort_jsx_attributes(&self, attrs: &mut Vec<JSXAttrOrSpread>) {
+        attrs.sort_by(|a, b| {
+            let (cat_a, key_a) = self.categorize_jsx_attr(a);
+            let (cat_b, key_b) = self.categorize_jsx_attr(b);
+            
+            match cat_a.cmp(&cat_b) {
+                std::cmp::Ordering::Equal => key_a.cmp(&key_b),
+                other => other,
+            }
+        });
+    }
+
+    fn categorize_jsx_attr(&self, attr: &JSXAttrOrSpread) -> (u8, String) {
+        match attr {
+            JSXAttrOrSpread::JSXAttr(jsx_attr) => {
+                match &jsx_attr.name {
+                    JSXAttrName::Ident(ident) => {
+                        let name = ident.sym.to_string();
+                        match name.as_str() {
+                            "key" => (0, name),     // key always first
+                            "ref" => (1, name),     // ref second
+                            s if s.starts_with("on") && s.len() > 2 && s.chars().nth(2).unwrap().is_uppercase() => {
+                                (3, name)           // Event handlers grouped
+                            }
+                            _ => (2, name),         // Regular props alphabetically
+                        }
+                    }
+                    _ => (2, String::new()),
+                }
+            }
+            JSXAttrOrSpread::SpreadElement(_) => (4, String::from("...")), // Spreads at the end
+        }
+    }
 }
 
 impl VisitMut for FormatterVisitor {
@@ -246,6 +324,19 @@ impl VisitMut for FormatterVisitor {
         ts_type.visit_mut_children_with(self);
     }
 
+    fn visit_mut_ts_enum_decl(&mut self, ts_enum: &mut TsEnumDecl) {
+        // Only sort if it's a string enum
+        if self.is_string_enum(&ts_enum.members) {
+            self.sort_enum_members(&mut ts_enum.members);
+        }
+        ts_enum.visit_mut_children_with(self);
+    }
+
+    fn visit_mut_jsx_opening_element(&mut self, jsx_opening: &mut JSXOpeningElement) {
+        self.sort_jsx_attributes(&mut jsx_opening.attrs);
+        jsx_opening.visit_mut_children_with(self);
+    }
+
     // TODO: Add more visit methods for other sortable elements
 }
 
@@ -256,7 +347,13 @@ mod tests {
 
     fn format_source(source: &str) -> Result<Module> {
         let parser = TypeScriptParser::new();
-        let module = parser.parse(source, "test.ts")?;
+        // Detect JSX and use .tsx extension if needed
+        let filename = if source.contains("<") && (source.contains("/>") || source.contains("</")) {
+            "test.tsx"
+        } else {
+            "test.ts"
+        };
+        let module = parser.parse(source, filename)?;
         KrokFormatter::new().format(module)
     }
 
@@ -783,6 +880,300 @@ type Combined = Writable & Timestamped & Identifiable & Versioned;
             );
         } else {
             panic!("Expected intersection type");
+        }
+    }
+
+    #[test]
+    fn test_enum_member_sorting_string_enum() {
+        let source = r#"
+enum Status {
+    Pending = "pending",
+    Active = "active",
+    Disabled = "disabled",
+    Archived = "archived"
+}
+
+enum Color {
+    Red = "RED",
+    Blue = "BLUE",
+    Green = "GREEN",
+    Yellow = "YELLOW"
+}
+"#;
+        
+        let formatted = format_source(source).unwrap();
+        
+        // Find the enums
+        let enums: Vec<_> = formatted.body.iter()
+            .filter_map(|item| match item {
+                ModuleItem::Stmt(Stmt::Decl(Decl::TsEnum(ts_enum))) => Some(ts_enum),
+                _ => None,
+            })
+            .collect();
+        
+        assert_eq!(enums.len(), 2);
+        
+        // Check Status enum members are sorted
+        let status_members: Vec<String> = enums[0].members.iter()
+            .map(|member| member.id.as_ident().unwrap().sym.to_string())
+            .collect();
+        assert_eq!(status_members, vec!["Active", "Archived", "Disabled", "Pending"]);
+        
+        // Check Color enum members are sorted
+        let color_members: Vec<String> = enums[1].members.iter()
+            .map(|member| member.id.as_ident().unwrap().sym.to_string())
+            .collect();
+        assert_eq!(color_members, vec!["Blue", "Green", "Red", "Yellow"]);
+    }
+
+    #[test]
+    fn test_enum_member_sorting_numeric_enum_preserved() {
+        let source = r#"
+enum Priority {
+    Low = 1,
+    Medium = 2,
+    High = 3,
+    Critical = 4
+}
+
+enum HttpStatus {
+    NotFound = 404,
+    OK = 200,
+    ServerError = 500,
+    BadRequest = 400
+}
+"#;
+        
+        let formatted = format_source(source).unwrap();
+        
+        // Find the enums
+        let enums: Vec<_> = formatted.body.iter()
+            .filter_map(|item| match item {
+                ModuleItem::Stmt(Stmt::Decl(Decl::TsEnum(ts_enum))) => Some(ts_enum),
+                _ => None,
+            })
+            .collect();
+        
+        assert_eq!(enums.len(), 2);
+        
+        // Check Priority enum members are NOT sorted (preserved original order)
+        let priority_members: Vec<String> = enums[0].members.iter()
+            .map(|member| member.id.as_ident().unwrap().sym.to_string())
+            .collect();
+        assert_eq!(priority_members, vec!["Low", "Medium", "High", "Critical"]);
+        
+        // Check HttpStatus enum members are NOT sorted (preserved original order)
+        let status_members: Vec<String> = enums[1].members.iter()
+            .map(|member| member.id.as_ident().unwrap().sym.to_string())
+            .collect();
+        assert_eq!(status_members, vec!["NotFound", "OK", "ServerError", "BadRequest"]);
+    }
+
+    #[test]
+    fn test_enum_member_sorting_mixed_enum() {
+        let source = r#"
+enum Mixed {
+    First,
+    Second = 10,
+    Third,
+    Fourth = "fourth",
+    Fifth = "fifth"
+}
+"#;
+        
+        let formatted = format_source(source).unwrap();
+        
+        // Find the enum
+        let ts_enum = formatted.body.iter()
+            .find_map(|item| match item {
+                ModuleItem::Stmt(Stmt::Decl(Decl::TsEnum(ts_enum))) => Some(ts_enum),
+                _ => None,
+            })
+            .unwrap();
+        
+        // Mixed enums should not be sorted to preserve value assignments
+        let members: Vec<String> = ts_enum.members.iter()
+            .map(|member| member.id.as_ident().unwrap().sym.to_string())
+            .collect();
+        assert_eq!(members, vec!["First", "Second", "Third", "Fourth", "Fifth"]);
+    }
+
+    #[test]
+    fn test_jsx_property_sorting_basic() {
+        let source = r#"
+const Component = () => {
+    return (
+        <div 
+            className="container"
+            onClick={handleClick}
+            id="main"
+            style={styles}
+            key="unique"
+            ref={divRef}
+            data-testid="test"
+        />
+    );
+};
+"#;
+        
+        let formatted = format_source(source).unwrap();
+        
+        // Find the JSX element
+        let jsx_element = find_jsx_element(&formatted);
+        
+        // Get prop names in order
+        let prop_names: Vec<String> = jsx_element.opening.attrs.iter()
+            .filter_map(|attr| match attr {
+                JSXAttrOrSpread::JSXAttr(jsx_attr) => {
+                    match &jsx_attr.name {
+                        JSXAttrName::Ident(ident) => Some(ident.sym.to_string()),
+                        _ => None,
+                    }
+                }
+                _ => None,
+            })
+            .collect();
+        
+        // key and ref should be first, then alphabetically sorted, then event handlers
+        assert_eq!(prop_names, vec![
+            "key", "ref", "className", "data-testid", "id", "style", "onClick"
+        ]);
+    }
+
+    #[test]
+    fn test_jsx_property_sorting_event_handlers() {
+        let source = r#"
+const Button = () => (
+    <button
+        type="submit"
+        onMouseEnter={handleEnter}
+        className="btn"
+        onClick={handleClick}
+        disabled={false}
+        onMouseLeave={handleLeave}
+        aria-label="Submit"
+        onChange={handleChange}
+        key="btn1"
+    />
+);
+"#;
+        
+        let formatted = format_source(source).unwrap();
+        
+        // Find the JSX element
+        let jsx_element = find_jsx_element(&formatted);
+        
+        // Get prop names in order
+        let prop_names: Vec<String> = jsx_element.opening.attrs.iter()
+            .filter_map(|attr| match attr {
+                JSXAttrOrSpread::JSXAttr(jsx_attr) => {
+                    match &jsx_attr.name {
+                        JSXAttrName::Ident(ident) => Some(ident.sym.to_string()),
+                        _ => None,
+                    }
+                }
+                _ => None,
+            })
+            .collect();
+        
+        // key first, then alphabetically sorted with event handlers grouped
+        assert_eq!(prop_names, vec![
+            "key", "aria-label", "className", "disabled", "type",
+            "onChange", "onClick", "onMouseEnter", "onMouseLeave"
+        ]);
+    }
+
+    #[test]
+    fn test_jsx_property_sorting_with_spread() {
+        let source = r#"
+const Card = (props) => (
+    <div
+        {...defaultProps}
+        className="card"
+        id={props.id}
+        {...props}
+        style={customStyle}
+        ref={cardRef}
+        key={props.key}
+    />
+);
+"#;
+        
+        let formatted = format_source(source).unwrap();
+        
+        // Find the JSX element
+        let jsx_element = find_jsx_element(&formatted);
+        
+        // Check attribute order - key/ref first, regular props sorted, spreads at end
+        let attrs: Vec<String> = jsx_element.opening.attrs.iter()
+            .map(|attr| match attr {
+                JSXAttrOrSpread::JSXAttr(jsx_attr) => {
+                    match &jsx_attr.name {
+                        JSXAttrName::Ident(ident) => ident.sym.to_string(),
+                        _ => "".to_string(),
+                    }
+                }
+                JSXAttrOrSpread::SpreadElement(_) => "...spread".to_string(),
+            })
+            .collect();
+        
+        assert_eq!(attrs, vec![
+            "key", "ref", "className", "id", "style", "...spread", "...spread"
+        ]);
+    }
+
+    fn find_jsx_element(module: &Module) -> &JSXElement {
+        for item in &module.body {
+            if let ModuleItem::Stmt(stmt) = item {
+                if let Some(jsx) = find_jsx_in_stmt(stmt) {
+                    return jsx;
+                }
+            }
+        }
+        panic!("No JSX element found");
+    }
+
+    fn find_jsx_in_stmt(stmt: &Stmt) -> Option<&JSXElement> {
+        match stmt {
+            Stmt::Decl(Decl::Var(var_decl)) => {
+                for decl in &var_decl.decls {
+                    if let Some(init) = &decl.init {
+                        if let Some(jsx) = find_jsx_in_expr(init) {
+                            return Some(jsx);
+                        }
+                    }
+                }
+            }
+            Stmt::Return(ret_stmt) => {
+                if let Some(arg) = &ret_stmt.arg {
+                    if let Some(jsx) = find_jsx_in_expr(arg) {
+                        return Some(jsx);
+                    }
+                }
+            }
+            _ => {}
+        }
+        None
+    }
+
+    fn find_jsx_in_expr(expr: &Expr) -> Option<&JSXElement> {
+        match expr {
+            Expr::JSXElement(jsx) => Some(jsx),
+            Expr::Paren(paren) => find_jsx_in_expr(&paren.expr),
+            Expr::Arrow(arrow) => {
+                match &*arrow.body {
+                    BlockStmtOrExpr::Expr(expr) => find_jsx_in_expr(expr),
+                    BlockStmtOrExpr::BlockStmt(block) => {
+                        for stmt in &block.stmts {
+                            if let Some(jsx) = find_jsx_in_stmt(stmt) {
+                                return Some(jsx);
+                            }
+                        }
+                        None
+                    }
+                }
+            }
+            _ => None,
         }
     }
 }
