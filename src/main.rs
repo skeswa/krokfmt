@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use clap::Parser;
 use colored::Colorize;
 use rayon::prelude::*;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use krokfmt::{
     codegen::CodeGenerator, file_handler::FileHandler, formatter::KrokFormatter,
@@ -97,7 +97,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn process_file(file_handler: &FileHandler, path: &PathBuf, cli: &Cli) -> Result<bool> {
+fn process_file(file_handler: &FileHandler, path: &Path, cli: &Cli) -> Result<bool> {
     let content = file_handler.read_file(path)?;
 
     // Parse
@@ -124,7 +124,7 @@ fn process_file(file_handler: &FileHandler, path: &PathBuf, cli: &Cli) -> Result
 
     // Handle output
     if cli.stdout {
-        println!("{}", formatted_content);
+        println!("{formatted_content}");
     } else if !cli.check {
         file_handler.write_file(path, &formatted_content)?;
     }

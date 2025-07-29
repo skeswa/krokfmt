@@ -15,15 +15,14 @@ pub struct ImportInfo {
     pub import_decl: ImportDecl,
 }
 
+#[derive(Default)]
 pub struct ImportAnalyzer {
     imports: Vec<ImportInfo>,
 }
 
 impl ImportAnalyzer {
     pub fn new() -> Self {
-        Self {
-            imports: Vec::new(),
-        }
+        Self::default()
     }
 
     pub fn analyze(mut self, module: &Module) -> Vec<ImportInfo> {

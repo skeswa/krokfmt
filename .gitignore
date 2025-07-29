@@ -21,3 +21,12 @@ Thumbs.db
 # Test artifacts
 *.orig
 test_output/
+tarpaulin-report.html
+lcov.info
+coverage/
+
+# Benchmarks
+benches/target/
+
+# Documentation
+doc/

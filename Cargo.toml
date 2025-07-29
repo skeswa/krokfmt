@@ -2,10 +2,14 @@
 name = "krokfmt"
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.70.0"
 authors = ["krokorok"]
 description = "A highly opinionated TypeScript code formatter"
 license = "MIT"
 repository = "https://github.com/skeswa/krokfmt"
+readme = "README.md"
+keywords = ["typescript", "formatter", "code-formatter", "tsx", "jsx"]
+categories = ["development-tools", "command-line-utilities"]
 
 [dependencies]
 clap = { version = "4.5", features = ["derive"] }

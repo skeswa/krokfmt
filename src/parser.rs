@@ -7,11 +7,17 @@ pub struct TypeScriptParser {
     pub source_map: Lrc<SourceMap>,
 }
 
-impl TypeScriptParser {
-    pub fn new() -> Self {
+impl Default for TypeScriptParser {
+    fn default() -> Self {
         Self {
             source_map: Lrc::new(SourceMap::default()),
         }
+    }
+}
+
+impl TypeScriptParser {
+    pub fn new() -> Self {
+        Self::default()
     }
 
     pub fn parse(&self, source: &str, filename: &str) -> Result<Module> {
