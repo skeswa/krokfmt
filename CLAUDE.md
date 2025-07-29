@@ -99,8 +99,76 @@ main.rs → file_handler.rs → (parallel) → parser.rs → transformer.rs → 
 
 ## Testing Strategy
 
+### Overview
+
 - Use a TDD workflow (write tests first)
-- Every requirement (see docs/requirements.md) should have a corresponding test
+- Every requirement (see docs/requirements.md) should have dedicated tests
+- Tests are organized by functional requirement groups for clarity
+
+### Test Structure
+
+```
+tests/
+├── fr1_tests.rs        # FR1: Import/Export Organization (26 tests)
+├── fr2_tests.rs        # FR2: Member Visibility Ordering (16 tests)
+├── fr3_tests.rs        # FR3: Alphabetical Sorting (24 tests)
+└── integration_tests.rs # End-to-end integration tests
+```
+
+### Requirement Test Files
+
+Each `fr*_tests.rs` file contains dedicated tests for specific requirements:
+
+- **fr1_tests.rs**: Import/Export Organization
+  - FR1.1: Import Statement Parsing (7 tests)
+  - FR1.2: Import Categorization (4 tests)
+  - FR1.3: Import Sorting (4 tests)
+  - FR1.4: Import Positioning (3 tests)
+  - FR1.5: Import Group Separation (4 tests)
+  - FR1.6: Import Syntax Preservation (4 tests)
+
+- **fr2_tests.rs**: Member Visibility Ordering
+  - FR2.1: Export Detection (6 tests)
+  - FR2.2: Export Prioritization (2 tests)
+  - FR2.3: Dependency Preservation (5 tests)
+  - FR2.4: Intelligent Grouping (3 tests)
+
+- **fr3_tests.rs**: Alphabetical Sorting
+  - FR3.1: Function Argument Sorting (5 tests)
+  - FR3.2: Object Property Sorting (4 tests)
+  - FR3.3: Class Member Sorting (4 tests)
+  - FR3.4: Type Member Sorting (4 tests)
+  - FR3.5: Enum Member Sorting (3 tests)
+  - FR3.6: JSX Property Sorting (4 tests)
+
+### Test Guidelines
+
+1. **One Test Per Requirement**: Each test should target exactly one requirement
+2. **Clear Test Names**: Test names must clearly indicate which requirement they verify (e.g., `test_fr1_1_parse_default_imports`)
+3. **Ordered Tests**: Tests are listed in order of requirement declaration
+4. **Isolated Testing**: Each test should be independent and not rely on other tests
+5. **Comprehensive Coverage**: Every sub-requirement must have at least one dedicated test
+
+### Running Tests
+
+```bash
+# Run all tests
+cargo test
+
+# Run tests for specific requirement group
+cargo test --test fr1_tests  # Import/Export tests
+cargo test --test fr2_tests  # Member Visibility tests
+cargo test --test fr3_tests  # Alphabetical Sorting tests
+
+# Run a specific test
+cargo test test_fr1_1_parse_default_imports
+
+# Run tests with output
+cargo test -- --nocapture
+```
+
+### Other Test Types
+
 - **Unit Tests**: Each module has tests covering its specific functionality
 - **Integration Tests** (`tests/integration_tests.rs`): End-to-end formatting tests
 - **Test Fixtures** (`test_files/`): Sample TypeScript files for manual testing
