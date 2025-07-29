@@ -9,22 +9,6 @@ Tasks are ordered by priority. Always work on tasks from the top of this list fi
 
 ### High Priority
 
-1. **Implement function argument sorting (FR3.1)**
-   - Sort object destructuring parameters in function arguments
-   - Skip positional parameters
-   - Add tests for edge cases
-   - File: `src/formatter.rs`
-
-2. **Implement class member sorting (FR3.3)**
-   - Sort class fields alphabetically within visibility groups
-   - Maintain order: static fields, instance fields, constructor, static methods, instance methods
-   - File: `src/formatter.rs`
-
-3. **Implement type member sorting (FR3.4)**
-   - Sort union type members alphabetically
-   - Sort intersection type members alphabetically
-   - File: `src/formatter.rs`
-
 ### Medium Priority
 
 4. **Implement enum member sorting (FR3.5)**
@@ -68,6 +52,9 @@ Tasks are ordered by priority. Always work on tasks from the top of this list fi
 - ✅ Implement import organization and sorting (2024-01-29)
 - ✅ Implement basic object property sorting (2024-01-29)
 - ✅ Create comprehensive test infrastructure (2024-01-29)
+- ✅ Implement function argument sorting (FR3.1) (2025-07-29)
+- ✅ Implement class member sorting (FR3.3) (2025-07-29)
+- ✅ Implement type member sorting (FR3.4) (2025-07-29)
 
 ## Task Guidelines
 

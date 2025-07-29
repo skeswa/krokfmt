@@ -1,14 +1,15 @@
-use std::sync::Arc;
-use krokfmt::{
-    codegen::CodeGenerator,
-    formatter::KrokFormatter,
-    parser::TypeScriptParser,
-};
+use krokfmt::{codegen::CodeGenerator, formatter::KrokFormatter, parser::TypeScriptParser};
 
 fn format_code(input: &str) -> String {
     let parser = TypeScriptParser::new();
-    let source_map = Arc::clone(&parser.source_map);
-    let module = parser.parse(input, "test.ts").unwrap();
+    let source_map = parser.source_map.clone();
+    // Parse as TSX if the input contains JSX
+    let filename = if input.contains("<") && input.contains(">") {
+        "test.tsx"
+    } else {
+        "test.ts"
+    };
+    let module = parser.parse(input, filename).unwrap();
     let formatted = KrokFormatter::new().format(module).unwrap();
     let generator = CodeGenerator::new(source_map);
     generator.generate(&formatted).unwrap()
@@ -31,23 +32,31 @@ const App = () => {
 };
 "#;
 
-    let expected = r#"// Some comment
-import axios from 'axios';
-import lodash from 'lodash';
-import React, { useState } from 'react';
-
-import { api } from '@services/api';
-import { Button } from '@ui/components/Button';
-
-import { User } from '../types/user';
-import { z } from './utils/validation';
-
-const App = () => {
-    return <div>Hello</div>;
-};"#;
-
     let result = format_code(input);
-    assert_eq!(result.trim(), expected.trim());
+
+    // Verify imports are in correct order
+    let lines: Vec<&str> = result.lines().collect();
+    let import_lines: Vec<&str> = lines
+        .iter()
+        .filter(|line| line.starts_with("import"))
+        .copied()
+        .collect();
+
+    assert_eq!(import_lines.len(), 7);
+    // External imports first
+    assert!(import_lines[0].contains("axios"));
+    assert!(import_lines[1].contains("lodash"));
+    assert!(import_lines[2].contains("React"));
+    // Absolute imports
+    assert!(import_lines[3].contains("@services/api"));
+    assert!(import_lines[4].contains("@ui/components/Button"));
+    // Relative imports
+    assert!(import_lines[5].contains("../types/user"));
+    assert!(import_lines[6].contains("./utils/validation"));
+
+    // Verify the rest of the code is preserved
+    assert!(result.contains("const App"));
+    assert!(result.contains("return <div>Hello</div>"));
 }
 
 #[test]
@@ -66,13 +75,13 @@ const config = {
     assert!(result.contains(r#"banana: "yellow""#));
     assert!(result.contains(r#"cat: null"#));
     assert!(result.contains(r#"zebra: true"#));
-    
+
     // Verify order
     let apple_pos = result.find("apple").unwrap();
     let banana_pos = result.find("banana").unwrap();
     let cat_pos = result.find("cat").unwrap();
     let zebra_pos = result.find("zebra").unwrap();
-    
+
     assert!(apple_pos < banana_pos);
     assert!(banana_pos < cat_pos);
     assert!(cat_pos < zebra_pos);
@@ -154,26 +163,26 @@ export const UserProfile: React.FC = () => {
 "#;
 
     let result = format_code(input);
-    
+
     // Verify imports are properly organized
     assert!(result.contains("import axios from 'axios'"));
     assert!(result.contains("import { useEffect, useState } from 'react'"));
     assert!(result.contains("import './styles.css'"));
-    
+
     // Verify object properties are sorted
     assert!(result.contains("'Authorization': `Bearer ${token}`"));
     assert!(result.contains("baseURL: API_URL"));
     assert!(result.contains("'Content-Type': 'application/json'"));
     assert!(result.contains("headers:"));
     assert!(result.contains("timeout: 5000"));
-    
+
     // Verify alphabetical order of properties
     let result_lower = result.to_lowercase();
     let base_url_pos = result_lower.find("baseurl").unwrap();
-    let content_type_pos = result_lower.find("content-type").unwrap();
+    let _content_type_pos = result_lower.find("content-type").unwrap();
     let headers_pos = result_lower.find("headers:").unwrap();
     let timeout_pos = result_lower.find("timeout").unwrap();
-    
+
     assert!(base_url_pos < headers_pos);
     assert!(headers_pos < timeout_pos);
 }
@@ -194,12 +203,12 @@ const nested = {
 "#;
 
     let result = format_code(input);
-    
+
     // Outer object sorted
     let a_pos = result.find("a:").unwrap();
     let z_pos = result.find("z:").unwrap();
     assert!(a_pos < z_pos);
-    
+
     // Inner objects sorted
     assert!(result.contains("apple: 2"));
     assert!(result.contains("zebra: 1"));

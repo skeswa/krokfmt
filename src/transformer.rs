@@ -3,9 +3,9 @@ use swc_ecma_visit::{Visit, VisitWith};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ImportCategory {
-    External,   // From node_modules
-    Absolute,   // Starting with @ or ~
-    Relative,   // Starting with ./ or ../
+    External, // From node_modules
+    Absolute, // Starting with @ or ~
+    Relative, // Starting with ./ or ../
 }
 
 #[derive(Debug, Clone)]
@@ -46,7 +46,7 @@ impl Visit for ImportAnalyzer {
     fn visit_import_decl(&mut self, import: &ImportDecl) {
         let path = import.src.value.to_string();
         let category = Self::categorize_import(&path);
-        
+
         self.imports.push(ImportInfo {
             category,
             path,
@@ -64,13 +64,13 @@ pub fn sort_imports(mut imports: Vec<ImportInfo>) -> Vec<ImportInfo> {
             ImportCategory::Absolute => 1,
             ImportCategory::Relative => 2,
         };
-        
+
         match category_order(&a.category).cmp(&category_order(&b.category)) {
             std::cmp::Ordering::Equal => a.path.cmp(&b.path),
             other => other,
         }
     });
-    
+
     imports
 }
 
@@ -122,22 +122,22 @@ import { Button } from '@components/Button';
 import { helper } from './utils/helper';
 import type { User } from '../types';
 "#;
-        
+
         let imports = parse_and_analyze(source);
         assert_eq!(imports.len(), 5);
-        
+
         assert_eq!(imports[0].category, ImportCategory::External);
         assert_eq!(imports[0].path, "react");
-        
+
         assert_eq!(imports[1].category, ImportCategory::External);
         assert_eq!(imports[1].path, "lodash");
-        
+
         assert_eq!(imports[2].category, ImportCategory::Absolute);
         assert_eq!(imports[2].path, "@components/Button");
-        
+
         assert_eq!(imports[3].category, ImportCategory::Relative);
         assert_eq!(imports[3].path, "./utils/helper");
-        
+
         assert_eq!(imports[4].category, ImportCategory::Relative);
         assert_eq!(imports[4].path, "../types");
     }
@@ -151,19 +151,19 @@ import { Button } from '@ui/Button';
 import { api } from '../api';
 import axios from 'axios';
 "#;
-        
+
         let imports = parse_and_analyze(source);
         let sorted = sort_imports(imports);
-        
+
         assert_eq!(sorted.len(), 5);
-        
+
         // External imports should come first
         assert_eq!(sorted[0].path, "axios");
         assert_eq!(sorted[1].path, "react");
-        
+
         // Then absolute imports
         assert_eq!(sorted[2].path, "@ui/Button");
-        
+
         // Finally relative imports
         assert_eq!(sorted[3].path, "../api");
         assert_eq!(sorted[4].path, "./helper");
@@ -179,15 +179,15 @@ import { z } from '@utils/z';
 import { a } from '@utils/a';
 import { m } from '@utils/m';
 "#;
-        
+
         let imports = parse_and_analyze(source);
         let sorted = sort_imports(imports);
-        
+
         // External imports sorted alphabetically
         assert_eq!(sorted[0].path, "axios");
         assert_eq!(sorted[1].path, "react");
         assert_eq!(sorted[2].path, "zod");
-        
+
         // Absolute imports sorted alphabetically
         assert_eq!(sorted[3].path, "@utils/a");
         assert_eq!(sorted[4].path, "@utils/m");

@@ -1,17 +1,16 @@
 use anyhow::{Context, Result};
-use swc_common::{FileName, SourceMap};
+use swc_common::{sync::Lrc, FileName, SourceMap};
 use swc_ecma_ast::Module;
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
-use std::sync::Arc;
 
 pub struct TypeScriptParser {
-    pub source_map: Arc<SourceMap>,
+    pub source_map: Lrc<SourceMap>,
 }
 
 impl TypeScriptParser {
     pub fn new() -> Self {
         Self {
-            source_map: Arc::new(SourceMap::default()),
+            source_map: Lrc::new(SourceMap::default()),
         }
     }
 
@@ -27,15 +26,10 @@ impl TypeScriptParser {
             ..Default::default()
         });
 
-        let lexer = Lexer::new(
-            syntax,
-            Default::default(),
-            StringInput::from(&*fm),
-            None,
-        );
+        let lexer = Lexer::new(syntax, Default::default(), StringInput::from(&*fm), None);
 
         let mut parser = Parser::new_from(lexer);
-        
+
         parser
             .parse_module()
             .map_err(|err| anyhow::anyhow!("Failed to parse {}: {:?}", filename, err))
@@ -63,12 +57,12 @@ mod tests {
         let source = r#"import { foo } from './bar';"#;
         let result = parser.parse(source, "test.ts");
         assert!(result.is_ok());
-        
+
         let module = result.unwrap();
         assert_eq!(module.body.len(), 1);
-        
+
         match &module.body[0] {
-            ModuleItem::ModuleDecl(ModuleDecl::Import(_)) => {},
+            ModuleItem::ModuleDecl(ModuleDecl::Import(_)) => {}
             _ => panic!("Expected import declaration"),
         }
     }
@@ -84,14 +78,14 @@ import type { Props } from './types';
 "#;
         let result = parser.parse(source, "test.ts");
         assert!(result.is_ok());
-        
+
         let module = result.unwrap();
         assert_eq!(module.body.len(), 4);
-        
+
         // All items should be imports
         for item in &module.body {
             match item {
-                ModuleItem::ModuleDecl(ModuleDecl::Import(_)) => {},
+                ModuleItem::ModuleDecl(ModuleDecl::Import(_)) => {}
                 _ => panic!("Expected only import declarations"),
             }
         }
@@ -108,7 +102,7 @@ export default class MyClass {}
 "#;
         let result = parser.parse(source, "test.ts");
         assert!(result.is_ok());
-        
+
         let module = result.unwrap();
         assert_eq!(module.body.len(), 4);
     }

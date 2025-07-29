@@ -3,12 +3,9 @@ use clap::Parser;
 use colored::Colorize;
 use rayon::prelude::*;
 use std::path::PathBuf;
-use std::sync::Arc;
 
 use krokfmt::{
-    codegen::CodeGenerator,
-    file_handler::FileHandler,
-    formatter::KrokFormatter,
+    codegen::CodeGenerator, file_handler::FileHandler, formatter::KrokFormatter,
     parser::TypeScriptParser,
 };
 
@@ -21,10 +18,17 @@ struct Cli {
     #[arg(help = "Files or directories to format")]
     paths: Vec<PathBuf>,
 
-    #[arg(short, long, help = "Check if files are formatted without modifying them")]
+    #[arg(
+        short,
+        long,
+        help = "Check if files are formatted without modifying them"
+    )]
     check: bool,
 
-    #[arg(long, help = "Print formatted output to stdout instead of writing to file")]
+    #[arg(
+        long,
+        help = "Print formatted output to stdout instead of writing to file"
+    )]
     stdout: bool,
 
     #[arg(long, help = "Skip creating backups of original files")]
@@ -95,35 +99,35 @@ fn main() -> Result<()> {
 
 fn process_file(file_handler: &FileHandler, path: &PathBuf, cli: &Cli) -> Result<bool> {
     let content = file_handler.read_file(path)?;
-    
+
     // Parse
     let parser = TypeScriptParser::new();
-    let source_map = Arc::clone(&parser.source_map);
+    let source_map = parser.source_map.clone();
     let module = parser
         .parse(&content, path.to_str().unwrap_or("unknown.ts"))
         .context("Failed to parse file")?;
-    
+
     // Format
     let formatter = KrokFormatter::new();
     let formatted_module = formatter.format(module).context("Failed to format file")?;
-    
+
     // Generate
     let generator = CodeGenerator::new(source_map);
     let formatted_content = generator
         .generate(&formatted_module)
         .context("Failed to generate code")?;
-    
+
     // Check if content changed
     if content == formatted_content {
         return Ok(false);
     }
-    
+
     // Handle output
     if cli.stdout {
         println!("{}", formatted_content);
     } else if !cli.check {
         file_handler.write_file(path, &formatted_content)?;
     }
-    
+
     Ok(true)
 }
