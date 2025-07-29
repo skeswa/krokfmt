@@ -1,10 +1,270 @@
 use anyhow::Result;
+use std::collections::{HashMap, HashSet};
 use swc_ecma_ast::*;
-use swc_ecma_visit::{VisitMut, VisitMutWith};
+use swc_ecma_visit::{Visit, VisitMut, VisitMutWith, VisitWith};
 
 use crate::transformer::{sort_imports, ImportAnalyzer, ImportCategory};
 
 pub struct KrokFormatter;
+
+/// Analyzes exports in a module to determine which members are exported
+#[derive(Default)]
+pub struct ExportAnalyzer {
+    exported_names: HashSet<String>,
+}
+
+impl ExportAnalyzer {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn analyze(&mut self, module: &Module) -> ExportInfo {
+        self.exported_names.clear();
+        module.visit_with(self);
+
+        ExportInfo {
+            exported_names: self.exported_names.clone(),
+        }
+    }
+}
+
+impl Visit for ExportAnalyzer {
+    fn visit_module_decl(&mut self, decl: &ModuleDecl) {
+        match decl {
+            ModuleDecl::ExportDecl(export_decl) => match &export_decl.decl {
+                Decl::Fn(fn_decl) => {
+                    self.exported_names.insert(fn_decl.ident.sym.to_string());
+                }
+                Decl::Class(class_decl) => {
+                    self.exported_names.insert(class_decl.ident.sym.to_string());
+                }
+                Decl::Var(var_decl) => {
+                    for decl in &var_decl.decls {
+                        if let Pat::Ident(ident) = &decl.name {
+                            self.exported_names.insert(ident.id.sym.to_string());
+                        }
+                    }
+                }
+                Decl::TsInterface(interface) => {
+                    self.exported_names.insert(interface.id.sym.to_string());
+                }
+                Decl::TsTypeAlias(type_alias) => {
+                    self.exported_names.insert(type_alias.id.sym.to_string());
+                }
+                Decl::TsEnum(ts_enum) => {
+                    self.exported_names.insert(ts_enum.id.sym.to_string());
+                }
+                _ => {}
+            },
+            ModuleDecl::ExportNamed(named_export) => {
+                for spec in &named_export.specifiers {
+                    match spec {
+                        ExportSpecifier::Named(named_spec) => {
+                            let name = match &named_spec.orig {
+                                ModuleExportName::Ident(ident) => ident.sym.to_string(),
+                                ModuleExportName::Str(_) => continue,
+                            };
+                            self.exported_names.insert(name);
+                        }
+                        ExportSpecifier::Default(_) => {}
+                        ExportSpecifier::Namespace(_) => {}
+                    }
+                }
+            }
+            ModuleDecl::ExportDefaultDecl(_) => {
+                // Default exports don't add to exported names
+            }
+            ModuleDecl::ExportDefaultExpr(export) => {
+                // Check if the expression is an identifier
+                if let Expr::Ident(ident) = export.expr.as_ref() {
+                    self.exported_names.insert(ident.sym.to_string());
+                }
+            }
+            _ => {}
+        }
+
+        decl.visit_children_with(self);
+    }
+}
+
+/// Holds information about exported members in a module
+pub struct ExportInfo {
+    exported_names: HashSet<String>,
+}
+
+impl ExportInfo {
+    pub fn is_exported(&self, name: &str) -> bool {
+        self.exported_names.contains(name)
+    }
+}
+
+/// Analyzes dependencies between declarations in a module
+#[derive(Default)]
+pub struct DependencyAnalyzer {
+    /// Maps declaration names to their dependencies
+    dependencies: HashMap<String, HashSet<String>>,
+    /// Current declaration being analyzed
+    current_decl: Option<String>,
+    /// All available declaration names in the module
+    available_decls: HashSet<String>,
+}
+
+impl DependencyAnalyzer {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn analyze(&mut self, module: &Module) -> DependencyGraph {
+        self.dependencies.clear();
+        self.available_decls.clear();
+
+        // First pass: collect all declaration names
+        for item in &module.body {
+            if let Some(name) = Self::get_declaration_name(item) {
+                self.available_decls.insert(name);
+            }
+        }
+
+        // Second pass: analyze dependencies
+        for item in &module.body {
+            if let Some(name) = Self::get_declaration_name(item) {
+                self.current_decl = Some(name.clone());
+                self.dependencies.insert(name, HashSet::new());
+                item.visit_with(self);
+                self.current_decl = None;
+            }
+        }
+
+        DependencyGraph {
+            dependencies: self.dependencies.clone(),
+        }
+    }
+
+    fn get_declaration_name(item: &ModuleItem) -> Option<String> {
+        match item {
+            ModuleItem::Stmt(stmt) => Self::get_stmt_declaration_name(stmt),
+            ModuleItem::ModuleDecl(ModuleDecl::ExportDecl(export_decl)) => {
+                Self::get_decl_name(&export_decl.decl)
+            }
+            _ => None,
+        }
+    }
+
+    fn get_stmt_declaration_name(stmt: &Stmt) -> Option<String> {
+        match stmt {
+            Stmt::Decl(decl) => Self::get_decl_name(decl),
+            _ => None,
+        }
+    }
+
+    fn get_decl_name(decl: &Decl) -> Option<String> {
+        match decl {
+            Decl::Fn(fn_decl) => Some(fn_decl.ident.sym.to_string()),
+            Decl::Class(class_decl) => Some(class_decl.ident.sym.to_string()),
+            Decl::Var(var_decl) => {
+                // For simplicity, return the first variable name
+                var_decl.decls.first().and_then(|decl| {
+                    if let Pat::Ident(ident) = &decl.name {
+                        Some(ident.id.sym.to_string())
+                    } else {
+                        None
+                    }
+                })
+            }
+            Decl::TsInterface(interface) => Some(interface.id.sym.to_string()),
+            Decl::TsTypeAlias(type_alias) => Some(type_alias.id.sym.to_string()),
+            Decl::TsEnum(ts_enum) => Some(ts_enum.id.sym.to_string()),
+            _ => None,
+        }
+    }
+}
+
+impl Visit for DependencyAnalyzer {
+    fn visit_ident(&mut self, ident: &Ident) {
+        if let Some(current) = &self.current_decl {
+            let name = ident.sym.to_string();
+            // Only track dependencies on declarations in this module
+            if self.available_decls.contains(&name) && &name != current {
+                self.dependencies.get_mut(current).unwrap().insert(name);
+            }
+        }
+        ident.visit_children_with(self);
+    }
+
+    fn visit_ts_entity_name(&mut self, entity: &TsEntityName) {
+        if let TsEntityName::Ident(ident) = entity {
+            self.visit_ident(ident);
+        }
+        entity.visit_children_with(self);
+    }
+}
+
+/// Represents the dependency graph of a module
+pub struct DependencyGraph {
+    pub dependencies: HashMap<String, HashSet<String>>,
+}
+
+impl DependencyGraph {
+    /// Returns true if `from` depends on `to`
+    pub fn depends_on(&self, from: &str, to: &str) -> bool {
+        self.dependencies
+            .get(from)
+            .map(|deps| deps.contains(to))
+            .unwrap_or(false)
+    }
+
+    /// Performs a topological sort of the given items based on dependencies
+    /// Returns None if there's a circular dependency
+    pub fn topological_sort(&self, items: Vec<String>) -> Option<Vec<String>> {
+        let mut result = Vec::new();
+        let mut visited = HashSet::new();
+        let mut visiting = HashSet::new();
+
+        for item in &items {
+            if !visited.contains(item)
+                && !self.visit_node(item, &items, &mut visited, &mut visiting, &mut result)
+            {
+                return None; // Circular dependency detected
+            }
+        }
+
+        result.reverse();
+        Some(result)
+    }
+
+    fn visit_node(
+        &self,
+        node: &str,
+        items: &[String],
+        visited: &mut HashSet<String>,
+        visiting: &mut HashSet<String>,
+        result: &mut Vec<String>,
+    ) -> bool {
+        if visiting.contains(node) {
+            return false; // Circular dependency
+        }
+
+        if visited.contains(node) {
+            return true;
+        }
+
+        visiting.insert(node.to_string());
+
+        if let Some(deps) = self.dependencies.get(node) {
+            for dep in deps {
+                if items.contains(dep) && !self.visit_node(dep, items, visited, visiting, result) {
+                    return false;
+                }
+            }
+        }
+
+        visiting.remove(node);
+        visited.insert(node.to_string());
+        result.push(node.to_string());
+
+        true
+    }
+}
 
 impl Default for KrokFormatter {
     fn default() -> Self {
@@ -22,13 +282,24 @@ impl KrokFormatter {
         let import_infos = ImportAnalyzer::new().analyze(&module);
         let sorted_imports = sort_imports(import_infos);
 
-        // Step 2: Separate imports from other items
-        let (_imports, mut other_items): (Vec<_>, Vec<_>) = module
+        // Step 2: Analyze exports and dependencies
+        let mut export_analyzer = ExportAnalyzer::new();
+        let export_info = export_analyzer.analyze(&module);
+
+        let mut dependency_analyzer = DependencyAnalyzer::new();
+        let dependency_graph = dependency_analyzer.analyze(&module);
+
+        // Step 3: Separate imports from other items
+        let (_imports, other_items): (Vec<_>, Vec<_>) = module
             .body
             .into_iter()
             .partition(|item| matches!(item, ModuleItem::ModuleDecl(ModuleDecl::Import(_))));
 
-        // Step 3: Reconstruct module with organized imports
+        // Step 4: Prioritize exports while preserving dependencies
+        let prioritized_items =
+            self.prioritize_exports(other_items, &export_info, &dependency_graph)?;
+
+        // Step 5: Reconstruct module with organized imports and prioritized declarations
         let mut new_body = Vec::new();
 
         // Add imports grouped by category with empty lines between groups
@@ -49,8 +320,8 @@ impl KrokFormatter {
             last_category = Some(import_info.category);
         }
 
-        // Add remaining items
-        new_body.append(&mut other_items);
+        // Add prioritized items
+        new_body.extend(prioritized_items);
 
         module.body = new_body;
 
@@ -59,6 +330,126 @@ impl KrokFormatter {
         module.visit_mut_with(&mut formatter);
 
         Ok(module)
+    }
+
+    fn prioritize_exports(
+        &self,
+        items: Vec<ModuleItem>,
+        export_info: &ExportInfo,
+        dependency_graph: &DependencyGraph,
+    ) -> Result<Vec<ModuleItem>> {
+        // Create ordered lists and a map for lookup
+        let mut ordered_items = Vec::new();
+        let mut name_to_item: HashMap<String, ModuleItem> = HashMap::new();
+        let mut other_items = Vec::new();
+
+        // Maintain original order while building the map
+        for item in items {
+            if let Some(name) = Self::get_item_name(&item) {
+                ordered_items.push(name.clone());
+                name_to_item.insert(name, item);
+            } else {
+                other_items.push(item);
+            }
+        }
+
+        // Separate exported and non-exported names while preserving order
+        let mut exported_names = Vec::new();
+        let mut non_exported_names = Vec::new();
+
+        for name in &ordered_items {
+            if export_info.is_exported(name) {
+                exported_names.push(name.clone());
+            } else {
+                non_exported_names.push(name.clone());
+            }
+        }
+
+        // Build the final list, respecting dependencies
+        let mut result = Vec::new();
+        let mut added = HashSet::new();
+
+        // Helper function to add an item and its dependencies
+        fn add_with_dependencies(
+            name: &str,
+            name_to_item: &mut HashMap<String, ModuleItem>,
+            dependency_graph: &DependencyGraph,
+            result: &mut Vec<ModuleItem>,
+            added: &mut HashSet<String>,
+            ordered_items: &[String],
+        ) {
+            if added.contains(name) || !name_to_item.contains_key(name) {
+                return;
+            }
+
+            // First add dependencies
+            if let Some(deps) = dependency_graph.dependencies.get(name) {
+                let mut sorted_deps: Vec<_> = deps.iter().cloned().collect();
+                // Sort dependencies by their original order
+                sorted_deps.sort_by_key(|dep| {
+                    ordered_items
+                        .iter()
+                        .position(|n| n == dep)
+                        .unwrap_or(usize::MAX)
+                });
+
+                for dep in sorted_deps {
+                    add_with_dependencies(
+                        &dep,
+                        name_to_item,
+                        dependency_graph,
+                        result,
+                        added,
+                        ordered_items,
+                    );
+                }
+            }
+
+            // Then add the item itself
+            if let Some(item) = name_to_item.remove(name) {
+                result.push(item);
+                added.insert(name.to_string());
+            }
+        }
+
+        // Add exported items with their dependencies
+        for name in &exported_names {
+            add_with_dependencies(
+                name,
+                &mut name_to_item,
+                dependency_graph,
+                &mut result,
+                &mut added,
+                &ordered_items,
+            );
+        }
+
+        // Add non-exported items with their dependencies
+        for name in &non_exported_names {
+            add_with_dependencies(
+                name,
+                &mut name_to_item,
+                dependency_graph,
+                &mut result,
+                &mut added,
+                &ordered_items,
+            );
+        }
+
+        // Add remaining items (like expression statements)
+        result.extend(other_items);
+
+        Ok(result)
+    }
+
+    fn get_item_name(item: &ModuleItem) -> Option<String> {
+        match item {
+            ModuleItem::Stmt(Stmt::Decl(decl)) => DependencyAnalyzer::get_decl_name(decl),
+            ModuleItem::ModuleDecl(ModuleDecl::ExportDecl(export_decl)) => {
+                DependencyAnalyzer::get_decl_name(&export_decl.decl)
+            }
+            _ => None,
+        }
     }
 }
 
@@ -1235,5 +1626,307 @@ const Card = (props) => (
             },
             _ => None,
         }
+    }
+
+    #[test]
+    fn test_export_detection_functions() {
+        let source = r#"
+export function publicFunc() {}
+function privateFunc() {}
+export const publicArrow = () => {};
+const privateArrow = () => {};
+"#;
+
+        let module = TypeScriptParser::new().parse(source, "test.ts").unwrap();
+        let mut analyzer = ExportAnalyzer::new();
+        let export_info = analyzer.analyze(&module);
+
+        assert!(export_info.is_exported("publicFunc"));
+        assert!(!export_info.is_exported("privateFunc"));
+        assert!(export_info.is_exported("publicArrow"));
+        assert!(!export_info.is_exported("privateArrow"));
+    }
+
+    #[test]
+    fn test_export_detection_classes() {
+        let source = r#"
+export class PublicClass {}
+class PrivateClass {}
+export interface PublicInterface {}
+interface PrivateInterface {}
+"#;
+
+        let module = TypeScriptParser::new().parse(source, "test.ts").unwrap();
+        let mut analyzer = ExportAnalyzer::new();
+        let export_info = analyzer.analyze(&module);
+
+        assert!(export_info.is_exported("PublicClass"));
+        assert!(!export_info.is_exported("PrivateClass"));
+        assert!(export_info.is_exported("PublicInterface"));
+        assert!(!export_info.is_exported("PrivateInterface"));
+    }
+
+    #[test]
+    fn test_export_detection_types_and_enums() {
+        let source = r#"
+export type PublicType = string;
+type PrivateType = number;
+export enum PublicEnum { A, B }
+enum PrivateEnum { X, Y }
+"#;
+
+        let module = TypeScriptParser::new().parse(source, "test.ts").unwrap();
+        let mut analyzer = ExportAnalyzer::new();
+        let export_info = analyzer.analyze(&module);
+
+        assert!(export_info.is_exported("PublicType"));
+        assert!(!export_info.is_exported("PrivateType"));
+        assert!(export_info.is_exported("PublicEnum"));
+        assert!(!export_info.is_exported("PrivateEnum"));
+    }
+
+    #[test]
+    fn test_export_detection_named_exports() {
+        let source = r#"
+const a = 1;
+const b = 2;
+function c() {}
+class D {}
+
+export { a, b as bee, c };
+"#;
+
+        let module = TypeScriptParser::new().parse(source, "test.ts").unwrap();
+        let mut analyzer = ExportAnalyzer::new();
+        let export_info = analyzer.analyze(&module);
+
+        assert!(export_info.is_exported("a"));
+        assert!(export_info.is_exported("b"));
+        assert!(export_info.is_exported("c"));
+        assert!(!export_info.is_exported("D"));
+    }
+
+    #[test]
+    fn test_export_detection_default_export() {
+        let source = r#"
+function myFunc() {}
+export default myFunc;
+
+const obj = { x: 1 };
+export { obj as default };
+"#;
+
+        let module = TypeScriptParser::new().parse(source, "test.ts").unwrap();
+        let mut analyzer = ExportAnalyzer::new();
+        let export_info = analyzer.analyze(&module);
+
+        assert!(export_info.is_exported("myFunc"));
+        assert!(export_info.is_exported("obj"));
+    }
+
+    #[test]
+    fn test_export_prioritization_basic() {
+        let source = r#"
+function privateFunc() {
+    return "private";
+}
+
+export function publicFunc() {
+    return privateFunc();
+}
+
+const privateConst = 10;
+
+export const publicConst = privateConst + 5;
+"#;
+
+        let formatted = format_source(source).unwrap();
+
+        // Find all function and variable declarations
+        let mut declarations = Vec::new();
+        for item in &formatted.body {
+            match item {
+                ModuleItem::Stmt(Stmt::Decl(Decl::Fn(fn_decl))) => {
+                    declarations.push(fn_decl.ident.sym.to_string());
+                }
+                ModuleItem::Stmt(Stmt::Decl(Decl::Var(var_decl))) => {
+                    for decl in &var_decl.decls {
+                        if let Pat::Ident(ident) = &decl.name {
+                            declarations.push(ident.id.sym.to_string());
+                        }
+                    }
+                }
+                ModuleItem::ModuleDecl(ModuleDecl::ExportDecl(export_decl)) => {
+                    match &export_decl.decl {
+                        Decl::Fn(fn_decl) => {
+                            declarations.push(fn_decl.ident.sym.to_string());
+                        }
+                        Decl::Var(var_decl) => {
+                            for decl in &var_decl.decls {
+                                if let Pat::Ident(ident) = &decl.name {
+                                    declarations.push(ident.id.sym.to_string());
+                                }
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        // Exported items should come before non-exported ones, but dependencies must be preserved
+        // privateFunc must come before publicFunc (dependency)
+        // privateConst must come before publicConst (dependency)
+        assert_eq!(
+            declarations,
+            vec!["privateFunc", "publicFunc", "privateConst", "publicConst"]
+        );
+    }
+
+    #[test]
+    fn test_export_prioritization_preserves_dependencies() {
+        let source = r#"
+const helper = () => "help";
+
+export const publicFunc = () => helper();
+
+function util() {
+    return helper();
+}
+
+export function main() {
+    return util();
+}
+"#;
+
+        let formatted = format_source(source).unwrap();
+
+        // Helper should stay before publicFunc because publicFunc depends on it
+        // util should stay before main because main depends on it
+        let mut declarations = Vec::new();
+        for item in &formatted.body {
+            match item {
+                ModuleItem::Stmt(Stmt::Decl(decl)) => match decl {
+                    Decl::Fn(fn_decl) => {
+                        declarations.push(fn_decl.ident.sym.to_string());
+                    }
+                    Decl::Var(var_decl) => {
+                        for decl in &var_decl.decls {
+                            if let Pat::Ident(ident) = &decl.name {
+                                declarations.push(ident.id.sym.to_string());
+                            }
+                        }
+                    }
+                    _ => {}
+                },
+                ModuleItem::ModuleDecl(ModuleDecl::ExportDecl(export_decl)) => {
+                    match &export_decl.decl {
+                        Decl::Fn(fn_decl) => {
+                            declarations.push(fn_decl.ident.sym.to_string());
+                        }
+                        Decl::Var(var_decl) => {
+                            for decl in &var_decl.decls {
+                                if let Pat::Ident(ident) = &decl.name {
+                                    declarations.push(ident.id.sym.to_string());
+                                }
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        // Dependencies must be preserved
+        let helper_idx = declarations.iter().position(|s| s == "helper").unwrap();
+        let public_func_idx = declarations.iter().position(|s| s == "publicFunc").unwrap();
+        let util_idx = declarations.iter().position(|s| s == "util").unwrap();
+        let main_idx = declarations.iter().position(|s| s == "main").unwrap();
+
+        assert!(helper_idx < public_func_idx);
+        assert!(util_idx < main_idx);
+    }
+
+    #[test]
+    fn test_export_prioritization_with_classes_and_types() {
+        let source = r#"
+interface PrivateInterface {
+    x: number;
+}
+
+export interface PublicInterface {
+    y: string;
+}
+
+class PrivateClass {
+    value = 10;
+}
+
+export class PublicClass extends PrivateClass {
+    extra = 20;
+}
+
+type PrivateType = string | number;
+
+export type PublicType = PrivateType | boolean;
+"#;
+
+        let formatted = format_source(source).unwrap();
+
+        // Collect all declaration names
+        let mut declarations = Vec::new();
+        for item in &formatted.body {
+            match item {
+                ModuleItem::Stmt(Stmt::Decl(decl)) => match decl {
+                    Decl::Class(class_decl) => {
+                        declarations.push(class_decl.ident.sym.to_string());
+                    }
+                    Decl::TsInterface(interface) => {
+                        declarations.push(interface.id.sym.to_string());
+                    }
+                    Decl::TsTypeAlias(type_alias) => {
+                        declarations.push(type_alias.id.sym.to_string());
+                    }
+                    _ => {}
+                },
+                ModuleItem::ModuleDecl(ModuleDecl::ExportDecl(export_decl)) => {
+                    match &export_decl.decl {
+                        Decl::Class(class_decl) => {
+                            declarations.push(class_decl.ident.sym.to_string());
+                        }
+                        Decl::TsInterface(interface) => {
+                            declarations.push(interface.id.sym.to_string());
+                        }
+                        Decl::TsTypeAlias(type_alias) => {
+                            declarations.push(type_alias.id.sym.to_string());
+                        }
+                        _ => {}
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        // Ensure dependencies are preserved
+        let private_class_idx = declarations
+            .iter()
+            .position(|s| s == "PrivateClass")
+            .unwrap();
+        let public_class_idx = declarations
+            .iter()
+            .position(|s| s == "PublicClass")
+            .unwrap();
+        let private_type_idx = declarations
+            .iter()
+            .position(|s| s == "PrivateType")
+            .unwrap();
+        let public_type_idx = declarations.iter().position(|s| s == "PublicType").unwrap();
+
+        // PublicClass depends on PrivateClass, so PrivateClass must come first
+        assert!(private_class_idx < public_class_idx);
+        // PublicType depends on PrivateType
+        assert!(private_type_idx < public_type_idx);
     }
 }

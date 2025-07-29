@@ -35,12 +35,31 @@ cargo build
 # Build release version
 cargo build --release
 
-# Run linter (if available)
+# Run linter
 cargo clippy
 
 # Format Rust code
 cargo fmt
 ```
+
+## IMPORTANT: Post-Change Verification
+
+**After EVERY code change, you MUST run the following commands in order:**
+
+1. `cargo fmt` - Format the code according to Rust standards
+2. `cargo clippy` - Check for common mistakes and improve code quality
+3. `cargo test` - Ensure all tests pass
+
+This is non-negotiable. These commands must be run after:
+- Adding new code
+- Modifying existing code
+- Refactoring
+- Adding or modifying tests
+
+If any of these commands fail:
+- `cargo fmt` - The changes will be applied automatically, commit them
+- `cargo clippy` - Fix all warnings before proceeding
+- `cargo test` - Fix failing tests before moving on
 
 ## Architecture Overview
 

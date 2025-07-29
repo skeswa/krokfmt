@@ -11,11 +11,6 @@ Tasks are ordered by priority. Always work on tasks from the top of this list fi
 
 ### Medium Priority
 
-5. **Implement member visibility ordering (FR2.2)**
-   - Move exported members toward the top of the file
-   - Build dependency graph to preserve correctness
-   - File: `src/formatter.rs`
-
 ### Low Priority
 
 7. **Add performance benchmarks**
@@ -46,6 +41,10 @@ Tasks are ordered by priority. Always work on tasks from the top of this list fi
 - ✅ Implement type member sorting (FR3.4) (2025-07-29)
 - ✅ Implement enum member sorting (FR3.5) (2025-07-29)
 - ✅ Add JSX property sorting (FR3.6) (2025-07-29)
+- ✅ Implement member visibility ordering (FR2.1 & FR2.2) (2025-07-29)
+  - Export detection to identify exported vs non-exported members
+  - Export prioritization to move exported members toward top
+  - Dependency graph to preserve correctness when reordering
 
 ## Task Guidelines
 

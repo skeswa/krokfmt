@@ -77,7 +77,8 @@ import d from '@/d';
 
 // Relative imports
 import e from './e';
-import f from './f';
+import f from '../f';
+import g from '../../g';
 ```
 
 #### FR1.6: Import Syntax Preservation
