@@ -30,7 +30,7 @@ impl ImportAnalyzer {
         self.imports
     }
 
-    fn categorize_import(path: &str) -> ImportCategory {
+    pub fn categorize_import(path: &str) -> ImportCategory {
         if path.starts_with("./") || path.starts_with("../") {
             ImportCategory::Relative
         } else if path.starts_with('@') || path.starts_with('~') {

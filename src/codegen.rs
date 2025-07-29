@@ -3,6 +3,8 @@ use swc_common::{sync::Lrc, SourceMap};
 use swc_ecma_ast::*;
 use swc_ecma_codegen::{text_writer::JsWriter, Config, Emitter};
 
+use crate::transformer::{ImportAnalyzer, ImportCategory};
+
 pub struct CodeGenerator {
     source_map: Lrc<SourceMap>,
 }
@@ -31,7 +33,79 @@ impl CodeGenerator {
             emitter.emit_module(module)?;
         }
 
-        Ok(String::from_utf8(buf)?)
+        let generated = String::from_utf8(buf)?;
+
+        // Post-process to add import spacing
+        Ok(self.add_import_spacing(generated, module))
+    }
+
+    fn add_import_spacing(&self, code: String, _module: &Module) -> String {
+        let lines: Vec<&str> = code.lines().collect();
+        let mut result = Vec::new();
+        let mut last_import_category: Option<ImportCategory> = None;
+        let mut last_was_import = false;
+        let mut first_non_import_found = false;
+
+        for line in lines.iter() {
+            // Check if this line is an import statement
+            let is_import = line.trim_start().starts_with("import ");
+
+            if is_import {
+                // Extract the import path to determine category
+                if let Some(from_pos) = line.find(" from ") {
+                    let after_from = &line[from_pos + 6..];
+                    if let Some(quote_start) = after_from.find(['\'', '"']) {
+                        let quote_char = after_from.chars().nth(quote_start).unwrap();
+                        if let Some(quote_end) = after_from[quote_start + 1..].find(quote_char) {
+                            let path = &after_from[quote_start + 1..quote_start + 1 + quote_end];
+                            let category = ImportAnalyzer::categorize_import(path);
+
+                            // Add empty line between different import categories
+                            if let Some(last_cat) = &last_import_category {
+                                if std::mem::discriminant(last_cat)
+                                    != std::mem::discriminant(&category)
+                                {
+                                    result.push("");
+                                }
+                            }
+
+                            last_import_category = Some(category);
+                        }
+                    }
+                } else if line.contains(['\'', '"']) {
+                    // Side-effect import like: import './polyfills';
+                    let quote_start = line.find(['\'', '"']).unwrap();
+                    let quote_char = line.chars().nth(quote_start).unwrap();
+                    if let Some(quote_end) = line[quote_start + 1..].find(quote_char) {
+                        let path = &line[quote_start + 1..quote_start + 1 + quote_end];
+                        let category = ImportAnalyzer::categorize_import(path);
+
+                        // Add empty line between different import categories
+                        if let Some(last_cat) = &last_import_category {
+                            if std::mem::discriminant(last_cat) != std::mem::discriminant(&category)
+                            {
+                                result.push("");
+                            }
+                        }
+
+                        last_import_category = Some(category);
+                    }
+                }
+
+                last_was_import = true;
+            } else {
+                // First non-import after imports - add empty line
+                if last_was_import && !first_non_import_found && !line.trim().is_empty() {
+                    result.push("");
+                    first_non_import_found = true;
+                }
+                last_was_import = false;
+            }
+
+            result.push(line);
+        }
+
+        result.join("\n")
     }
 }
 

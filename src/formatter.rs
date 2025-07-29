@@ -289,9 +289,21 @@ impl KrokFormatter {
         let mut dependency_analyzer = DependencyAnalyzer::new();
         let dependency_graph = dependency_analyzer.analyze(&module);
 
-        // Step 3: Separate imports from other items
-        let (_imports, other_items): (Vec<_>, Vec<_>) = module
-            .body
+        // Step 3: Separate imports and exports from other items
+        let (import_export_items, other_items): (Vec<_>, Vec<_>) =
+            module.body.into_iter().partition(|item| {
+                matches!(
+                    item,
+                    ModuleItem::ModuleDecl(ModuleDecl::Import(_))
+                        | ModuleItem::ModuleDecl(ModuleDecl::ExportNamed(_))
+                        | ModuleItem::ModuleDecl(ModuleDecl::ExportAll(_))
+                        | ModuleItem::ModuleDecl(ModuleDecl::ExportDefaultExpr(_))
+                        | ModuleItem::ModuleDecl(ModuleDecl::ExportDefaultDecl(_))
+                )
+            });
+
+        // Further separate imports from exports
+        let (_imports, exports): (Vec<_>, Vec<_>) = import_export_items
             .into_iter()
             .partition(|item| matches!(item, ModuleItem::ModuleDecl(ModuleDecl::Import(_))));
 
@@ -322,6 +334,9 @@ impl KrokFormatter {
 
         // Add prioritized items
         new_body.extend(prioritized_items);
+
+        // Add exports at the end
+        new_body.extend(exports);
 
         module.body = new_body;
 

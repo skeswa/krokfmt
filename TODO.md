@@ -45,6 +45,13 @@ Tasks are ordered by priority. Always work on tasks from the top of this list fi
   - Export detection to identify exported vs non-exported members
   - Export prioritization to move exported members toward top
   - Dependency graph to preserve correctness when reordering
+- ✅ Implement all FR1.x requirements (2025-07-29)
+  - FR1.1: Import Statement Parsing - Parse all import syntaxes
+  - FR1.2: Import Categorization - External/Absolute/Relative
+  - FR1.3: Import Sorting - Alphabetically within categories
+  - FR1.4: Import Positioning - All imports at top of file
+  - FR1.5: Import Group Separation - Empty lines between groups
+  - FR1.6: Import Syntax Preservation - Maintain exact syntax
 
 ## Task Guidelines
 

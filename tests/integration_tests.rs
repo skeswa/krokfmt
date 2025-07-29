@@ -233,3 +233,108 @@ const obj = {
     assert!(result.contains("apple: 2"));
     assert!(result.contains("zebra: 1"));
 }
+
+#[test]
+fn test_fr1_all_requirements() {
+    // Comprehensive test for all FR1 requirements
+    let input = r#"
+// Orphaned code before imports
+const orphaned = "should move after imports";
+
+// Side-effect imports (FR1.1, FR1.6)
+import 'reflect-metadata';
+import './polyfills';
+
+// External imports out of order (FR1.1, FR1.2, FR1.3)
+import zod from 'zod';
+import React, { useState } from 'react';
+import axios from 'axios';
+import * as fs from 'fs';
+
+// Absolute imports out of order (FR1.1, FR1.2, FR1.3)  
+import { z } from '@utils/z';
+import { a } from '@utils/a';
+import { Button } from '~/components/Button';
+
+// Relative imports out of order (FR1.1, FR1.2, FR1.3)
+import { deeper } from '../../deeper';
+import { parent } from '../parent';
+import { sibling } from './sibling';
+
+// Type imports (FR1.1, FR1.6)
+import type { User } from './types';
+import type { Config } from '@config/types';
+
+// Aliases (FR1.1, FR1.6)
+import { foo as bar } from './module';
+
+// The actual code
+export function main() {
+    console.log(orphaned);
+    return bar();
+}
+"#;
+
+    let result = format_code(input);
+
+    // FR1.1 & FR1.6: All import syntaxes preserved
+    assert!(result.contains("import axios from 'axios';"));
+    assert!(result.contains("import * as fs from 'fs';"));
+    assert!(result.contains("import React, { useState } from 'react';"));
+    assert!(result.contains("import 'reflect-metadata';"));
+    assert!(result.contains("import './polyfills';"));
+    assert!(result.contains("import type { User } from './types';"));
+    assert!(result.contains("import { foo as bar } from './module';"));
+
+    // FR1.2 & FR1.3: Proper categorization and sorting
+    let lines: Vec<&str> = result.lines().collect();
+    let import_lines: Vec<&str> = lines
+        .iter()
+        .filter(|line| line.trim_start().starts_with("import "))
+        .copied()
+        .collect();
+
+    // External imports come first and are sorted
+    let external_start = import_lines
+        .iter()
+        .position(|line| line.contains("axios"))
+        .unwrap();
+    let fs_pos = import_lines
+        .iter()
+        .position(|line| line.contains("fs"))
+        .unwrap();
+    let react_pos = import_lines
+        .iter()
+        .position(|line| line.contains("React"))
+        .unwrap();
+    let zod_pos = import_lines
+        .iter()
+        .position(|line| line.contains("zod"))
+        .unwrap();
+    assert!(external_start < fs_pos && fs_pos < react_pos && react_pos < zod_pos);
+
+    // Absolute imports come after external
+    let absolute_start = import_lines
+        .iter()
+        .position(|line| line.contains("@"))
+        .unwrap();
+    assert!(zod_pos < absolute_start);
+
+    // Relative imports come last
+    let relative_start = import_lines
+        .iter()
+        .position(|line| line.contains("../"))
+        .unwrap();
+    assert!(absolute_start < relative_start);
+
+    // FR1.4: All imports at top, orphaned code moved after
+    let main_pos = result.find("export function main").unwrap();
+    let orphaned_pos = result.find("const orphaned").unwrap();
+    let last_import_pos = result.rfind("import ").unwrap();
+    assert!(last_import_pos < orphaned_pos);
+    assert!(orphaned_pos < main_pos);
+
+    // FR1.5: Empty lines between import groups
+    assert!(result.contains("import zod from 'zod';\n\nimport"));
+    assert!(result.contains("import { Button } from '~/components/Button';\n\nimport"));
+}
