@@ -13,12 +13,6 @@ Tasks are ordered by priority. Always work on tasks from the top of this list fi
 
 ### Low Priority
 
-7. **Add performance benchmarks**
-   - Create benchmark suite for formatting speed
-   - Test against large TypeScript files
-   - Add to CI pipeline
-   - File: `benches/`
-
 8. **Implement source map support**
    - Generate source maps during code generation
    - Useful for debugging transformed code
@@ -52,6 +46,11 @@ Tasks are ordered by priority. Always work on tasks from the top of this list fi
   - FR1.4: Import Positioning - All imports at top of file
   - FR1.5: Import Group Separation - Empty lines between groups
   - FR1.6: Import Syntax Preservation - Maintain exact syntax
+- ✅ Add performance benchmarks (2025-07-29)
+  - Created benchmark suite for formatting speed
+  - Added benchmarks for different file sizes and complexities
+  - Integrated benchmarks into CI pipeline
+  - Created both synthetic and real-world benchmarks
 
 ## Task Guidelines
 

@@ -49,6 +49,18 @@ cargo clippy
 
 # Format Rust code
 cargo fmt
+
+# Run benchmarks
+cargo bench
+
+# Run specific benchmark
+cargo bench --bench real_world_bench
+
+# Run benchmarks and save baseline
+cargo bench -- --save-baseline main
+
+# Compare benchmarks against baseline
+cargo bench -- --baseline main
 ```
 
 ## IMPORTANT: Post-Change Verification
@@ -222,6 +234,48 @@ cargo run -- test_files/sample.ts --stdout
 # Test all sample files
 cargo run -- test_files/
 ```
+
+## Performance Benchmarking
+
+The project includes performance benchmarks to measure formatting speed across different file sizes and complexities.
+
+### Benchmark Structure
+
+Benchmarks are located in `benches/`:
+- `formatting_bench.rs` - Synthetic benchmarks with various file sizes
+- `real_world_bench.rs` - Benchmarks using actual test fixtures
+
+### Running Benchmarks
+
+```bash
+# Run all benchmarks
+cargo bench
+
+# Run specific benchmark suite
+cargo bench --bench real_world_bench
+
+# Save baseline for comparison
+cargo bench -- --save-baseline my-baseline
+
+# Compare against baseline
+cargo bench -- --baseline my-baseline
+```
+
+### Benchmark Results
+
+Results are saved in `target/criterion/` with HTML reports showing:
+- Execution time distributions
+- Performance comparisons between runs
+- Throughput measurements (bytes/second)
+
+### CI Integration
+
+Benchmarks run automatically on:
+- Every push to main branch
+- Pull requests (with comparison against base branch)
+- Manual workflow dispatch
+
+Results are uploaded as GitHub Actions artifacts for review.
 
 ## Task Management
 

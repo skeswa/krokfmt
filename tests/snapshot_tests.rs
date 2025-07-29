@@ -20,9 +20,9 @@ fn test_fixture(fixture_path: &str) {
     let input_path = format!("tests/fixtures/{}.input.ts", fixture_path);
     let input = fs::read_to_string(&input_path)
         .unwrap_or_else(|_| panic!("Failed to read fixture: {}", input_path));
-    
+
     let output = format_code(&input);
-    
+
     // Use the fixture path as the snapshot name
     assert_snapshot!(fixture_path, output);
 }
