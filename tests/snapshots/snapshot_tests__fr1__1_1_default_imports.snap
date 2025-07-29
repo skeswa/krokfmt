@@ -1,0 +1,9 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+import axios from 'axios';
+import lodash from 'lodash';
+import React from 'react';
+
+const App = ()=><div>Hello</div>;

@@ -1,0 +1,29 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+function processOptions({ apple, banana, zebra }: Options) {
+    return {
+        apple,
+        banana,
+        zebra
+    };
+}
+const handleConfig = ({ baseURL, headers, retries, timeout }: Config)=>{
+    console.log(baseURL, headers, retries, timeout);
+};
+function processUser({ settings: { language, theme }, user: { age, id, name } }: UserData) {
+    return {
+        age,
+        id,
+        language,
+        name,
+        theme
+    };
+}
+function mixedParams(first: number, { apple, zebra }: Options, last: string) {
+    return `${first} ${apple} ${zebra} ${last}`;
+}
+function add(b: number, a: number) {
+    return a + b;
+}

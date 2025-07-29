@@ -23,11 +23,20 @@ krokfmt is a highly opinionated, zero-configuration TypeScript code formatter wr
 # Run all tests
 cargo test
 
-# Run a specific test
-cargo test test_import_organization_complete
+# Run snapshot tests only
+cargo test --test snapshot_tests
+
+# Run a specific snapshot test
+cargo test --test snapshot_tests test_fr1_1_default_imports
 
 # Run tests with output
 cargo test -- --nocapture
+
+# Review snapshot changes interactively
+cargo insta review
+
+# Accept all snapshot changes
+cargo insta accept
 
 # Build debug version
 cargo build
@@ -102,76 +111,117 @@ main.rs → file_handler.rs → (parallel) → parser.rs → transformer.rs → 
 ### Overview
 
 - Use a TDD workflow (write tests first)
-- Every requirement (see docs/requirements.md) should have dedicated tests
-- Tests are organized by functional requirement groups for clarity
+- Every requirement (see docs/requirements.md) must have snapshot tests
+- All tests use the snapshot testing approach with [insta](https://insta.rs/)
+- Test inputs are TypeScript files in `tests/fixtures/`
+- Expected outputs are automatically managed in `tests/snapshots/`
 
 ### Test Structure
 
 ```
 tests/
-├── fr1_tests.rs        # FR1: Import/Export Organization (26 tests)
-├── fr2_tests.rs        # FR2: Member Visibility Ordering (16 tests)
-├── fr3_tests.rs        # FR3: Alphabetical Sorting (24 tests)
-└── integration_tests.rs # End-to-end integration tests
+├── snapshot_tests.rs   # All requirement tests using snapshot approach
+├── fixtures/          # Input TypeScript files
+│   ├── fr1/          # FR1: FR1.X fixtures
+│   ├── fr2/          # FR2: FR2.X fixtures
+│   ├── fr3/          # FR3: FR3.X fixtures
+│   └── frX/          # FRX: fixtures to do with functional requirement X (FRX.Y)
+└── snapshots/        # Generated snapshots (auto-managed by insta)
 ```
 
-### Requirement Test Files
+### Fixture Organization
 
-Each `fr*_tests.rs` file contains dedicated tests for specific requirements:
+#### Naming Convention
 
-- **fr1_tests.rs**: Import/Export Organization
-  - FR1.1: Import Statement Parsing (7 tests)
-  - FR1.2: Import Categorization (4 tests)
-  - FR1.3: Import Sorting (4 tests)
-  - FR1.4: Import Positioning (3 tests)
-  - FR1.5: Import Group Separation (4 tests)
-  - FR1.6: Import Syntax Preservation (4 tests)
+Fixtures must follow this naming pattern:
+```
+{requirement}_{subrequirement}_{description}.input.ts
+```
 
-- **fr2_tests.rs**: Member Visibility Ordering
-  - FR2.1: Export Detection (6 tests)
-  - FR2.2: Export Prioritization (2 tests)
-  - FR2.3: Dependency Preservation (5 tests)
-  - FR2.4: Intelligent Grouping (3 tests)
+Examples:
+- `fr1/1_1_default_imports.input.ts` - FR1.1 test for default imports
+- `fr2/2_3_dependency_preservation.input.ts` - FR2.3 test for dependencies
+- `fr3/3_6_jsx_properties.input.ts` - FR3.6 test for JSX props
 
-- **fr3_tests.rs**: Alphabetical Sorting
-  - FR3.1: Function Argument Sorting (5 tests)
-  - FR3.2: Object Property Sorting (4 tests)
-  - FR3.3: Class Member Sorting (4 tests)
-  - FR3.4: Type Member Sorting (4 tests)
-  - FR3.5: Enum Member Sorting (3 tests)
-  - FR3.6: JSX Property Sorting (4 tests)
+#### Test Organization in snapshot_tests.rs
+
+Tests must be organized by requirement groups with clear comments:
+
+```rust
+// FR1: Import/Export Organization Tests
+
+#[test]
+fn test_fr1_1_default_imports() {
+    test_fixture("fr1/1_1_default_imports");
+}
+
+#[test]
+fn test_fr1_2_categorization() {
+    test_fixture("fr1/1_2_categorization");
+}
+
+// FR2: Member Visibility Ordering Tests
+
+#[test]
+fn test_fr2_1_export_detection() {
+    test_fixture("fr2/2_1_export_detection");
+}
+```
+
+### Creating New Tests
+
+1. **Create the fixture file** following the naming convention:
+   ```typescript
+   // tests/fixtures/fr1/1_x_new_feature.input.ts
+   // FR1.x: Description of what this tests
+   import { z } from './z';
+   import { a } from './a';
+   ```
+
+2. **Add the test** in the correct section of `snapshot_tests.rs`:
+   ```rust
+   #[test]
+   fn test_fr1_x_new_feature() {
+       test_fixture("fr1/1_x_new_feature");
+   }
+   ```
+
+3. **Generate the snapshot**:
+   ```bash
+   cargo test --test snapshot_tests test_fr1_x_new_feature
+   ```
+
+4. **Review and accept**:
+   ```bash
+   cargo insta review
+   ```
 
 ### Test Guidelines
 
-1. **One Test Per Requirement**: Each test should target exactly one requirement
-2. **Clear Test Names**: Test names must clearly indicate which requirement they verify (e.g., `test_fr1_1_parse_default_imports`)
-3. **Ordered Tests**: Tests are listed in order of requirement declaration
-4. **Isolated Testing**: Each test should be independent and not rely on other tests
-5. **Comprehensive Coverage**: Every sub-requirement must have at least one dedicated test
+1. **One fixture per sub-requirement**: Each sub-requirement should have at least one dedicated fixture
+2. **Clear documentation**: Each fixture should start with a comment explaining what it tests
+3. **Comprehensive examples**: Include edge cases and complex scenarios
+4. **Isolated tests**: Each fixture should test one specific behavior
+5. **Real-world code**: Use realistic TypeScript patterns in fixtures
 
-### Running Tests
+### Benefits of Snapshot Testing
 
+- **Visual diffs**: See exactly what changed in the formatter output
+- **Easy updates**: One command to update all snapshots after intentional changes
+- **Readable tests**: Input and output are plain TypeScript files
+- **Fast feedback**: Quickly spot unintended formatting changes
+- **Version controlled**: Snapshot changes are tracked in git
+
+### Manual Testing
+
+The `test_files/` directory contains sample TypeScript files for manual testing:
 ```bash
-# Run all tests
-cargo test
+# Test a single file manually
+cargo run -- test_files/sample.ts --stdout
 
-# Run tests for specific requirement group
-cargo test --test fr1_tests  # Import/Export tests
-cargo test --test fr2_tests  # Member Visibility tests
-cargo test --test fr3_tests  # Alphabetical Sorting tests
-
-# Run a specific test
-cargo test test_fr1_1_parse_default_imports
-
-# Run tests with output
-cargo test -- --nocapture
+# Test all sample files
+cargo run -- test_files/
 ```
-
-### Other Test Types
-
-- **Unit Tests**: Each module has tests covering its specific functionality
-- **Integration Tests** (`tests/integration_tests.rs`): End-to-end formatting tests
-- **Test Fixtures** (`test_files/`): Sample TypeScript files for manual testing
 
 ## Task Management
 
@@ -181,11 +231,11 @@ All tasks are tracked in TODO.md. The file contains:
 - **Completed**: Finished tasks with completion dates
 
 When implementing a task:
-1. Write tests first (TDD approach)
+1. Write snapshot tests first (TDD approach)
 2. Implement the minimum code to pass tests
 3. Refactor if needed
-4. Update integration tests
-5. Run `cargo test` to ensure nothing is broken
+4. Run `cargo test --test snapshot_tests` to verify
+5. Review snapshots with `cargo insta review`
 6. Move task to Completed
 
 ## Adding New Tasks

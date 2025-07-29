@@ -1,0 +1,8 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+const BasicComponent = ()=>(<Button aria-label="Submit" className="btn-primary" disabled onClick={handleClick}/>);
+const ListItem = ({ item })=>(<Item key={item.id} ref={itemRef} className="list-item" name={item.name} onClick={()=>selectItem(item)}/>);
+const InteractiveForm = ()=>(<Input className="form-input" disabled={isDisabled} placeholder="Enter text" value={inputValue} onBlur={handleBlur} onChange={handleChange} onClick={handleClick} onFocus={handleFocus}/>);
+const ExtendedComponent = ()=>(<Component className="extended" id="comp-1" name="test" {...defaultProps} {...overrideProps}/>);

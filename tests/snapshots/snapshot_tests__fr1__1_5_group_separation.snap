@@ -1,0 +1,16 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+import axios from 'axios';
+import React from 'react';
+
+import { theme } from '@styles/theme';
+import { Button } from '@ui/Button';
+
+import { utils } from '../utils';
+import { helper } from './helper';
+
+export const App = ()=>{
+    return <div>Import groups should have empty lines between them</div>;
+};

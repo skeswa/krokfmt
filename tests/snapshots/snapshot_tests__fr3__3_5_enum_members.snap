@@ -1,0 +1,28 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+enum Status {
+    Error = 'error',
+    Loading = 'loading',
+    Pending = 'pending',
+    Success = 'success'
+}
+enum Priority {
+    Low = 1,
+    High = 3,
+    Medium = 2,
+    Critical = 4
+}
+enum Mixed {
+    A,
+    B = 5,
+    C,
+    D = 'delta'
+}
+enum Color {
+    Blue = 'blue',
+    Green = 'green',
+    Red = 'red',
+    Yellow = 'yellow'
+}

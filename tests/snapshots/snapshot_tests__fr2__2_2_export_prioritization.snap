@@ -1,0 +1,33 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+export const publicConfig = {
+    api: 'https://api.example.com'
+};
+export function publicHelper() {
+    return 'public';
+}
+interface PrivateOptions {
+    internal: boolean;
+}
+export interface PublicOptions extends PrivateOptions {
+    external: boolean;
+}
+class InternalService {
+    name = 'internal';
+}
+export class PublicService {
+    service = new InternalService();
+}
+export const constant1 = 1;
+export const constant2 = 3;
+export const constant3 = 5;
+const privateConfig = {
+    debug: false
+};
+function privateHelper() {
+    return 'private';
+}
+const privateConstant = 2;
+const anotherPrivate = 4;

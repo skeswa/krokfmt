@@ -1,0 +1,16 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+import axios, { AxiosError } from 'axios';
+import React, { useState, useEffect } from 'react';
+
+import utils, { helper, type HelperType } from '../utils/helpers';
+
+export function useData() {
+    const [data, setData] = useState(null);
+    useEffect(()=>{
+        axios.get('/api/data').then((res)=>setData(res.data));
+    }, []);
+    return data;
+}

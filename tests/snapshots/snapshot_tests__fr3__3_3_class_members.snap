@@ -1,0 +1,35 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+class MyClass {
+    static bar = 'bar';
+    static foo = 'foo';
+    static zoo = 'zoo';
+    apple: number;
+    banana: boolean;
+    zebra: string;
+    constructor(){
+        this.apple = 1;
+        this.banana = true;
+        this.zebra = 'z';
+    }
+    static aStatic() {
+        return 'a';
+    }
+    static bStatic() {
+        return 'b';
+    }
+    static zStatic() {
+        return 'z';
+    }
+    aMethod() {
+        return this.apple;
+    }
+    bMethod() {
+        return this.banana;
+    }
+    zMethod() {
+        return this.zebra;
+    }
+}

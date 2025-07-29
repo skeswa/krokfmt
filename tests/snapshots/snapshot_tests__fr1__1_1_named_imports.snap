@@ -1,0 +1,12 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+import { AxiosError, AxiosResponse } from 'axios';
+import { debounce, throttle } from 'lodash';
+import { useState, useEffect } from 'react';
+
+function useApi() {
+    const [data, setData] = useState(null);
+    return data;
+}

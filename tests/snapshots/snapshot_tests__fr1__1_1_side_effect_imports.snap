@@ -1,0 +1,10 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+import 'reflect-metadata';
+
+import './polyfills';
+import './styles.css';
+
+console.log('App initialized');

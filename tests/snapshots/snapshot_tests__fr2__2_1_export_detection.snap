@@ -1,0 +1,27 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+function privateHelper() {
+    return 'private';
+}
+export function publicApi() {
+    return privateHelper() + ' api';
+}
+class PrivateClass {
+    value = 1;
+}
+export class PublicClass {
+    instance = new PrivateClass();
+}
+interface PrivateInterface {
+    id: number;
+}
+export interface PublicInterface extends PrivateInterface {
+    name: string;
+}
+type PrivateType = number | string;
+export type PublicType = PrivateType | boolean;
+const a = 1;
+const b = 2;
+export { a, b };

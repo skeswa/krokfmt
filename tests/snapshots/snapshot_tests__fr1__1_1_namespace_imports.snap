@@ -1,0 +1,13 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+import * as fs from 'fs';
+import * as path from 'path';
+
+import * as helpers from '../helpers';
+import * as utils from './utils';
+
+export function readFile(filename: string) {
+    return fs.readFileSync(path.join(process.cwd(), filename));
+}

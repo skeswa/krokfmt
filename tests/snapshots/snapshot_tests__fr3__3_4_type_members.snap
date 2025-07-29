@@ -1,0 +1,22 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+type Status = 'error' | 'loading' | 'pending' | 'success';
+type Combined = TypeA & TypeB & TypeM & TypeZ;
+type Primitive = bigint | boolean | null | number | string | symbol | undefined;
+type Action = {
+    type: 'LOAD';
+    payload: string;
+} | {
+    type: 'ERROR';
+    error: Error;
+} | {
+    type: 'SUCCESS';
+    data: any;
+} | {
+    type: 'RESET';
+};
+type Mixed = boolean | string | {
+    kind: 'object';
+} | number[] | (() => void);

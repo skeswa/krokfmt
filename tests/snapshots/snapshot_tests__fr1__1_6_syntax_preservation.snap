@@ -1,0 +1,20 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+import 'global-polyfill';
+import MyReact from 'react';
+
+import { type Config, type Settings } from './config';
+import data from './data.json' with {
+
+    type: 'json'
+};
+import './side-effect';
+import styles from './styles.css' with {
+    type: 'css'
+};
+import type { User } from './types';
+export { default as MyExport } from './my-export';
+export * from './re-exports';
+export { foo, bar } from './module';

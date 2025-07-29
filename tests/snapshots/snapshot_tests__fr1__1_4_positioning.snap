@@ -1,0 +1,18 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+import axios from 'axios';
+import React from 'react';
+import { useState } from 'react';
+
+import { Button } from '@ui/Button';
+
+const earlyVar = 'I should be after imports';
+export const App = ()=>{
+    return <Button onClick={()=>console.log(earlyVar)}>Click</Button>;
+};
+function earlyFunction() {
+    return 'Also should be after imports';
+}
+const middleVar = 'mixed';

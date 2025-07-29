@@ -1,0 +1,41 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+const config = {
+    apple: 42,
+    banana: "yellow",
+    cat: null,
+    dog: undefined,
+    zebra: true
+};
+const nested = {
+    another: {
+        first: false,
+        last: true
+    },
+    outer: {
+        apple: 2,
+        middle: {
+            bar: 'b',
+            foo: 'c',
+            zoo: 'a'
+        },
+        zebra: 1
+    }
+};
+const withSpread = {
+    ...defaults,
+    ...overrides,
+    apple: 2,
+    banana: 3,
+    cat: 4,
+    zebra: 1
+};
+const computed = {
+    [dynamicKey]: 2,
+    ['literal']: 4,
+    apple: 3,
+    banana: 5,
+    zebra: 1
+};
