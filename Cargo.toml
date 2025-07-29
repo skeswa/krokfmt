@@ -13,7 +13,7 @@ categories = ["development-tools", "command-line-utilities"]
 
 [dependencies]
 clap = { version = "4.5", features = ["derive"] }
-swc_atoms = "0.6"
+swc_atoms = "7.0"
 swc_common = { version = "0.33", features = ["tty-emitter"] }
 swc_ecma_ast = "0.112"
 swc_ecma_codegen = "0.148"
