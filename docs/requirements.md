@@ -1,0 +1,531 @@
+# krokfmt Requirements Specification
+
+## Table of Contents
+1. [Functional Requirements](#functional-requirements)
+2. [Non-Functional Requirements](#non-functional-requirements)
+3. [Requirements Traceability Matrix](#requirements-traceability-matrix)
+4. [Acceptance Criteria](#acceptance-criteria)
+
+## Functional Requirements
+
+### FR1: Import/Export Organization
+
+#### FR1.1: Import Statement Parsing
+**Description**: The system shall parse and identify all import and export statements in a TypeScript file.
+
+**Acceptance Criteria**:
+- Recognizes all ES6 import syntaxes:
+  - Default imports: `import React from 'react'`
+  - Named imports: `import { useState } from 'react'`
+  - Namespace imports: `import * as utils from './utils'`
+  - Side-effect imports: `import './styles.css'`
+  - Type imports: `import type { User } from './types'`
+- Handles mixed import styles: `import React, { useState } from 'react'`
+- Preserves import aliases: `import { foo as bar } from './module'`
+
+#### FR1.2: Import Categorization
+**Description**: The system shall categorize imports into three distinct groups based on their path patterns.
+
+**Categories**:
+1. **External** - Packages from node_modules (no path prefix)
+2. **Absolute** - Paths starting with `@` or `~`
+3. **Relative** - Paths starting with `./` or `../`
+
+**Examples**:
+```typescript
+// External
+import React from 'react';
+import lodash from 'lodash/debounce';
+
+// Absolute
+import { Button } from '@components/Button';
+import { config } from '~/config';
+
+// Relative
+import { helper } from './utils/helper';
+import { User } from '../types';
+```
+
+#### FR1.3: Import Sorting
+**Description**: The system shall sort imports alphabetically within each category by import path.
+
+**Rules**:
+- Case-sensitive alphabetical ordering
+- Special characters follow ASCII ordering
+- Path comparison ignores quotes
+
+#### FR1.4: Import Positioning
+**Description**: The system shall place all import and export statements at the top of the file.
+
+**Constraints**:
+- Preserves shebang lines (`#!/usr/bin/env node`)
+- Preserves file-level comments before imports
+- Moves orphaned imports to the top
+
+#### FR1.5: Import Group Separation
+**Description**: The system shall separate import groups with exactly one empty line.
+
+**Layout**:
+```typescript
+// External imports
+import a from 'a';
+import b from 'b';
+
+// Absolute imports
+import c from '@/c';
+import d from '@/d';
+
+// Relative imports
+import e from './e';
+import f from './f';
+```
+
+#### FR1.6: Import Syntax Preservation
+**Description**: The system shall preserve the exact import syntax and semantics.
+
+**Guarantees**:
+- Maintains import type (default/named/namespace)
+- Preserves type-only imports
+- Keeps side-effect import behavior
+- Retains import assertions
+
+### FR2: Member Visibility Ordering
+
+#### FR2.1: Export Detection
+**Description**: The system shall identify exported versus non-exported members in a file.
+
+**Member Types**:
+- Functions (regular and arrow)
+- Classes
+- Interfaces
+- Type aliases
+- Constants
+- Variables
+- Enums
+
+#### FR2.2: Export Prioritization
+**Description**: The system shall move exported members toward the top of the file when possible.
+
+**Constraints**:
+- Maintains dependency order
+- Preserves lexical scoping
+- Respects temporal dead zones
+
+#### FR2.3: Dependency Preservation
+**Description**: The system shall never reorder members in a way that breaks code functionality.
+
+**Analysis Required**:
+- Variable usage before declaration
+- Function hoisting behavior
+- Class inheritance chains
+- Circular dependencies
+
+#### FR2.4: Intelligent Grouping
+**Description**: The system shall keep related members together when reordering.
+
+**Grouping Rules**:
+- Class with its methods
+- Interface with its implementations
+- Type with its guards/assertions
+
+### FR3: Alphabetical Sorting
+
+#### FR3.1: Function Argument Sorting
+**Description**: The system shall sort function arguments alphabetically when order doesn't affect behavior.
+
+**Applicability**:
+- Object destructuring parameters
+- NOT positional parameters
+
+**Example**:
+```typescript
+// Before
+function process({ zebra, apple, banana }: Options) {}
+
+// After  
+function process({ apple, banana, zebra }: Options) {}
+```
+
+#### FR3.2: Object Property Sorting
+**Description**: The system shall sort object literal properties alphabetically.
+
+**Rules**:
+- Computed properties sort by their string representation
+- Spread operators sort to the end
+- Getters/setters stay together
+
+#### FR3.3: Class Member Sorting
+**Description**: The system shall sort class fields and methods alphabetically within visibility groups.
+
+**Order**:
+1. Static fields (alphabetically)
+2. Instance fields (alphabetically)
+3. Constructor
+4. Static methods (alphabetically)
+5. Instance methods (alphabetically)
+
+#### FR3.4: Type Member Sorting
+**Description**: The system shall sort members of union and intersection types alphabetically.
+
+**Example**:
+```typescript
+// Before
+type Status = 'error' | 'success' | 'pending';
+
+// After
+type Status = 'error' | 'pending' | 'success';
+```
+
+#### FR3.5: Enum Member Sorting
+**Description**: The system shall sort enum members alphabetically.
+
+**Constraints**:
+- Only for string enums
+- Numeric enums preserve values
+
+#### FR3.6: JSX Property Sorting
+**Description**: The system shall sort JSX/TSX element properties alphabetically.
+
+**Special Rules**:
+- `key` and `ref` always first
+- Event handlers group together
+- Spread operators at the end
+
+### FR4: CLI Interface
+
+#### FR4.1: Single File Processing
+**Description**: The system shall process individual TypeScript files.
+
+**Command**: `krokfmt path/to/file.ts`
+
+**Behavior**:
+- Formats file in place
+- Creates backup unless --no-backup
+- Reports success/failure
+
+#### FR4.2: Directory Processing
+**Description**: The system shall recursively process all TypeScript files in directories.
+
+**Command**: `krokfmt src/`
+
+**Features**:
+- Finds all .ts/.tsx/.mts/.cts files
+- Skips node_modules
+- Skips hidden directories
+- Follows symbolic links
+
+#### FR4.3: Glob Pattern Support
+**Description**: The system shall support glob patterns for file selection.
+
+**Command**: `krokfmt "src/**/*.ts"`
+
+**Patterns**:
+- Standard glob syntax
+- Multiple patterns allowed
+- Negative patterns (exclusions)
+
+#### FR4.4: Check Mode
+**Description**: The system shall verify formatting without modifying files.
+
+**Command**: `krokfmt --check src/`
+
+**Behavior**:
+- Exit code 0 if all formatted
+- Exit code 1 if changes needed
+- Lists files needing formatting
+
+#### FR4.5: Stdout Mode
+**Description**: The system shall output formatted code to stdout.
+
+**Command**: `krokfmt --stdout file.ts`
+
+**Use Cases**:
+- Piping to other tools
+- Preview formatting
+- Editor integration
+
+#### FR4.6: Version Display
+**Description**: The system shall display version information.
+
+**Command**: `krokfmt --version`
+
+**Output**: `krokfmt 0.1.0`
+
+#### FR4.7: Help Display
+**Description**: The system shall provide comprehensive help information.
+
+**Command**: `krokfmt --help`
+
+**Contents**:
+- Usage examples
+- Option descriptions
+- File pattern examples
+
+### FR5: File Handling
+
+#### FR5.1: Encoding Preservation
+**Description**: The system shall preserve file encoding (UTF-8).
+
+**Features**:
+- Detects BOM
+- Maintains encoding
+- Handles non-ASCII characters
+
+#### FR5.2: Line Ending Preservation
+**Description**: The system shall preserve existing line endings.
+
+**Detection**:
+- LF (Unix/macOS)
+- CRLF (Windows)
+- Consistent throughout file
+
+#### FR5.3: Backup Creation
+**Description**: The system shall create backups before modifying files.
+
+**Default Behavior**:
+- Creates .bak files
+- Single backup per file
+- Opt-out with --no-backup
+
+#### FR5.4: File Type Support
+**Description**: The system shall handle all TypeScript file extensions.
+
+**Extensions**:
+- `.ts` - Standard TypeScript
+- `.tsx` - TypeScript with JSX
+- `.mts` - ES modules
+- `.cts` - CommonJS modules
+
+## Non-Functional Requirements
+
+### NFR1: Performance
+
+#### NFR1.1: Processing Speed
+**Description**: The system shall format files quickly and efficiently.
+
+**Metrics**:
+- 1000 lines in < 100ms
+- 10,000 lines in < 1s
+- Linear time complexity
+
+#### NFR1.2: Parallel Processing
+**Description**: The system shall process multiple files concurrently.
+
+**Implementation**:
+- Work-stealing parallelism
+- CPU core utilization
+- Shared nothing architecture
+
+#### NFR1.3: Memory Efficiency
+**Description**: The system shall use memory proportional to file size.
+
+**Constraints**:
+- < 10MB overhead per file
+- No memory leaks
+- Efficient string handling
+
+#### NFR1.4: Large File Support
+**Description**: The system shall handle large TypeScript files gracefully.
+
+**Limits**:
+- Files up to 10MB
+- 100,000+ lines of code
+- Graceful degradation
+
+### NFR2: Correctness
+
+#### NFR2.1: Semantic Preservation
+**Description**: The system shall never change program behavior.
+
+**Guarantees**:
+- No logic changes
+- No type changes
+- No runtime differences
+
+#### NFR2.2: Comment Preservation
+**Description**: The system shall preserve all comments and their associations.
+
+**Types**:
+- Line comments
+- Block comments
+- JSDoc comments
+- TS pragma comments
+
+#### NFR2.3: Syntax Support
+**Description**: The system shall support all valid TypeScript syntax.
+
+**Coverage**:
+- ES2022+ features
+- Latest TypeScript
+- Stage 3 proposals
+- JSX/TSX
+
+#### NFR2.4: Output Validity
+**Description**: The system shall always produce valid TypeScript.
+
+**Validation**:
+- Parseable output
+- No syntax errors
+- Maintains types
+
+### NFR3: Robustness
+
+#### NFR3.1: Error Recovery
+**Description**: The system shall handle errors gracefully without crashing.
+
+**Scenarios**:
+- Syntax errors
+- File permissions
+- Disk space
+- Malformed input
+
+#### NFR3.2: Error Messaging
+**Description**: The system shall provide clear, actionable error messages.
+
+**Format**:
+```
+Error: Failed to parse file
+  File: src/components/Button.tsx
+  Line: 42, Column: 15
+  Issue: Unexpected token ']', expected '}'
+```
+
+#### NFR3.3: Partial Formatting
+**Description**: The system shall format valid portions of files with errors.
+
+**Strategy**:
+- Skip unparseable sections
+- Format valid parts
+- Report limitations
+
+#### NFR3.4: Circular Dependency Handling
+**Description**: The system shall detect and handle circular dependencies.
+
+**Approach**:
+- Dependency graph analysis
+- Cycle detection
+- Safe fallback behavior
+
+### NFR4: Developer Experience
+
+#### NFR4.1: Distribution
+**Description**: The system shall be distributed as a single binary.
+
+**Platforms**:
+- macOS (x64, ARM64)
+- Linux (x64, ARM64)
+- Windows (x64)
+
+#### NFR4.2: Cross-Platform Support
+**Description**: The system shall work identically across platforms.
+
+**Compatibility**:
+- Path handling
+- Line endings
+- File systems
+
+#### NFR4.3: Zero Dependencies
+**Description**: The system shall have no runtime dependencies.
+
+**Benefits**:
+- Easy installation
+- No version conflicts
+- Portable execution
+
+#### NFR4.4: CI/CD Integration
+**Description**: The system shall integrate well with CI/CD pipelines.
+
+**Features**:
+- Exit codes
+- Machine-readable output
+- Quiet mode
+- JSON reports (future)
+
+### NFR5: Maintainability
+
+#### NFR5.1: Test Coverage
+**Description**: The system shall maintain high test coverage.
+
+**Targets**:
+- 90% line coverage
+- 85% branch coverage
+- 100% critical paths
+
+#### NFR5.2: TDD Methodology
+**Description**: The system shall be developed using Test-Driven Development.
+
+**Process**:
+1. Write failing test
+2. Implement minimum code
+3. Refactor
+4. Document
+
+#### NFR5.3: Modular Architecture
+**Description**: The system shall use a modular, extensible architecture.
+
+**Principles**:
+- Single responsibility
+- Loose coupling
+- High cohesion
+- Clear interfaces
+
+#### NFR5.4: Error Handling
+**Description**: The system shall have comprehensive error handling.
+
+**Requirements**:
+- Result types
+- Error propagation
+- Recovery strategies
+- Logging
+
+## Requirements Traceability Matrix
+
+| Requirement | Component | Test Coverage | Status |
+|-------------|-----------|---------------|---------|
+| FR1.1 | parser.rs | test_parse_* | ✓ |
+| FR1.2 | transformer.rs | test_categorize_imports | ✓ |
+| FR1.3 | transformer.rs | test_sort_imports | ✓ |
+| FR1.4 | formatter.rs | test_imports_at_top | ✓ |
+| FR1.5 | codegen.rs | test_import_spacing | ✓ |
+| FR2.1-4 | formatter.rs | - | Planned |
+| FR3.1-6 | formatter.rs | test_object_sorting | Partial |
+| FR4.1-7 | main.rs | - | ✓ |
+| FR5.1-4 | file_handler.rs | test_file_* | ✓ |
+| NFR1.1-4 | All | Benchmarks | Planned |
+| NFR2.1-4 | All | Integration tests | ✓ |
+| NFR3.1-4 | All | Error tests | Partial |
+| NFR4.1-4 | Build system | - | Planned |
+| NFR5.1-4 | All | Coverage report | ✓ |
+
+## Acceptance Criteria
+
+### Release Criteria
+
+1. **Functionality**
+   - All FR1.* requirements implemented
+   - FR3.2 (object sorting) implemented
+   - FR4.* (CLI) fully functional
+
+2. **Quality**
+   - Zero panics on valid input
+   - 90% test coverage achieved
+   - All integration tests passing
+
+3. **Performance**
+   - Meets NFR1.1 speed requirements
+   - Memory usage within limits
+   - Parallel processing working
+
+4. **Documentation**
+   - README complete
+   - All public APIs documented
+   - Usage examples provided
+
+### Definition of Done
+
+A requirement is considered complete when:
+1. Implementation passes all tests
+2. Code review completed
+3. Documentation updated
+4. Integration tests added
+5. No regression in existing features

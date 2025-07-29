@@ -1,0 +1,26 @@
+[package]
+name = "krokfmt"
+version = "0.1.0"
+edition = "2021"
+authors = ["krokorok"]
+description = "A highly opinionated TypeScript code formatter"
+license = "MIT"
+repository = "https://github.com/skeswa/krokfmt"
+
+[dependencies]
+clap = { version = "4.5", features = ["derive"] }
+swc_atoms = "0.6"
+swc_common = { version = "0.33", features = ["tty-emitter"] }
+swc_ecma_ast = "0.112"
+swc_ecma_codegen = "0.148"
+swc_ecma_parser = "0.143"
+swc_ecma_visit = "0.98"
+anyhow = "1.0"
+glob = "0.3"
+rayon = "1.8"
+colored = "2.1"
+
+[dev-dependencies]
+tempfile = "3.9"
+insta = "1.34"
+pretty_assertions = "1.4"
