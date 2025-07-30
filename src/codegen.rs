@@ -1,5 +1,5 @@
 use anyhow::Result;
-use swc_common::{sync::Lrc, SourceMap};
+use swc_common::{comments::SingleThreadedComments, sync::Lrc, SourceMap};
 use swc_ecma_ast::*;
 use swc_ecma_codegen::{text_writer::JsWriter, Config, Emitter};
 
@@ -7,11 +7,22 @@ use crate::transformer::{ImportAnalyzer, ImportCategory};
 
 pub struct CodeGenerator {
     source_map: Lrc<SourceMap>,
+    comments: Option<SingleThreadedComments>,
 }
 
 impl CodeGenerator {
     pub fn new(source_map: Lrc<SourceMap>) -> Self {
-        Self { source_map }
+        Self {
+            source_map,
+            comments: None,
+        }
+    }
+
+    pub fn with_comments(source_map: Lrc<SourceMap>, comments: SingleThreadedComments) -> Self {
+        Self {
+            source_map,
+            comments: Some(comments),
+        }
     }
 
     pub fn generate(&self, module: &Module) -> Result<String> {
@@ -25,7 +36,10 @@ impl CodeGenerator {
             let mut emitter = Emitter {
                 cfg: config,
                 cm: self.source_map.clone(),
-                comments: None,
+                comments: self
+                    .comments
+                    .as_ref()
+                    .map(|c| c as &dyn swc_common::comments::Comments),
                 wr: Box::new(writer),
             };
 

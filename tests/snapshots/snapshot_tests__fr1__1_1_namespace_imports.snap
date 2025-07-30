@@ -2,6 +2,7 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
+// FR1.1: Namespace imports should be parsed and preserved
 import * as fs from 'fs';
 import * as path from 'path';
 

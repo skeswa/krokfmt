@@ -2,6 +2,7 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
+// FR1.1: Named imports should be parsed and preserved
 import { AxiosError, AxiosResponse } from 'axios';
 import { debounce, throttle } from 'lodash';
 import { useState, useEffect } from 'react';

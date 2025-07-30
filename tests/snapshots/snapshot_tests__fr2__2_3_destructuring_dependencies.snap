@@ -2,6 +2,9 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
+// FR2.3: Destructuring and spread dependencies
+// Object with dependencies
+// Array destructuring
 const values = [
     1,
     2,
@@ -9,6 +12,7 @@ const values = [
 ];
 const [first, second] = values;
 export const sum = first + second;
+// Function parameter destructuring
 interface Options {
     timeout: number;
     retries: number;
@@ -23,6 +27,7 @@ export function createClient({ retries, timeout }: Options = defaultOptions) {
         timeout
     };
 }
+// Nested destructuring
 const nested = {
     user: {
         profile: {

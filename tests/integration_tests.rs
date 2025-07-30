@@ -3,6 +3,7 @@ use krokfmt::{codegen::CodeGenerator, formatter::KrokFormatter, parser::TypeScri
 fn format_code(input: &str) -> String {
     let parser = TypeScriptParser::new();
     let source_map = parser.source_map.clone();
+    let comments = parser.comments.clone();
     // Parse as TSX if the input contains JSX
     let filename = if input.contains("<") && input.contains(">") {
         "test.tsx"
@@ -11,7 +12,7 @@ fn format_code(input: &str) -> String {
     };
     let module = parser.parse(input, filename).unwrap();
     let formatted = KrokFormatter::new().format(module).unwrap();
-    let generator = CodeGenerator::new(source_map);
+    let generator = CodeGenerator::with_comments(source_map, comments);
     generator.generate(&formatted).unwrap()
 }
 

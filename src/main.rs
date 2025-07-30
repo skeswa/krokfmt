@@ -103,6 +103,7 @@ fn process_file(file_handler: &FileHandler, path: &Path, cli: &Cli) -> Result<bo
     // Parse
     let parser = TypeScriptParser::new();
     let source_map = parser.source_map.clone();
+    let comments = parser.comments.clone();
     let module = parser
         .parse(&content, path.to_str().unwrap_or("unknown.ts"))
         .context("Failed to parse file")?;
@@ -112,7 +113,7 @@ fn process_file(file_handler: &FileHandler, path: &Path, cli: &Cli) -> Result<bo
     let formatted_module = formatter.format(module).context("Failed to format file")?;
 
     // Generate
-    let generator = CodeGenerator::new(source_map);
+    let generator = CodeGenerator::with_comments(source_map, comments);
     let formatted_content = generator
         .generate(&formatted_module)
         .context("Failed to generate code")?;

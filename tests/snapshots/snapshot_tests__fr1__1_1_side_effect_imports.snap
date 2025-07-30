@@ -2,6 +2,7 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
+// FR1.1: Side-effect imports should be parsed and preserved
 import 'reflect-metadata';
 
 import './polyfills';

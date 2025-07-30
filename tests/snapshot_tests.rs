@@ -5,6 +5,7 @@ use std::fs;
 fn format_code(input: &str) -> String {
     let parser = TypeScriptParser::new();
     let source_map = parser.source_map.clone();
+    let comments = parser.comments.clone();
     let filename = if input.contains("<") && input.contains(">") {
         "test.tsx"
     } else {
@@ -12,7 +13,7 @@ fn format_code(input: &str) -> String {
     };
     let module = parser.parse(input, filename).unwrap();
     let formatted = KrokFormatter::new().format(module).unwrap();
-    let generator = CodeGenerator::new(source_map);
+    let generator = CodeGenerator::with_comments(source_map, comments);
     generator.generate(&formatted).unwrap()
 }
 
@@ -201,4 +202,36 @@ fn test_fr3_5_enum_members() {
 #[test]
 fn test_fr3_6_jsx_properties() {
     test_fixture("fr3/3_6_jsx_properties");
+}
+
+// FR6: Comment Handling Tests
+
+#[test]
+fn test_fr6_1_line_comments() {
+    test_fixture("fr6/6_1_line_comments");
+}
+
+#[test]
+fn test_fr6_2_block_comments() {
+    test_fixture("fr6/6_2_block_comments");
+}
+
+#[test]
+fn test_fr6_3_jsdoc_comments() {
+    test_fixture("fr6/6_3_jsdoc_comments");
+}
+
+#[test]
+fn test_fr6_4_comment_positioning() {
+    test_fixture("fr6/6_4_comment_positioning");
+}
+
+#[test]
+fn test_fr6_5_comment_association() {
+    test_fixture("fr6/6_5_comment_association");
+}
+
+#[test]
+fn test_fr6_6_special_comments() {
+    test_fixture("fr6/6_6_special_comments");
 }

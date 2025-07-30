@@ -2,6 +2,7 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
+// FR1.2: Imports should be categorized into External, Absolute, and Relative groups
 import axios from 'axios';
 import lodash from 'lodash';
 import React from 'react';

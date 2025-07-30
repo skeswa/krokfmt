@@ -2,6 +2,7 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
+// FR1.6: Import syntax should be preserved exactly
 import 'global-polyfill';
 import MyReact from 'react';
 

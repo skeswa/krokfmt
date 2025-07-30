@@ -2,6 +2,8 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
+// FR2.3: Hoisting and temporal dead zone challenges
+// Function hoisting - exported function uses hoisted function
 function helperFunction() {
     return 'helper';
 }
@@ -11,14 +13,17 @@ export function publicApi() {
 class MyClass {
     value = 42;
 }
+// Class hoisting (not hoisted, should fail if reordered incorrectly)
 export const instance = new MyClass();
 const base = 10;
 function computeValue() {
     return base * 2;
 }
+// Const temporal dead zone
 export const earlyUse = computeValue();
 function initialValue() {
     return 100;
 }
+// Mixed declarations
 var hoistedVar = initialValue();
 export const exportedConst = hoistedVar;

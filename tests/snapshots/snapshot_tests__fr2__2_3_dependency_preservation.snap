@@ -2,26 +2,34 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
+// FR2.3: Dependencies must be preserved when reordering
+// Base values that exported values depend on
 const BASE_URL = 'https://api.example.com';
 const API_VERSION = 'v1';
+// Exported value that depends on non-exported values
 export const API_ENDPOINT = `${BASE_URL}/${API_VERSION}`;
+// Helper function used by exported function
 function validateInput(input: string): boolean {
     return input.length > 0;
 }
+// Exported function that depends on helper
 export function processInput(input: string): string {
     if (!validateInput(input)) {
         throw new Error('Invalid input');
     }
     return input.toUpperCase();
 }
+// Base class
 class BaseHandler {
     protected name = 'base';
 }
+// Exported class that extends base
 export class ApiHandler extends BaseHandler {
     handle() {
         return this.name;
     }
 }
+// Complex dependency chain
 const step1 = 1;
 const step2 = step1 + 1;
 export const step3 = step2 + 1;

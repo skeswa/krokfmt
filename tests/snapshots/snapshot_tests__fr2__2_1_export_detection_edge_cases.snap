@@ -2,25 +2,33 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
+// FR2.1: Complex export detection patterns
+// Re-exports
 export const external = 'external';
+// Export list at bottom
 const item1 = 'one';
 const item2 = 'two';
+// Type exports
 type InternalType = string;
 export type ExportedType = InternalType;
+// Interface exports
 interface InternalInterface {
     x: number;
 }
 export interface ExportedInterface extends InternalInterface {
     y: number;
 }
+// Const assertions with exports
 const VALUES = [
     'a',
     'b',
     'c'
 ] as const;
 export type Value = typeof VALUES[number];
+// Mixed export patterns
 const internal = 'internal';
 const item3 = 'three';
+// Namespace exports
 namespace InternalNS {
     export const value = 42;
 }

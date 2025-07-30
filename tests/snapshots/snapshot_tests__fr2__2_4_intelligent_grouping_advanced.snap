@@ -2,6 +2,8 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
+// FR2.4: Advanced intelligent grouping patterns
+// Error type with multiple related items
 export class CustomError extends Error {
     constructor(public code: string, message: string){
         super(message);
@@ -13,6 +15,7 @@ export function isCustomError(error: unknown): error is CustomError {
 export function createCustomError(code: string, message: string): CustomError {
     return new CustomError(code, message);
 }
+// State management pattern
 export interface State {
     count: number;
     loading: boolean;
@@ -48,13 +51,16 @@ export function reducer(state: State, action: Action): State {
             };
     }
 }
+// API client pattern
 interface ApiConfig {
     baseUrl: string;
     timeout: number;
 }
 export class ApiClient {
     constructor(private config: ApiConfig){}
-    async get(path: string) {}
+    async get(path: string) {
+    // implementation
+    }
 }
 export function createApiClient(baseUrl: string): ApiClient {
     return new ApiClient({
@@ -62,6 +68,7 @@ export function createApiClient(baseUrl: string): ApiClient {
         timeout: 5000
     });
 }
+// Validation pattern
 export type Validator<T> = (value: unknown) => value is T;
 export const isString: Validator<string> = (value): value is string =>{
     return typeof value === 'string';

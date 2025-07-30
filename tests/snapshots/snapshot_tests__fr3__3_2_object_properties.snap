@@ -2,6 +2,7 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
+// FR3.2: Object literal properties should be sorted alphabetically
 const config = {
     apple: 42,
     banana: "yellow",
@@ -9,6 +10,7 @@ const config = {
     dog: undefined,
     zebra: true
 };
+// Nested objects should also be sorted
 const nested = {
     another: {
         first: false,
@@ -24,6 +26,7 @@ const nested = {
         zebra: 1
     }
 };
+// Spread operators should be preserved
 const withSpread = {
     ...defaults,
     ...overrides,
@@ -32,6 +35,7 @@ const withSpread = {
     cat: 4,
     zebra: 1
 };
+// Computed properties
 const computed = {
     [dynamicKey]: 2,
     ['literal']: 4,

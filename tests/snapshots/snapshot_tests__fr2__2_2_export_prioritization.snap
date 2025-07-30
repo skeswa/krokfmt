@@ -2,6 +2,8 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
+// FR2.2: Exported members should be prioritized over non-exported
+// Mix of exported and non-exported members
 export const publicConfig = {
     api: 'https://api.example.com'
 };
@@ -20,6 +22,7 @@ class InternalService {
 export class PublicService {
     service = new InternalService();
 }
+// Multiple exports should all be prioritized
 export const constant1 = 1;
 export const constant2 = 3;
 export const constant3 = 5;

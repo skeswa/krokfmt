@@ -2,12 +2,15 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
+// FR2.3: Class-based dependency patterns
+// Base classes
 class EventEmitter {
     emit(event: string) {}
 }
 class Logger {
     log(message: string) {}
 }
+// Export with multiple inheritance simulation
 export class Service {
     private emitter = new EventEmitter();
     private logger = new Logger();
@@ -16,6 +19,7 @@ export class Service {
         this.emitter.emit('work');
     }
 }
+// Decorator pattern
 class BaseDecorator {
     constructor(protected component: any){}
 }
@@ -26,6 +30,7 @@ export class LoggingDecorator extends BaseDecorator {
         console.log('after');
     }
 }
+// Static dependencies
 class Config {
     static readonly DEFAULT_TIMEOUT = 5000;
 }

@@ -2,9 +2,14 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
+// FR3.4: Type members should be sorted alphabetically
+// Union types should be sorted
 type Status = 'error' | 'loading' | 'pending' | 'success';
+// Intersection types should be sorted
 type Combined = TypeA & TypeB & TypeM & TypeZ;
+// Complex union types
 type Primitive = bigint | boolean | null | number | string | symbol | undefined;
+// Object literal unions
 type Action = {
     type: 'LOAD';
     payload: string;
@@ -17,6 +22,7 @@ type Action = {
 } | {
     type: 'RESET';
 };
+// Mixed type unions
 type Mixed = boolean | string | {
     kind: 'object';
 } | number[] | (() => void);

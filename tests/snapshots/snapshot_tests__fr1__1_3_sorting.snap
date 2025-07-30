@@ -2,18 +2,22 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
+// FR1.3: Imports should be sorted alphabetically within each category
+// External imports out of order
 import axios from 'axios';
 import react from 'react';
 import zod from 'zod';
 
 import { a } from '@utils/a';
 import { m } from '@utils/m';
+
+// Absolute imports out of order
 import { z } from '@utils/z';
 
 import { monkey } from '../../monkey';
 import { apple } from '../apple';
+// Relative imports out of order
 import { zebra } from './zebra';
-
 export function main() {
     console.log('Sorted imports');
 }

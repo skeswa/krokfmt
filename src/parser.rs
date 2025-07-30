@@ -1,16 +1,18 @@
 use anyhow::{Context, Result};
-use swc_common::{sync::Lrc, FileName, SourceMap};
+use swc_common::{comments::SingleThreadedComments, sync::Lrc, FileName, SourceMap};
 use swc_ecma_ast::Module;
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
 
 pub struct TypeScriptParser {
     pub source_map: Lrc<SourceMap>,
+    pub comments: SingleThreadedComments,
 }
 
 impl Default for TypeScriptParser {
     fn default() -> Self {
         Self {
             source_map: Lrc::new(SourceMap::default()),
+            comments: SingleThreadedComments::default(),
         }
     }
 }
@@ -32,7 +34,12 @@ impl TypeScriptParser {
             ..Default::default()
         });
 
-        let lexer = Lexer::new(syntax, Default::default(), StringInput::from(&*fm), None);
+        let lexer = Lexer::new(
+            syntax,
+            Default::default(),
+            StringInput::from(&*fm),
+            Some(&self.comments),
+        );
 
         let mut parser = Parser::new_from(lexer);
 

@@ -352,6 +352,124 @@ type Status = 'error' | 'pending' | 'success';
 - JSDoc comments
 - TS pragma comments
 
+### FR6: Comment Handling
+
+#### FR6.1: Line Comment Preservation
+**Description**: The system shall preserve all single-line comments (`//`) in their correct positions.
+
+**Rules**:
+- Comments on their own line stay on their own line
+- Trailing comments remain at end of line
+- Leading comments stay attached to following statement
+- Indentation is preserved relative to code
+
+**Example**:
+```typescript
+// This comment stays with the import
+import React from 'react'; // This stays at end of line
+
+// This comment stays with the function
+function foo() {
+    // Inner comment preserved
+    return 42; // Trailing comment
+}
+```
+
+#### FR6.2: Block Comment Preservation
+**Description**: The system shall preserve all multi-line comments (`/* */`) with formatting intact.
+
+**Rules**:
+- Block comment formatting is preserved exactly
+- Position relative to code is maintained
+- Inline block comments stay inline
+- Multi-line blocks keep their line structure
+
+**Example**:
+```typescript
+/* This block comment
+   spans multiple lines
+   and keeps its format */
+const x = /* inline */ 42;
+
+/*
+ * Star-aligned comment
+ * stays formatted
+ */
+function bar() {}
+```
+
+#### FR6.3: JSDoc Comment Preservation
+**Description**: The system shall preserve JSDoc comments (`/** */`) with their associated declarations.
+
+**Rules**:
+- JSDoc comments move with their documented element
+- Internal JSDoc formatting is preserved
+- Tags and indentation maintained
+- Blank lines between JSDoc and declaration preserved
+
+**Example**:
+```typescript
+/**
+ * This is a JSDoc comment
+ * @param {string} name - The name
+ * @returns {void}
+ */
+export function greet(name: string): void {}
+```
+
+#### FR6.4: Comment Positioning
+**Description**: The system shall maintain correct comment positioning relative to code.
+
+**Categories**:
+1. **Leading** - Comments before a statement on separate lines
+2. **Trailing** - Comments after code on the same line
+3. **Floating** - Comments between statements not attached to code
+4. **Header** - File-level comments at the top
+
+**Rules**:
+- Leading comments move with their associated statement
+- Trailing comments stay on the same line as their code
+- Floating comments maintain relative position
+- Header comments remain at file top (after shebang if present)
+
+#### FR6.5: Comment Association
+**Description**: The system shall correctly associate comments with code elements.
+
+**Association Rules**:
+- Comments immediately before a statement belong to that statement
+- Comments at the end of a line belong to that line's code
+- Blank lines can break comment association
+- Comments move with their associated code during reordering
+
+**Example**:
+```typescript
+// This belongs to export const a
+export const a = 1;
+
+const b = 2; // This belongs to const b
+
+// This is a floating comment
+
+// This belongs to function c
+function c() {}
+```
+
+#### FR6.6: Special Comment Handling
+**Description**: The system shall recognize and preserve special TypeScript comments.
+
+**Special Comments**:
+- `// @ts-ignore` - TypeScript ignore directive
+- `// @ts-expect-error` - TypeScript error expectation
+- `// @ts-nocheck` - File-level TS checking disable
+- `// eslint-disable` - ESLint directives
+- `// prettier-ignore` - Prettier directives
+- `// #region` / `// #endregion` - Code folding markers
+
+**Rules**:
+- Pragma comments must stay with their target line
+- File-level directives stay at appropriate file position
+- Region markers maintain their pairing
+
 #### NFR2.3: Syntax Support
 **Description**: The system shall support all valid TypeScript syntax.
 
@@ -492,6 +610,7 @@ Error: Failed to parse file
 | FR3.1-6 | formatter.rs | test_object_sorting | Partial |
 | FR4.1-7 | main.rs | - | ✓ |
 | FR5.1-4 | file_handler.rs | test_file_* | ✓ |
+| FR6.1-6 | parser.rs, codegen.rs | test_comment_* | Planned |
 | NFR1.1-4 | All | Benchmarks | Planned |
 | NFR2.1-4 | All | Integration tests | ✓ |
 | NFR3.1-4 | All | Error tests | Partial |

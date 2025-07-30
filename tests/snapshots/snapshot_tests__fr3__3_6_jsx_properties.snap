@@ -2,7 +2,11 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
+// FR3.6: JSX properties should be sorted with special rules
 const BasicComponent = ()=>(<Button aria-label="Submit" className="btn-primary" disabled onClick={handleClick}/>);
+// key and ref should come first
 const ListItem = ({ item })=>(<Item key={item.id} ref={itemRef} className="list-item" name={item.name} onClick={()=>selectItem(item)}/>);
+// Event handlers should be grouped
 const InteractiveForm = ()=>(<Input className="form-input" disabled={isDisabled} placeholder="Enter text" value={inputValue} onBlur={handleBlur} onChange={handleChange} onClick={handleClick} onFocus={handleFocus}/>);
+// Spread props should be at the end
 const ExtendedComponent = ()=>(<Component className="extended" id="comp-1" name="test" {...defaultProps} {...overrideProps}/>);

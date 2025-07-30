@@ -9,6 +9,14 @@ Tasks are ordered by priority. Always work on tasks from the top of this list fi
 
 ### High Priority
 
+1. **Fix comment preservation issues (FR6: NFR2.2)**
+   - Comments are now captured and emitted, but have issues:
+   - Fix comment indentation (some comments lose proper indentation)
+   - Ensure comments move with their associated code during reordering
+   - Fix floating comment positioning
+   - Handle comment associations correctly in formatter
+   - Files: `src/formatter.rs`, `src/codegen.rs`
+
 ### Medium Priority
 
 ### Low Priority
@@ -25,6 +33,13 @@ Tasks are ordered by priority. Always work on tasks from the top of this list fi
 
 ## Completed
 <!-- Move completed tasks here with completion date -->
+
+- ✅ Implement comment preservation (FR6: NFR2.2) - Initial implementation (2025-07-30)
+  - Added detailed requirements for comment handling (FR6.1-6.6)
+  - Created comprehensive test cases for all comment types
+  - Updated parser to capture comments using SingleThreadedComments
+  - Updated codegen to emit comments in correct positions
+  - Comments are now preserved but need fixes for positioning and associations
 
 - ✅ Set up project structure and dependencies (2024-01-29)
 - ✅ Implement import organization and sorting (2024-01-29)

@@ -2,6 +2,8 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
+// FR2.4: Related members should be kept together
+// Type and its guard should stay together
 export type User = {
     id: number;
     name: string;
@@ -9,6 +11,7 @@ export type User = {
 export function isUser(obj: any): obj is User {
     return obj && typeof obj.id === 'number' && typeof obj.name === 'string';
 }
+// Interface and class should stay together
 export interface Config {
     apiUrl: string;
 }

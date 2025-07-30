@@ -1,0 +1,34 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+// FR6.1: Line comment preservation - comments should stay in correct positions
+// File header comment
+// Second line of header
+// Comment before imports
+import React from 'react'; // Comment after React import
+
+// Comment between imports
+
+import { Button } from '@ui/Button';
+
+import { helper } from './helper';
+// Comment before export
+export const z = 100; // Trailing on export
+ // Final comment
+// Comment before const
+const x = 42; // Trailing comment on const
+// Comment before function
+function foo() {
+    // Comment inside function
+    const y = 10; // Trailing in function
+    // Comment before return
+    return y * 2; // Trailing on return
+}
+// Floating comment between functions
+// Comment for bar function
+function bar() {
+    // First line in bar
+    console.log('bar');
+// Last line in bar
+}

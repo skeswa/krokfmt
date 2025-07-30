@@ -2,10 +2,13 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
+// FR2: Comprehensive integration test combining all FR2 features
+// Internal utilities
 function internalLog(message: string) {
     console.log(`[Internal] ${message}`);
 }
 type LogLevel = 'error' | 'info' | 'warn';
+// Exported logger with dependencies
 export class Logger {
     constructor(private level: LogLevel){}
     log(message: string) {
@@ -17,9 +20,11 @@ export class Logger {
 export function createLogger(level: LogLevel = 'info'): Logger {
     return new Logger(level);
 }
+// Base types used by exports
 interface BaseConfig {
     debug: boolean;
 }
+// Exported config depending on base
 export interface AppConfig extends BaseConfig {
     logLevel: LogLevel;
     apiUrl: string;
@@ -32,6 +37,7 @@ export const defaultConfig: AppConfig = {
 function internalValidate(value: unknown): boolean {
     return value != null;
 }
+// Mixed visibility service
 class BaseService {
     protected logger: Logger;
     constructor(config: AppConfig){
@@ -44,6 +50,7 @@ export class DataService extends BaseService {
             throw new Error('Invalid ID');
         }
         this.logger.log(`Fetching data for ${id}`);
+        // Fetch implementation
         return {
             id
         };
@@ -52,9 +59,11 @@ export class DataService extends BaseService {
 export function createDataService(config: AppConfig = defaultConfig): DataService {
     return new DataService(config);
 }
+// Type guards and validators
 export function isAppConfig(value: unknown): value is AppConfig {
     return (typeof value === 'object' && value !== null && 'debug' in value && 'logLevel' in value && 'apiUrl' in value);
 }
+// Final integration
 const serviceInstance = createDataService();
 export async function performDataOperation(id: string) {
     return serviceInstance.fetchData(id);
