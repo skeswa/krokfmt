@@ -25,34 +25,30 @@ krokfmt is a highly opinionated, zero-configuration TypeScript code formatter de
 
 ## System Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                           CLI Interface                              │
-│                        (clap-based parser)                          │
-└─────────────────────┬───────────────────────────┬──────────────────┘
-                      │                           │
-                      ▼                           ▼
-┌─────────────────────────────────┐ ┌────────────────────────────────┐
-│        File Handler             │ │      Progress Reporter         │
-│   - File discovery              │ │   - Colored output             │
-│   - Glob expansion              │ │   - Error aggregation          │
-│   - Backup management           │ │   - Exit code handling         │
-└─────────────────┬───────────────┘ └────────────────────────────────┘
-                  │
-                  ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                    Parallel Processing Engine                        │
-│                         (Rayon-based)                               │
-└─────────────────────┬───────────────────────────────────────────────┘
-                      │
-                      ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                      Format Pipeline                                 │
-│  ┌─────────┐  ┌──────────┐  ┌───────────┐  ┌──────────────────┐   │
-│  │ Parser  │→ │ Analyzer │→ │Transformer│→ │ Code Generator   │   │
-│  │  (SWC)  │  │          │  │           │  │     (SWC)        │   │
-│  └─────────┘  └──────────┘  └───────────┘  └──────────────────┘   │
-└─────────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph "System Architecture"
+        CLI[CLI Interface<br/>clap-based parser]
+        FH[File Handler<br/>- File discovery<br/>- Glob expansion<br/>- Backup management]
+        PR[Progress Reporter<br/>- Colored output<br/>- Error aggregation<br/>- Exit code handling]
+        PPE[Parallel Processing Engine<br/>Rayon-based]
+        
+        CLI --> FH
+        CLI --> PR
+        FH --> PPE
+        
+        subgraph FP[Format Pipeline]
+            P[Parser<br/>SWC] --> A[Analyzer]
+            A --> T[Transformer]
+            T --> CG[Code Generator<br/>SWC]
+        end
+        
+        PPE --> FP
+    end
+    
+    style CLI fill:#f9f,stroke:#333,stroke-width:4px
+    style FP fill:#bbf,stroke:#333,stroke-width:2px
+    style PPE fill:#9f9,stroke:#333,stroke-width:2px
 ```
 
 ### Component Interaction Diagram
@@ -147,23 +143,20 @@ graph BT
 
 ## Data Flow
 
-```
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│  Input File  │ --> │   Parser     │ --> │     AST      │
-│   (*.ts)     │     │              │     │              │
-└──────────────┘     └──────────────┘     └──────┬───────┘
-                                                  │
-                                                  ▼
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│ Output File  │ <-- │   Codegen    │ <-- │ Transformed  │
-│   (*.ts)     │     │              │     │     AST      │
-└──────────────┘     └──────────────┘     └──────┬───────┘
-                                                  ▲
-                                                  │
-                     ┌──────────────┐     ┌──────────────┐
-                     │ Transformer  │ <-- │   Analyzer   │
-                     │              │     │              │
-                     └──────────────┘     └──────────────┘
+```mermaid
+flowchart TB
+    IF[Input File<br/>*.ts] --> P[Parser]
+    P --> AST1[AST]
+    AST1 --> A[Analyzer]
+    A --> T[Transformer]
+    T --> AST2[Transformed<br/>AST]
+    AST2 --> CG[Codegen]
+    CG --> OF[Output File<br/>*.ts]
+    
+    style IF fill:#f9f,stroke:#333,stroke-width:2px
+    style OF fill:#9f9,stroke:#333,stroke-width:2px
+    style AST1 fill:#ff9,stroke:#333,stroke-width:2px
+    style AST2 fill:#ff9,stroke:#333,stroke-width:2px
 ```
 
 ### AST Transformation Pipeline
@@ -220,18 +213,21 @@ Key features:
 
 ### Import Categorization Logic
 
-```
-                    Import Path Analysis
-                           │
-            ┌──────────────┼──────────────┐
-            │              │              │
-            ▼              ▼              ▼
-    Starts with ./    Starts with     Everything
-    or ../            @ or ~          else
-            │              │              │
-            ▼              ▼              ▼
-        Relative      Absolute       External
-        Import        Import         Import
+```mermaid
+flowchart TD
+    IPA[Import Path Analysis]
+    IPA --> C1{Starts with<br/>./ or ../}
+    IPA --> C2{Starts with<br/>@ or ~}
+    IPA --> C3{Everything<br/>else}
+    
+    C1 --> REL[Relative<br/>Import]
+    C2 --> ABS[Absolute<br/>Import]
+    C3 --> EXT[External<br/>Import]
+    
+    style IPA fill:#f9f,stroke:#333,stroke-width:2px
+    style REL fill:#9cf,stroke:#333,stroke-width:2px
+    style ABS fill:#fc9,stroke:#333,stroke-width:2px
+    style EXT fill:#cf9,stroke:#333,stroke-width:2px
 ```
 
 Categories are determined by path prefix:
@@ -345,20 +341,24 @@ classDiagram
 
 ### Rule Application Order
 
-```
-1. Extract imports/exports
-        │
-        ▼
-2. Categorize and sort imports
-        │
-        ▼
-3. Apply structural transformations
-        │
-        ▼
-4. Apply ordering rules recursively
-        │
-        ▼
-5. Generate code with spacing rules
+```mermaid
+flowchart TD
+    S1[1. Extract imports/exports]
+    S2[2. Categorize and sort imports]
+    S3[3. Apply structural transformations]
+    S4[4. Apply ordering rules recursively]
+    S5[5. Generate code with spacing rules]
+    
+    S1 --> S2
+    S2 --> S3
+    S3 --> S4
+    S4 --> S5
+    
+    style S1 fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    style S2 fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    style S3 fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+    style S4 fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    style S5 fill:#fce4ec,stroke:#880e4f,stroke-width:2px
 ```
 
 ### Conflict Resolution
@@ -403,23 +403,20 @@ graph TD
 
 ### Parallel Processing Architecture
 
-```
-┌─────────────────────────────────────────────────┐
-│              Main Thread                         │
-│  - File discovery                               │
-│  - Work distribution                            │
-│  - Result aggregation                           │
-└────────────────┬────────────────────────────────┘
-                 │
-    ┌────────────┼────────────┬─────────────┐
-    ▼            ▼            ▼             ▼
-┌─────────┐ ┌─────────┐ ┌─────────┐  ┌─────────┐
-│Worker 1 │ │Worker 2 │ │Worker 3 │  │Worker N │
-│         │ │         │ │         │  │         │
-│ Parse   │ │ Parse   │ │ Parse   │  │ Parse   │
-│ Format  │ │ Format  │ │ Format  │  │ Format  │
-│ Write   │ │ Write   │ │ Write   │  │ Write   │
-└─────────┘ └─────────┘ └─────────┘  └─────────┘
+```mermaid
+flowchart TD
+    MT[Main Thread<br/>- File discovery<br/>- Work distribution<br/>- Result aggregation]
+    
+    MT --> W1[Worker 1<br/>Parse<br/>Format<br/>Write]
+    MT --> W2[Worker 2<br/>Parse<br/>Format<br/>Write]
+    MT --> W3[Worker 3<br/>Parse<br/>Format<br/>Write]
+    MT --> WN[Worker N<br/>Parse<br/>Format<br/>Write]
+    
+    style MT fill:#f9f,stroke:#333,stroke-width:4px
+    style W1 fill:#9cf,stroke:#333,stroke-width:2px
+    style W2 fill:#9cf,stroke:#333,stroke-width:2px
+    style W3 fill:#9cf,stroke:#333,stroke-width:2px
+    style WN fill:#9cf,stroke:#333,stroke-width:2px
 ```
 
 Optimizations:
@@ -480,16 +477,19 @@ graph TD
 
 ### Error Reporting
 
-```
-✗ src/components/Button.tsx: Failed to parse file
-  → Unexpected token at line 42, column 15
-  → Expected '}' but found ']'
-
-✗ src/utils/helper.ts: Circular dependency detected
-  → Cannot reorder members without breaking semantics
-  → Partial formatting applied
-
-Summary: 2 errors, 148 files formatted successfully
+```mermaid
+graph LR
+    subgraph "Error Output Format"
+        E1[✗ src/components/Button.tsx: Failed to parse file<br/>→ Unexpected token at line 42, column 15<br/>→ Expected '}' but found ']']
+        
+        E2[✗ src/utils/helper.ts: Circular dependency detected<br/>→ Cannot reorder members without breaking semantics<br/>→ Partial formatting applied]
+        
+        S[Summary: 2 errors, 148 files formatted successfully]
+    end
+    
+    style E1 fill:#fdd,stroke:#c00,stroke-width:2px
+    style E2 fill:#ffd,stroke:#cc0,stroke-width:2px
+    style S fill:#dfd,stroke:#0c0,stroke-width:2px
 ```
 
 ### Error Handling Flow
@@ -581,16 +581,24 @@ stateDiagram-v2
 
 ### Test Data Organization
 
-```
-tests/
-├── fixtures/
-│   ├── imports/
-│   ├── objects/
-│   ├── classes/
-│   └── edge-cases/
-├── snapshots/
-└── golden/
-    └── real-world-examples/
+```mermaid
+graph TD
+    T[tests/]
+    T --> F[fixtures/]
+    T --> S[snapshots/]
+    T --> G[golden/]
+    
+    F --> FI[imports/]
+    F --> FO[objects/]
+    F --> FC[classes/]
+    F --> FE[edge-cases/]
+    
+    G --> GR[real-world-examples/]
+    
+    style T fill:#f9f,stroke:#333,stroke-width:4px
+    style F fill:#fc9,stroke:#333,stroke-width:2px
+    style S fill:#9cf,stroke:#333,stroke-width:2px
+    style G fill:#cf9,stroke:#333,stroke-width:2px
 ```
 
 ## Future Extensibility
@@ -611,23 +619,19 @@ struct RuleEngine {
 
 ### Incremental Formatting (Future)
 
-```
-┌────────────────┐     ┌────────────────┐
-│ Previous AST   │     │  Current AST   │
-│   (cached)     │     │                │
-└────────┬───────┘     └────────┬───────┘
-         │                      │
-         └──────────┬───────────┘
-                    ▼
-            ┌───────────────┐
-            │  Diff Engine  │
-            │               │
-            └───────┬───────┘
-                    ▼
-            ┌───────────────┐
-            │Format Changed │
-            │  Nodes Only   │
-            └───────────────┘
+```mermaid
+flowchart TD
+    PAST[Previous AST<br/>cached]
+    CAST[Current AST]
+    
+    PAST --> DE[Diff Engine]
+    CAST --> DE
+    DE --> FCN[Format Changed<br/>Nodes Only]
+    
+    style PAST fill:#f9f,stroke:#333,stroke-width:2px
+    style CAST fill:#f9f,stroke:#333,stroke-width:2px
+    style DE fill:#ff9,stroke:#333,stroke-width:2px
+    style FCN fill:#9f9,stroke:#333,stroke-width:2px
 ```
 
 ### Language Support Expansion
@@ -640,17 +644,18 @@ The architecture supports adding new languages by:
 
 ### Editor Integration Points
 
-```
-┌─────────────┐     JSON-RPC      ┌─────────────┐
-│   VSCode    │ ←───────────────→ │  krokfmt    │
-│  Extension  │                   │   Server    │
-└─────────────┘                   └─────────────┘
-                                          │
-                                          ▼
-                                  ┌───────────────┐
-                                  │  Format API   │
-                                  │  (library)    │
-                                  └───────────────┘
+```mermaid
+flowchart LR
+    VSC[VSCode<br/>Extension]
+    KS[krokfmt<br/>Server]
+    FA[Format API<br/>library]
+    
+    VSC <-->|JSON-RPC| KS
+    KS --> FA
+    
+    style VSC fill:#9cf,stroke:#333,stroke-width:2px
+    style KS fill:#fc9,stroke:#333,stroke-width:2px
+    style FA fill:#cf9,stroke:#333,stroke-width:2px
 ```
 
 ## Conclusion
