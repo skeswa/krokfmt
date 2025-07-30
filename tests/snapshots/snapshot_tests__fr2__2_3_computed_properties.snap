@@ -1,0 +1,26 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+const PREFIX = 'api';
+const VERSION = 'v1';
+const endpoints = {
+    [`${PREFIX}_${VERSION}_users`]: '/users',
+    [`${PREFIX}_${VERSION}_posts`]: '/posts'
+};
+export const apiEndpoints = endpoints;
+const methodName = 'getData';
+class DataService {
+    [methodName]() {
+        return 'data';
+    }
+}
+export const service = new DataService();
+const privateKey = Symbol('private');
+const obj = {
+    [privateKey]: 'secret',
+    public: 'visible'
+};
+export function getPrivate() {
+    return obj[privateKey];
+}

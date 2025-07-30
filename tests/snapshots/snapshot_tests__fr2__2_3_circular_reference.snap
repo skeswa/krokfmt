@@ -1,0 +1,26 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+type B = {
+    a: A;
+};
+type A = {
+    b: B;
+};
+export type Combined = A & B;
+function helper2(): string {
+    return 'result';
+}
+function helper1(): string {
+    return helper2();
+}
+export function main() {
+    return helper1();
+}
+class Node {
+    next: Node | null = null;
+}
+export class LinkedList {
+    head = new Node();
+}

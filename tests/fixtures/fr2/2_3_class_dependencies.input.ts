@@ -1,0 +1,43 @@
+// FR2.3: Class-based dependency patterns
+
+// Base classes
+class EventEmitter {
+    emit(event: string) {}
+}
+
+class Logger {
+    log(message: string) {}
+}
+
+// Export with multiple inheritance simulation
+export class Service {
+    private emitter = new EventEmitter();
+    private logger = new Logger();
+    
+    doWork() {
+        this.logger.log('working');
+        this.emitter.emit('work');
+    }
+}
+
+// Decorator pattern
+class BaseDecorator {
+    constructor(protected component: any) {}
+}
+
+export class LoggingDecorator extends BaseDecorator {
+    execute() {
+        console.log('before');
+        this.component.execute();
+        console.log('after');
+    }
+}
+
+// Static dependencies
+class Config {
+    static readonly DEFAULT_TIMEOUT = 5000;
+}
+
+export class ApiClient {
+    timeout = Config.DEFAULT_TIMEOUT;
+}

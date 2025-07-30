@@ -120,9 +120,7 @@ impl DependencyAnalyzer {
 
         // First pass: collect all declaration names
         for item in &module.body {
-            if let Some(name) = Self::get_declaration_name(item) {
-                self.available_decls.insert(name);
-            }
+            self.collect_declaration_names(item);
         }
 
         // Second pass: analyze dependencies
@@ -137,6 +135,83 @@ impl DependencyAnalyzer {
 
         DependencyGraph {
             dependencies: self.dependencies.clone(),
+        }
+    }
+
+    fn collect_declaration_names(&mut self, item: &ModuleItem) {
+        match item {
+            ModuleItem::Stmt(stmt) => self.collect_stmt_names(stmt),
+            ModuleItem::ModuleDecl(ModuleDecl::ExportDecl(export_decl)) => {
+                self.collect_decl_names(&export_decl.decl);
+            }
+            _ => {}
+        }
+    }
+
+    fn collect_stmt_names(&mut self, stmt: &Stmt) {
+        if let Stmt::Decl(decl) = stmt {
+            self.collect_decl_names(decl);
+        }
+    }
+
+    fn collect_decl_names(&mut self, decl: &Decl) {
+        match decl {
+            Decl::Fn(fn_decl) => {
+                self.available_decls.insert(fn_decl.ident.sym.to_string());
+            }
+            Decl::Class(class_decl) => {
+                self.available_decls
+                    .insert(class_decl.ident.sym.to_string());
+            }
+            Decl::Var(var_decl) => {
+                for decl in &var_decl.decls {
+                    self.collect_pat_names(&decl.name);
+                }
+            }
+            Decl::TsInterface(interface) => {
+                self.available_decls.insert(interface.id.sym.to_string());
+            }
+            Decl::TsTypeAlias(type_alias) => {
+                self.available_decls.insert(type_alias.id.sym.to_string());
+            }
+            Decl::TsEnum(ts_enum) => {
+                self.available_decls.insert(ts_enum.id.sym.to_string());
+            }
+            Decl::TsModule(ts_module) => match &ts_module.id {
+                TsModuleName::Ident(ident) => {
+                    self.available_decls.insert(ident.sym.to_string());
+                }
+                TsModuleName::Str(s) => {
+                    self.available_decls.insert(s.value.to_string());
+                }
+            },
+            _ => {}
+        }
+    }
+
+    fn collect_pat_names(&mut self, pat: &Pat) {
+        match pat {
+            Pat::Ident(ident) => {
+                self.available_decls.insert(ident.id.sym.to_string());
+            }
+            Pat::Object(obj_pat) => {
+                for prop in &obj_pat.props {
+                    match prop {
+                        ObjectPatProp::KeyValue(kv) => self.collect_pat_names(&kv.value),
+                        ObjectPatProp::Assign(assign) => {
+                            self.available_decls.insert(assign.key.sym.to_string());
+                        }
+                        ObjectPatProp::Rest(rest) => self.collect_pat_names(&rest.arg),
+                    }
+                }
+            }
+            Pat::Array(array_pat) => {
+                for p in array_pat.elems.iter().flatten() {
+                    self.collect_pat_names(p);
+                }
+            }
+            Pat::Rest(rest) => self.collect_pat_names(&rest.arg),
+            _ => {}
         }
     }
 
@@ -163,17 +238,40 @@ impl DependencyAnalyzer {
             Decl::Class(class_decl) => Some(class_decl.ident.sym.to_string()),
             Decl::Var(var_decl) => {
                 // For simplicity, return the first variable name
-                var_decl.decls.first().and_then(|decl| {
-                    if let Pat::Ident(ident) = &decl.name {
-                        Some(ident.id.sym.to_string())
-                    } else {
-                        None
-                    }
-                })
+                var_decl
+                    .decls
+                    .first()
+                    .and_then(|decl| Self::get_pat_name(&decl.name))
             }
             Decl::TsInterface(interface) => Some(interface.id.sym.to_string()),
             Decl::TsTypeAlias(type_alias) => Some(type_alias.id.sym.to_string()),
             Decl::TsEnum(ts_enum) => Some(ts_enum.id.sym.to_string()),
+            Decl::TsModule(ts_module) => match &ts_module.id {
+                TsModuleName::Ident(ident) => Some(ident.sym.to_string()),
+                TsModuleName::Str(s) => Some(s.value.to_string()),
+            },
+            _ => None,
+        }
+    }
+
+    fn get_pat_name(pat: &Pat) -> Option<String> {
+        match pat {
+            Pat::Ident(ident) => Some(ident.id.sym.to_string()),
+            Pat::Object(obj_pat) => {
+                // For object destructuring, return the first property name
+                obj_pat.props.first().and_then(|prop| match prop {
+                    ObjectPatProp::KeyValue(kv) => Self::get_pat_name(&kv.value),
+                    ObjectPatProp::Assign(assign) => Some(assign.key.sym.to_string()),
+                    ObjectPatProp::Rest(_) => None,
+                })
+            }
+            Pat::Array(array_pat) => {
+                // For array destructuring, return the first element name
+                array_pat
+                    .elems
+                    .iter()
+                    .find_map(|elem| elem.as_ref().and_then(Self::get_pat_name))
+            }
             _ => None,
         }
     }
@@ -196,6 +294,26 @@ impl Visit for DependencyAnalyzer {
             self.visit_ident(ident);
         }
         entity.visit_children_with(self);
+    }
+
+    fn visit_member_expr(&mut self, expr: &MemberExpr) {
+        // For member expressions like Internal.Config, we want to track 'Internal'
+        if let MemberProp::Ident(ident) = &expr.prop {
+            // Visit the property name
+            ident.visit_children_with(self);
+        }
+
+        // Visit the object part
+        if let Some(ident) = expr.obj.as_ident() {
+            if let Some(current) = &self.current_decl {
+                let name = ident.sym.to_string();
+                if self.available_decls.contains(&name) && &name != current {
+                    self.dependencies.get_mut(current).unwrap().insert(name);
+                }
+            }
+        }
+
+        expr.obj.visit_children_with(self);
     }
 }
 
@@ -397,6 +515,9 @@ impl KrokFormatter {
                 return;
             }
 
+            // Mark as being processed to prevent infinite recursion
+            added.insert(name.to_string());
+
             // First add dependencies
             if let Some(deps) = dependency_graph.dependencies.get(name) {
                 let mut sorted_deps: Vec<_> = deps.iter().cloned().collect();
@@ -409,21 +530,22 @@ impl KrokFormatter {
                 });
 
                 for dep in sorted_deps {
-                    add_with_dependencies(
-                        &dep,
-                        name_to_item,
-                        dependency_graph,
-                        result,
-                        added,
-                        ordered_items,
-                    );
+                    if !added.contains(&dep) {
+                        add_with_dependencies(
+                            &dep,
+                            name_to_item,
+                            dependency_graph,
+                            result,
+                            added,
+                            ordered_items,
+                        );
+                    }
                 }
             }
 
             // Then add the item itself
             if let Some(item) = name_to_item.remove(name) {
                 result.push(item);
-                added.insert(name.to_string());
             }
         }
 

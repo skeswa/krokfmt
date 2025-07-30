@@ -1,0 +1,29 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+interface BaseUser {
+    id: string;
+}
+export interface User extends BaseUser {
+    name: string;
+}
+interface AdminUser extends User {
+    permissions: string[];
+}
+export interface SuperAdmin extends AdminUser {
+    superPowers: boolean;
+}
+function processUser(user: User): string {
+    return user.name;
+}
+export function getUsername(user: User): string {
+    return processUser(user);
+}
+function validateAdmin(admin: AdminUser): boolean {
+    return admin.permissions.length > 0;
+}
+export function checkAdmin(user: User): boolean {
+    const admin = user as AdminUser;
+    return validateAdmin(admin);
+}

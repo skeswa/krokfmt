@@ -1,0 +1,74 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+export class CustomError extends Error {
+    constructor(public code: string, message: string){
+        super(message);
+    }
+}
+export function isCustomError(error: unknown): error is CustomError {
+    return error instanceof CustomError;
+}
+export function createCustomError(code: string, message: string): CustomError {
+    return new CustomError(code, message);
+}
+export interface State {
+    count: number;
+    loading: boolean;
+}
+export const initialState: State = {
+    count: 0,
+    loading: false
+};
+export type Action = {
+    type: 'INCREMENT';
+} | {
+    type: 'DECREMENT';
+} | {
+    type: 'SET_LOADING';
+    payload: boolean;
+};
+export function reducer(state: State, action: Action): State {
+    switch(action.type){
+        case 'INCREMENT':
+            return {
+                ...state,
+                count: state.count + 1
+            };
+        case 'DECREMENT':
+            return {
+                ...state,
+                count: state.count - 1
+            };
+        case 'SET_LOADING':
+            return {
+                ...state,
+                loading: action.payload
+            };
+    }
+}
+interface ApiConfig {
+    baseUrl: string;
+    timeout: number;
+}
+export class ApiClient {
+    constructor(private config: ApiConfig){}
+    async get(path: string) {}
+}
+export function createApiClient(baseUrl: string): ApiClient {
+    return new ApiClient({
+        baseUrl,
+        timeout: 5000
+    });
+}
+export type Validator<T> = (value: unknown) => value is T;
+export const isString: Validator<string> = (value): value is string =>{
+    return typeof value === 'string';
+};
+export const isNumber: Validator<number> = (value): value is number =>{
+    return typeof value === 'number';
+};
+export function createValidator<T>(check: (value: unknown) => boolean): Validator<T> {
+    return (value): value is T =>check(value);
+}

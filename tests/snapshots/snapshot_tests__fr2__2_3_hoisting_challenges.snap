@@ -1,0 +1,24 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+function helperFunction() {
+    return 'helper';
+}
+export function publicApi() {
+    return helperFunction();
+}
+class MyClass {
+    value = 42;
+}
+export const instance = new MyClass();
+const base = 10;
+function computeValue() {
+    return base * 2;
+}
+export const earlyUse = computeValue();
+function initialValue() {
+    return 100;
+}
+var hoistedVar = initialValue();
+export const exportedConst = hoistedVar;

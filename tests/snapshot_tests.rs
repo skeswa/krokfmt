@@ -107,8 +107,68 @@ fn test_fr2_3_dependency_preservation() {
 }
 
 #[test]
+fn test_fr2_3_circular_reference() {
+    test_fixture("fr2/2_3_circular_reference");
+}
+
+#[test]
+fn test_fr2_3_complex_chains() {
+    test_fixture("fr2/2_3_complex_chains");
+}
+
+#[test]
+fn test_fr2_3_interleaved_dependencies() {
+    test_fixture("fr2/2_3_interleaved_dependencies");
+}
+
+#[test]
+fn test_fr2_3_class_dependencies() {
+    test_fixture("fr2/2_3_class_dependencies");
+}
+
+#[test]
+fn test_fr2_3_namespace_dependencies() {
+    test_fixture("fr2/2_3_namespace_dependencies");
+}
+
+#[test]
+fn test_fr2_3_destructuring_dependencies() {
+    test_fixture("fr2/2_3_destructuring_dependencies");
+}
+
+#[test]
+fn test_fr2_3_computed_properties() {
+    test_fixture("fr2/2_3_computed_properties");
+}
+
+#[test]
+fn test_fr2_3_hoisting_challenges() {
+    test_fixture("fr2/2_3_hoisting_challenges");
+}
+
+#[test]
 fn test_fr2_4_intelligent_grouping() {
     test_fixture("fr2/2_4_intelligent_grouping");
+}
+
+#[test]
+fn test_fr2_1_export_detection_edge_cases() {
+    test_fixture("fr2/2_1_export_detection_edge_cases");
+}
+
+#[test]
+fn test_fr2_2_export_prioritization_complex() {
+    test_fixture("fr2/2_2_export_prioritization_complex");
+}
+
+#[test]
+fn test_fr2_4_intelligent_grouping_advanced() {
+    test_fixture("fr2/2_4_intelligent_grouping_advanced");
+}
+
+#[test]
+fn test_fr2_comprehensive_integration() {
+    test_fixture("fr2/2_comprehensive_integration");
 }
 
 // FR3: Alphabetical Sorting Tests

@@ -1,0 +1,33 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+type Handler = (data: any) => void;
+type AsyncHandler = (data: any) => Promise<void>;
+export type Middleware = {
+    before: Handler;
+    after: AsyncHandler;
+};
+const MODES = [
+    'dev',
+    'prod'
+] as const;
+type Mode = typeof MODES[number];
+export const currentMode: Mode = MODES[0];
+namespace Internal {
+    export interface Config {
+        timeout: number;
+    }
+    export const defaultConfig: Config = {
+        timeout: 5000
+    };
+}
+export namespace Api {
+    export interface Options extends Internal.Config {
+        retries: number;
+    }
+    export const defaultOptions: Options = {
+        ...Internal.defaultConfig,
+        retries: 3
+    };
+}

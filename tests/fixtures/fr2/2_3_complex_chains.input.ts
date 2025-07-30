@@ -1,0 +1,24 @@
+// FR2.3: Complex dependency chains with mixed exports
+
+// Chain 1: Constants building on each other
+const BASE = 10;
+const MULTIPLIER = 2;
+export const RESULT = BASE * MULTIPLIER;
+const ADJUSTED = RESULT + 5;
+export const FINAL = ADJUSTED * 2;
+
+// Chain 2: Function composition
+function add(a: number, b: number) { return a + b; }
+function multiply(a: number, b: number) { return a * b; }
+export function calculate(x: number) { return multiply(add(x, 5), 2); }
+function validate(n: number) { return n > 0; }
+export function safeCalculate(x: number) { 
+    return validate(x) ? calculate(x) : 0;
+}
+
+// Chain 3: Object builders
+const defaults = { color: 'blue', size: 10 };
+const overrides = { size: 20 };
+export const config = { ...defaults, ...overrides };
+const extended = { ...config, name: 'test' };
+export const finalConfig = { ...extended, id: 1 };

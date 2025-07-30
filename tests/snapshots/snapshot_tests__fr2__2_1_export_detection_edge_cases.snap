@@ -1,0 +1,34 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+export const external = 'external';
+const item1 = 'one';
+const item2 = 'two';
+type InternalType = string;
+export type ExportedType = InternalType;
+interface InternalInterface {
+    x: number;
+}
+export interface ExportedInterface extends InternalInterface {
+    y: number;
+}
+const VALUES = [
+    'a',
+    'b',
+    'c'
+] as const;
+export type Value = typeof VALUES[number];
+const internal = 'internal';
+const item3 = 'three';
+namespace InternalNS {
+    export const value = 42;
+}
+export namespace ExportedNS {
+    export const value = InternalNS.value;
+}
+export { foo } from './foo';
+export { bar as baz } from './bar';
+export * from './utils';
+export * as helpers from './helpers';
+export { item1, item2 };

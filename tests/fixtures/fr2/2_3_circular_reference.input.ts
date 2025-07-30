@@ -1,0 +1,25 @@
+// FR2.3: Circular reference patterns
+
+// Pattern 1: Mutual type references
+type A = { b: B };
+type B = { a: A };
+export type Combined = A & B;
+
+// Pattern 2: Function references
+function helper1(): string {
+    return helper2();
+}
+function helper2(): string {
+    return 'result';
+}
+export function main() {
+    return helper1();
+}
+
+// Pattern 3: Class with self-reference
+class Node {
+    next: Node | null = null;
+}
+export class LinkedList {
+    head = new Node();
+}

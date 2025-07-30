@@ -1,0 +1,61 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+function internalLog(message: string) {
+    console.log(`[Internal] ${message}`);
+}
+type LogLevel = 'error' | 'info' | 'warn';
+export class Logger {
+    constructor(private level: LogLevel){}
+    log(message: string) {
+        if (this.level === 'info') {
+            internalLog(message);
+        }
+    }
+}
+export function createLogger(level: LogLevel = 'info'): Logger {
+    return new Logger(level);
+}
+interface BaseConfig {
+    debug: boolean;
+}
+export interface AppConfig extends BaseConfig {
+    logLevel: LogLevel;
+    apiUrl: string;
+}
+export const defaultConfig: AppConfig = {
+    apiUrl: 'https://api.example.com',
+    debug: false,
+    logLevel: 'info'
+};
+function internalValidate(value: unknown): boolean {
+    return value != null;
+}
+class BaseService {
+    protected logger: Logger;
+    constructor(config: AppConfig){
+        this.logger = createLogger(config.logLevel);
+    }
+}
+export class DataService extends BaseService {
+    async fetchData(id: string): Promise<unknown> {
+        if (!internalValidate(id)) {
+            throw new Error('Invalid ID');
+        }
+        this.logger.log(`Fetching data for ${id}`);
+        return {
+            id
+        };
+    }
+}
+export function createDataService(config: AppConfig = defaultConfig): DataService {
+    return new DataService(config);
+}
+export function isAppConfig(value: unknown): value is AppConfig {
+    return (typeof value === 'object' && value !== null && 'debug' in value && 'logLevel' in value && 'apiUrl' in value);
+}
+const serviceInstance = createDataService();
+export async function performDataOperation(id: string) {
+    return serviceInstance.fetchData(id);
+}
