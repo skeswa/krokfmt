@@ -2,6 +2,23 @@
 
 Tasks are ordered by priority. Always work on tasks from the top of this list first.
 
+## Requirements Status Summary
+
+### Functional Requirements
+- ✅ FR1: Import/Export Organization (All sub-requirements tested)
+- ✅ FR2: Member Visibility Ordering (All sub-requirements tested)
+- ✅ FR3: Alphabetical Sorting (All sub-requirements tested)
+- ⚠️  FR4: CLI Interface (Implemented but needs comprehensive tests)
+- ❌ FR5: File Handling (Not fully implemented/tested)
+- ⚠️  FR6: Comment Handling (Implemented but has issues)
+
+### Non-Functional Requirements
+- ⚠️  NFR1: Performance (Benchmarks exist but need specific metrics)
+- ✅ NFR2: Correctness (Mostly implemented)
+- ❌ NFR3: Robustness (Error handling needs work)
+- ❌ NFR4: Developer Experience (Distribution/platform support pending)
+- ❌ NFR5: Maintainability (Coverage reporting not set up)
+
 ## In Progress
 <!-- Move ONE task here when you start working on it -->
 
@@ -18,6 +35,57 @@ Tasks are ordered by priority. Always work on tasks from the top of this list fi
    - Files: `src/formatter.rs`, `src/codegen.rs`
 
 ### Medium Priority
+
+2. **Implement and test FR4 requirements (CLI Interface)**
+   - FR4.1: Single File Processing - Already implemented
+   - FR4.2: Directory Processing - Already implemented
+   - FR4.3: Glob Pattern Support - Already implemented
+   - FR4.4: Check Mode - Already implemented
+   - FR4.5: Stdout Mode - Already implemented
+   - FR4.6: Version Display - Already implemented
+   - FR4.7: Help Display - Already implemented
+   - Add comprehensive tests for all CLI features
+   - Files: `tests/integration_tests.rs`, `src/main.rs`
+
+3. **Implement and test FR5 requirements (File Handling)**
+   - FR5.1: Encoding Preservation (UTF-8, BOM detection)
+   - FR5.2: Line Ending Preservation (LF/CRLF)
+   - FR5.3: Backup Creation (.bak files)
+   - FR5.4: File Type Support (.ts, .tsx, .mts, .cts)
+   - Create test fixtures for each file handling scenario
+   - Files: `src/file_handler.rs`, `tests/`
+
+4. **Implement and test NFR1 requirements (Performance)**
+   - NFR1.1: Processing Speed benchmarks (1000 lines < 100ms)
+   - NFR1.2: Parallel Processing verification
+   - NFR1.3: Memory Efficiency tests
+   - NFR1.4: Large File Support (up to 10MB)
+   - Enhance existing benchmarks with specific metrics
+   - Files: `benches/`, performance test suite
+
+5. **Implement and test NFR3 requirements (Robustness)**
+   - NFR3.1: Error Recovery (handle syntax errors gracefully)
+   - NFR3.2: Error Messaging (clear, actionable messages)
+   - NFR3.3: Partial Formatting (format valid portions)
+   - NFR3.4: Circular Dependency Handling (already partially done)
+   - Create error handling test suite
+   - Files: `src/error.rs` (new), `tests/error_tests.rs` (new)
+
+6. **Implement and test NFR4 requirements (Developer Experience)**
+   - NFR4.1: Distribution as single binary
+   - NFR4.2: Cross-Platform Support verification
+   - NFR4.3: Zero Dependencies verification
+   - NFR4.4: CI/CD Integration features
+   - Set up release pipeline and platform tests
+   - Files: `.github/workflows/`, build scripts
+
+7. **Implement and test NFR5 requirements (Maintainability)**
+   - NFR5.1: Test Coverage measurement (90% target)
+   - NFR5.2: TDD Methodology documentation
+   - NFR5.3: Modular Architecture verification
+   - NFR5.4: Error Handling patterns
+   - Set up coverage reporting and architecture docs
+   - Files: `Cargo.toml`, documentation
 
 ### Low Priority
 
