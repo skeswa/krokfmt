@@ -3,6 +3,7 @@ use swc_common::{comments::SingleThreadedComments, sync::Lrc, SourceMap};
 use swc_ecma_ast::*;
 use swc_ecma_codegen::{text_writer::JsWriter, Config, Emitter};
 
+use crate::comment_fixer::fix_comment_indentation;
 use crate::transformer::{ImportAnalyzer, ImportCategory};
 
 pub struct CodeGenerator {
@@ -49,8 +50,9 @@ impl CodeGenerator {
 
         let generated = String::from_utf8(buf)?;
 
-        // Post-process to add import spacing
-        Ok(self.add_import_spacing(generated, module))
+        // Post-process to fix comment indentation and add import spacing
+        let with_fixed_comments = fix_comment_indentation(generated);
+        Ok(self.add_import_spacing(with_fixed_comments, module))
     }
 
     fn add_import_spacing(&self, code: String, _module: &Module) -> String {

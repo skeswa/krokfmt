@@ -26,7 +26,7 @@ const b = 2;
 // This comment belongs to function foo
 // It has multiple lines
 function foo() {
-// Inside foo
+    // Inside foo
 }
 // Gap before bar
 // This belongs to bar

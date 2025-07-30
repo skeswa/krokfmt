@@ -59,7 +59,7 @@ interface ApiConfig {
 export class ApiClient {
     constructor(private config: ApiConfig){}
     async get(path: string) {
-    // implementation
+        // implementation
     }
 }
 export function createApiClient(baseUrl: string): ApiClient {

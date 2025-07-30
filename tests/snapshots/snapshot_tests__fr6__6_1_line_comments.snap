@@ -30,5 +30,5 @@ function foo() {
 function bar() {
     // First line in bar
     console.log('bar');
-// Last line in bar
+    // Last line in bar
 }

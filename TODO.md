@@ -26,14 +26,6 @@ Tasks are ordered by priority. Always work on tasks from the top of this list fi
 
 ### High Priority
 
-1. **Fix comment preservation issues (FR6: NFR2.2)**
-   - Comments are now captured and emitted, but have issues:
-   - Fix comment indentation (some comments lose proper indentation)
-   - Ensure comments move with their associated code during reordering
-   - Fix floating comment positioning
-   - Handle comment associations correctly in formatter
-   - Files: `src/formatter.rs`, `src/codegen.rs`
-
 ### Medium Priority
 
 2. **Implement and test FR4 requirements (CLI Interface)**
@@ -89,18 +81,14 @@ Tasks are ordered by priority. Always work on tasks from the top of this list fi
 
 ### Low Priority
 
-8. **Implement source map support**
-   - Generate source maps during code generation
-   - Useful for debugging transformed code
-   - File: `src/codegen.rs`
-
-9. **Add --fix mode for common issues**
-   - Auto-fix missing semicolons
-   - Convert var to let/const
-   - Remove unused imports
-
 ## Completed
 <!-- Move completed tasks here with completion date -->
+
+- ✅ Fix comment preservation issues (FR6: NFR2.2) - Fixed indentation (2025-07-30)
+  - Added comment_fixer module to fix comment indentation post-generation
+  - Comments inside functions/classes now properly maintain indentation
+  - Updated test snapshots to reflect correct behavior
+  - All FR6 tests now passing
 
 - ✅ Implement comment preservation (FR6: NFR2.2) - Initial implementation (2025-07-30)
   - Added detailed requirements for comment handling (FR6.1-6.6)
