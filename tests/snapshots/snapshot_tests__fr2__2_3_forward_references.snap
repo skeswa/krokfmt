@@ -1,0 +1,79 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+// FR2.3: Forward references that are allowed in TypeScript
+// These declarations can be reordered without breaking functionality
+// Function declarations can be used before declaration (hoisting)
+type Failure = {
+    kind: 'error';
+    error: Error;
+};
+class MyClass {
+    value = 42;
+}
+type Success = {
+    kind: 'success';
+    value: string;
+};
+// Complex interface inheritance chain
+export interface C extends B {
+    c: string;
+}
+// Interfaces can extend interfaces declared later
+export interface ExtendedUser extends BaseUser {
+    premium: boolean;
+}
+// Mixed forward references
+export type Handler = (data: Data) => Result;
+enum Result {
+    Success,
+    Failure
+}
+enum Status {
+    Pending,
+    Active,
+    Completed
+}
+// Class declarations in type positions
+export function createMyClass(): MyClass {
+    return new MyClass();
+}
+// Enum in type position
+export let currentStatus: Status;
+// Another function using forward reference
+export function mainFunction() {
+    return helperFunction2();
+}
+// Function calling another function declared later
+export function processData(input: string): string {
+    return transform(validate(input));
+}
+export const result1 = helperFunction1();
+interface A {
+    a: string;
+}
+type ActiveStatus = 'active';
+interface B extends A {
+    b: string;
+}
+interface BaseUser {
+    id: string;
+    name: string;
+}
+interface Data {
+    payload: string;
+}
+type InactiveStatus = 'inactive';
+function helperFunction1() {
+    return 'helper1';
+}
+function helperFunction2() {
+    return 'helper2';
+}
+function transform(input: string): string {
+    return input.toUpperCase();
+}
+function validate(input: string): string {
+    return input.trim();
+}

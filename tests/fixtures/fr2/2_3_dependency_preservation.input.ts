@@ -1,13 +1,14 @@
 // FR2.3: Dependencies must be preserved when reordering
+// This tests RUNTIME dependencies that must maintain order
 
-// Base values that exported values depend on
+// Base values that exported values depend on (runtime dependency)
 const BASE_URL = 'https://api.example.com';
 const API_VERSION = 'v1';
 
 // Exported value that depends on non-exported values
 export const API_ENDPOINT = `${BASE_URL}/${API_VERSION}`;
 
-// Helper function used by exported function
+// Helper function used by exported function (function hoisting allows reordering)
 function validateInput(input: string): boolean {
     return input.length > 0;
 }
@@ -20,7 +21,7 @@ export function processInput(input: string): string {
     return input.toUpperCase();
 }
 
-// Base class
+// Base class (can be reordered due to hoisting)
 class BaseHandler {
     protected name = 'base';
 }
@@ -32,9 +33,23 @@ export class ApiHandler extends BaseHandler {
     }
 }
 
-// Complex dependency chain
+// Complex dependency chain with variables (runtime dependencies)
 const step1 = 1;
 const step2 = step1 + 1;
 export const step3 = step2 + 1;
 const step4 = step3 + 1;
 export const step5 = step4 + 1;
+
+// Arrow function dependency (must appear after config)
+const config = { timeout: 5000 };
+export const fetchData = async () => {
+    return fetch('/api', { timeout: config.timeout });
+};
+
+// Object property access dependency
+const settings = { debug: true };
+export const isDebugMode = settings.debug;
+
+// Function expression dependency
+const multiply = (a: number, b: number) => a * b;
+export const double = (n: number) => multiply(n, 2);

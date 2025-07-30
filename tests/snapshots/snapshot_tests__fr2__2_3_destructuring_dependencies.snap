@@ -4,11 +4,6 @@ expression: output
 ---
 // FR2.3: Destructuring and spread dependencies
 // Object with dependencies
-// Function parameter destructuring
-interface Options {
-    timeout: number;
-    retries: number;
-}
 const defaultOptions: Options = {
     retries: 3,
     timeout: 5000
@@ -37,6 +32,11 @@ export function createClient({ retries, timeout }: Options = defaultOptions) {
 }
 export const sum = first + second;
 export const username = name;
+// Function parameter destructuring
+interface Options {
+    timeout: number;
+    retries: number;
+}
 const extendedConfig = {
     ...baseConfig,
     ssl: true

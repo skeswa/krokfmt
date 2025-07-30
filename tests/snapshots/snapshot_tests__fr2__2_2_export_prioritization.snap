@@ -7,9 +7,6 @@ expression: output
 class InternalService {
     name = 'internal';
 }
-interface PrivateOptions {
-    internal: boolean;
-}
 export interface PublicOptions extends PrivateOptions {
     external: boolean;
 }
@@ -25,6 +22,9 @@ export const publicConfig = {
 };
 export function publicHelper() {
     return 'public';
+}
+interface PrivateOptions {
+    internal: boolean;
 }
 const anotherPrivate = 4;
 const privateConfig = {

@@ -112,20 +112,56 @@ impl ExportInfo {
     }
 }
 
+/// Represents the type of a declaration for dependency analysis
+#[derive(Debug, Clone, PartialEq)]
+enum DeclType {
+    /// Function declarations - hoisted, can be called before declaration
+    FunctionDecl,
+    /// Class declarations - hoisted in type positions, runtime instantiation requires declaration
+    ClassDecl,
+    /// Interface declarations - type-only, can be forward referenced
+    Interface,
+    /// Type alias - type-only, can be forward referenced
+    TypeAlias,
+    /// Enum - can be forward referenced in type positions
+    Enum,
+    /// Variable with const/let/var - runtime value, must be declared before use
+    Variable,
+    /// Unknown declaration type
+    Unknown,
+}
+
+/// Context in which a dependency is used
+#[derive(Debug, Clone, PartialEq, Default)]
+enum DependencyContext {
+    /// Used in a type annotation or type-level construct
+    TypeLevel,
+    /// Used in a runtime expression or value
+    #[default]
+    RuntimeValue,
+}
+
 /// Analyzes dependencies between declarations in a module.
 ///
 /// This is critical for FR2.3 - we must preserve dependency order even when
 /// reordering exports. The analyzer builds a dependency graph by tracking
 /// identifier references within each declaration. This ensures that if A uses B,
 /// B will always appear before A in the formatted output.
+///
+/// The analyzer now distinguishes between type-level and runtime dependencies,
+/// allowing TypeScript's forward reference rules to be properly handled.
 #[derive(Default)]
 pub struct DependencyAnalyzer {
-    /// Maps declaration names to their dependencies
+    /// Maps declaration names to their runtime dependencies
     dependencies: HashMap<String, HashSet<String>>,
     /// Current declaration being analyzed
     current_decl: Option<String>,
-    /// All available declaration names in the module
-    available_decls: HashSet<String>,
+    /// Maps declaration names to their types
+    decl_types: HashMap<String, DeclType>,
+    /// Current context (type-level or runtime)
+    current_context: DependencyContext,
+    /// Whether we're inside a type annotation
+    in_type_annotation: bool,
 }
 
 impl DependencyAnalyzer {
@@ -135,15 +171,15 @@ impl DependencyAnalyzer {
 
     pub fn analyze(&mut self, module: &Module) -> DependencyGraph {
         self.dependencies.clear();
-        self.available_decls.clear();
+        self.decl_types.clear();
 
         // Two-pass analysis is necessary because forward references are allowed
         // in JavaScript. First we catalog all declarations, then we can accurately
         // identify which identifier references are dependencies.
 
-        // First pass: collect all declaration names
+        // First pass: collect all declaration names and their types
         for item in &module.body {
-            self.collect_declaration_names(item);
+            self.collect_declaration_info(item);
         }
 
         // Second pass: analyze dependencies
@@ -151,6 +187,8 @@ impl DependencyAnalyzer {
             if let Some(name) = Self::get_declaration_name(item) {
                 self.current_decl = Some(name.clone());
                 self.dependencies.insert(name, HashSet::new());
+                self.current_context = DependencyContext::RuntimeValue;
+                self.in_type_annotation = false;
                 item.visit_with(self);
                 self.current_decl = None;
             }
@@ -161,79 +199,91 @@ impl DependencyAnalyzer {
         }
     }
 
-    fn collect_declaration_names(&mut self, item: &ModuleItem) {
+    fn collect_declaration_info(&mut self, item: &ModuleItem) {
         match item {
-            ModuleItem::Stmt(stmt) => self.collect_stmt_names(stmt),
+            ModuleItem::Stmt(stmt) => self.collect_stmt_info(stmt),
             ModuleItem::ModuleDecl(ModuleDecl::ExportDecl(export_decl)) => {
-                self.collect_decl_names(&export_decl.decl);
+                self.collect_decl_info(&export_decl.decl);
             }
             _ => {}
         }
     }
 
-    fn collect_stmt_names(&mut self, stmt: &Stmt) {
+    fn collect_stmt_info(&mut self, stmt: &Stmt) {
         if let Stmt::Decl(decl) = stmt {
-            self.collect_decl_names(decl);
+            self.collect_decl_info(decl);
         }
     }
 
-    fn collect_decl_names(&mut self, decl: &Decl) {
+    fn collect_decl_info(&mut self, decl: &Decl) {
         match decl {
             Decl::Fn(fn_decl) => {
-                self.available_decls.insert(fn_decl.ident.sym.to_string());
+                let name = fn_decl.ident.sym.to_string();
+                self.decl_types.insert(name, DeclType::FunctionDecl);
             }
             Decl::Class(class_decl) => {
-                self.available_decls
-                    .insert(class_decl.ident.sym.to_string());
+                let name = class_decl.ident.sym.to_string();
+                self.decl_types.insert(name, DeclType::ClassDecl);
             }
             Decl::Var(var_decl) => {
                 for decl in &var_decl.decls {
-                    self.collect_pat_names(&decl.name);
+                    self.collect_pat_info(&decl.name, DeclType::Variable);
                 }
             }
             Decl::TsInterface(interface) => {
-                self.available_decls.insert(interface.id.sym.to_string());
+                let name = interface.id.sym.to_string();
+                self.decl_types.insert(name, DeclType::Interface);
             }
             Decl::TsTypeAlias(type_alias) => {
-                self.available_decls.insert(type_alias.id.sym.to_string());
+                let name = type_alias.id.sym.to_string();
+                self.decl_types.insert(name, DeclType::TypeAlias);
             }
             Decl::TsEnum(ts_enum) => {
-                self.available_decls.insert(ts_enum.id.sym.to_string());
+                let name = ts_enum.id.sym.to_string();
+                self.decl_types.insert(name, DeclType::Enum);
             }
             Decl::TsModule(ts_module) => match &ts_module.id {
                 TsModuleName::Ident(ident) => {
-                    self.available_decls.insert(ident.sym.to_string());
+                    let name = ident.sym.to_string();
+                    self.decl_types.insert(name, DeclType::Unknown);
                 }
                 TsModuleName::Str(s) => {
-                    self.available_decls.insert(s.value.to_string());
+                    let name = s.value.to_string();
+                    self.decl_types.insert(name, DeclType::Unknown);
                 }
             },
             _ => {}
         }
     }
 
-    fn collect_pat_names(&mut self, pat: &Pat) {
+    fn collect_pat_info(&mut self, pat: &Pat, decl_type: DeclType) {
         match pat {
             Pat::Ident(ident) => {
-                self.available_decls.insert(ident.id.sym.to_string());
+                let name = ident.id.sym.to_string();
+                self.decl_types.insert(name, decl_type.clone());
             }
             Pat::Object(obj_pat) => {
                 for prop in &obj_pat.props {
                     match prop {
-                        ObjectPatProp::KeyValue(kv) => self.collect_pat_names(&kv.value),
-                        ObjectPatProp::Assign(assign) => {
-                            self.available_decls.insert(assign.key.sym.to_string());
+                        ObjectPatProp::KeyValue(kv) => {
+                            self.collect_pat_info(&kv.value, decl_type.clone())
                         }
-                        ObjectPatProp::Rest(rest) => self.collect_pat_names(&rest.arg),
+                        ObjectPatProp::Assign(assign) => {
+                            let name = assign.key.sym.to_string();
+                            self.decl_types.insert(name, decl_type.clone());
+                        }
+                        ObjectPatProp::Rest(rest) => {
+                            self.collect_pat_info(&rest.arg, decl_type.clone())
+                        }
                     }
                 }
             }
             Pat::Array(array_pat) => {
                 for p in array_pat.elems.iter().flatten() {
-                    self.collect_pat_names(p);
+                    self.collect_pat_info(p, decl_type.clone());
                 }
             }
-            Pat::Rest(rest) => self.collect_pat_names(&rest.arg),
+            Pat::Rest(rest) => self.collect_pat_info(&rest.arg, decl_type.clone()),
             _ => {}
         }
     }
@@ -304,42 +354,125 @@ impl Visit for DependencyAnalyzer {
     fn visit_ident(&mut self, ident: &Ident) {
         if let Some(current) = &self.current_decl {
             let name = ident.sym.to_string();
-            // We only track intra-module dependencies, not external imports or builtins.
-            // Self-references are excluded to avoid circular dependency false positives.
-            if self.available_decls.contains(&name) && &name != current {
-                self.dependencies.get_mut(current).unwrap().insert(name);
+
+            // Check if this is a known declaration and not a self-reference
+            if let Some(decl_type) = self.decl_types.get(&name).cloned() {
+                if &name != current {
+                    // Determine if we need to track this dependency
+                    let should_track = match (&self.current_context, &decl_type) {
+                        // Type-level dependencies on type-only constructs don't need ordering
+                        (DependencyContext::TypeLevel, DeclType::Interface) => false,
+                        (DependencyContext::TypeLevel, DeclType::TypeAlias) => false,
+                        (DependencyContext::TypeLevel, DeclType::Enum) => false,
+
+                        // Function declarations are hoisted, so calls don't need ordering
+                        (DependencyContext::RuntimeValue, DeclType::FunctionDecl) => false,
+
+                        // Class declarations in type positions don't need ordering
+                        (DependencyContext::TypeLevel, DeclType::ClassDecl) => false,
+
+                        // All other cases require dependency tracking
+                        _ => true,
+                    };
+
+                    if should_track {
+                        self.dependencies.get_mut(current).unwrap().insert(name);
+                    }
+                }
             }
         }
         ident.visit_children_with(self);
     }
 
-    fn visit_ts_entity_name(&mut self, entity: &TsEntityName) {
-        if let TsEntityName::Ident(ident) = entity {
-            self.visit_ident(ident);
+    // Track when we enter type annotations
+    fn visit_ts_type_ann(&mut self, type_ann: &TsTypeAnn) {
+        let prev_context = self.current_context.clone();
+        self.current_context = DependencyContext::TypeLevel;
+        self.in_type_annotation = true;
+        type_ann.visit_children_with(self);
+        self.current_context = prev_context;
+        self.in_type_annotation = false;
+    }
+
+    // Track type references
+    fn visit_ts_type_ref(&mut self, type_ref: &TsTypeRef) {
+        let prev_context = self.current_context.clone();
+        self.current_context = DependencyContext::TypeLevel;
+        type_ref.visit_children_with(self);
+        self.current_context = prev_context;
+    }
+
+    // Interface extends clauses are type-level
+    fn visit_ts_interface_decl(&mut self, interface: &TsInterfaceDecl) {
+        let prev_context = self.current_context.clone();
+
+        // Process extends clause in type context
+        if !interface.extends.is_empty() {
+            self.current_context = DependencyContext::TypeLevel;
+            for extend in &interface.extends {
+                extend.visit_with(self);
+            }
         }
-        entity.visit_children_with(self);
+
+        // Process body in type context
+        self.current_context = DependencyContext::TypeLevel;
+        interface.body.visit_children_with(self);
+
+        self.current_context = prev_context;
+    }
+
+    // Type alias RHS is type-level
+    fn visit_ts_type_alias_decl(&mut self, type_alias: &TsTypeAliasDecl) {
+        let prev_context = self.current_context.clone();
+        self.current_context = DependencyContext::TypeLevel;
+        type_alias.type_ann.visit_with(self);
+        self.current_context = prev_context;
+    }
+
+    // Class extends/implements are type-level
+    fn visit_class(&mut self, class: &Class) {
+        let prev_context = self.current_context.clone();
+
+        // Super class can be type-level or runtime depending on usage
+        if let Some(super_class) = &class.super_class {
+            // For now, treat extends as runtime since it affects prototype chain
+            super_class.visit_with(self);
+        }
+
+        // Implements clauses are type-level
+        if !class.implements.is_empty() {
+            self.current_context = DependencyContext::TypeLevel;
+            for implement in &class.implements {
+                implement.visit_with(self);
+            }
+            self.current_context = prev_context.clone();
+        }
+
+        // Visit class body
+        class.body.visit_children_with(self);
+
+        self.current_context = prev_context;
     }
 
     fn visit_member_expr(&mut self, expr: &MemberExpr) {
-        // Member expressions need special handling because only the object part
-        // represents a potential dependency. For `Config.defaults`, we track
-        // dependency on 'Config', not 'defaults'.
-        if let MemberProp::Ident(ident) = &expr.prop {
-            // Visit the property name
-            ident.visit_children_with(self);
-        }
-
-        // Visit the object part
+        // Member expressions are always runtime value access
         if let Some(ident) = expr.obj.as_ident() {
             if let Some(current) = &self.current_decl {
                 let name = ident.sym.to_string();
-                if self.available_decls.contains(&name) && &name != current {
-                    self.dependencies.get_mut(current).unwrap().insert(name);
+                if self.decl_types.get(&name).is_some() {
+                    if &name != current {
+                        // Member access always requires runtime value
+                        self.dependencies.get_mut(current).unwrap().insert(name);
+                    }
                 }
             }
         }
 
         expr.obj.visit_children_with(self);
+
+        if let MemberProp::Ident(_) = &expr.prop {
+            // Don't need to track the property name as a dependency
+        }
     }
 }
 
@@ -2056,12 +2189,14 @@ export const publicConst = privateConst + 5;
             }
         }
 
-        // With visibility-based organization:
-        // - Dependencies are hoisted first (privateConst, privateFunc)
-        // - Then exported items alphabetically (publicConst, publicFunc)
+        // With smart dependency analysis:
+        // - Only runtime dependencies are hoisted (privateConst)
+        // - Function declarations don't need hoisting (privateFunc can stay after)
+        // - Exported items are alphabetically sorted (publicConst, publicFunc)
+        // - Non-exported items follow (privateFunc)
         assert_eq!(
             declarations,
-            vec!["privateConst", "privateFunc", "publicConst", "publicFunc"]
+            vec!["privateConst", "publicConst", "publicFunc", "privateFunc"]
         );
     }
 
@@ -2120,14 +2255,15 @@ export function main() {
             }
         }
 
-        // Dependencies must be preserved
+        // With smart dependency analysis:
+        // - helper (arrow function) must be before publicFunc (runtime dependency)
+        // - util is a function declaration, so it doesn't need to be before main
         let helper_idx = declarations.iter().position(|s| s == "helper").unwrap();
         let public_func_idx = declarations.iter().position(|s| s == "publicFunc").unwrap();
-        let util_idx = declarations.iter().position(|s| s == "util").unwrap();
-        let main_idx = declarations.iter().position(|s| s == "main").unwrap();
 
         assert!(helper_idx < public_func_idx);
-        assert!(util_idx < main_idx);
+
+        // Function declarations can be called before declaration, so util can appear after main
     }
 
     #[test]
@@ -2199,15 +2335,14 @@ export type PublicType = PrivateType | boolean;
             .iter()
             .position(|s| s == "PublicClass")
             .unwrap();
-        let private_type_idx = declarations
+        let _private_type_idx = declarations
             .iter()
             .position(|s| s == "PrivateType")
             .unwrap();
-        let public_type_idx = declarations.iter().position(|s| s == "PublicType").unwrap();
+        let _public_type_idx = declarations.iter().position(|s| s == "PublicType").unwrap();
 
-        // PublicClass depends on PrivateClass, so PrivateClass must come first
+        // PublicClass extends PrivateClass (runtime dependency for prototype chain)
         assert!(private_class_idx < public_class_idx);
-        // PublicType depends on PrivateType
-        assert!(private_type_idx < public_type_idx);
+        // Type aliases can forward reference other types, so ordering is not required
     }
 }

@@ -4,23 +4,12 @@ expression: output
 ---
 // FR2: Comprehensive integration test combining all FR2 features
 // Internal utilities
-// Base types used by exports
-interface BaseConfig {
-    debug: boolean;
-}
 // Mixed visibility service
 class BaseService {
     protected logger: Logger;
     constructor(config: AppConfig){
         this.logger = createLogger(config.logLevel);
     }
-}
-type LogLevel = 'error' | 'info' | 'warn';
-function internalLog(message: string) {
-    console.log(`[Internal] ${message}`);
-}
-function internalValidate(value: unknown): boolean {
-    return value != null;
 }
 // Final integration
 const serviceInstance = createDataService();
@@ -67,4 +56,15 @@ export function isAppConfig(value: unknown): value is AppConfig {
 }
 export async function performDataOperation(id: string) {
     return serviceInstance.fetchData(id);
+}
+// Base types used by exports
+interface BaseConfig {
+    debug: boolean;
+}
+type LogLevel = 'error' | 'info' | 'warn';
+function internalLog(message: string) {
+    console.log(`[Internal] ${message}`);
+}
+function internalValidate(value: unknown): boolean {
+    return value != null;
 }

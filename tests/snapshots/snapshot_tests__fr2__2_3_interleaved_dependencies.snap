@@ -4,20 +4,6 @@ expression: output
 ---
 // FR2.3: Interleaved dependencies - exports and non-exports mixed
 // Base types
-// Non-export depends on export
-interface AdminUser extends User {
-    permissions: string[];
-}
-interface BaseUser {
-    id: string;
-}
-// Function pattern
-function processUser(user: User): string {
-    return user.name;
-}
-function validateAdmin(admin: AdminUser): boolean {
-    return admin.permissions.length > 0;
-}
 // Export depends on non-export that depends on export
 export interface SuperAdmin extends AdminUser {
     superPowers: boolean;
@@ -32,4 +18,18 @@ export function checkAdmin(user: User): boolean {
 }
 export function getUsername(user: User): string {
     return processUser(user);
+}
+// Non-export depends on export
+interface AdminUser extends User {
+    permissions: string[];
+}
+interface BaseUser {
+    id: string;
+}
+// Function pattern
+function processUser(user: User): string {
+    return user.name;
+}
+function validateAdmin(admin: AdminUser): boolean {
+    return admin.permissions.length > 0;
 }

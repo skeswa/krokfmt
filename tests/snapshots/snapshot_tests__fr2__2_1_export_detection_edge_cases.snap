@@ -4,12 +4,6 @@ expression: output
 ---
 // FR2.1: Complex export detection patterns
 // Re-exports
-// Interface exports
-interface InternalInterface {
-    x: number;
-}
-// Type exports
-type InternalType = string;
 // Const assertions with exports
 const VALUES = [
     'a',
@@ -32,6 +26,12 @@ namespace InternalNS {
 export namespace ExportedNS {
     export const value = InternalNS.value;
 }
+// Interface exports
+interface InternalInterface {
+    x: number;
+}
+// Type exports
+type InternalType = string;
 // Mixed export patterns
 const internal = 'internal';
 const item3 = 'three';

@@ -7,10 +7,6 @@ expression: output
 const ADJUSTED = RESULT + 5;
 const BASE = 10;
 const MULTIPLIER = 2;
-// Chain 2: Function composition
-function add(a: number, b: number) {
-    return a + b;
-}
 // Chain 3: Object builders
 const defaults = {
     color: 'blue',
@@ -20,15 +16,9 @@ const extended = {
     ...config,
     name: 'test'
 };
-function multiply(a: number, b: number) {
-    return a * b;
-}
 const overrides = {
     size: 20
 };
-function validate(n: number) {
-    return n > 0;
-}
 export const FINAL = ADJUSTED * 2;
 export const RESULT = BASE * MULTIPLIER;
 export function calculate(x: number) {
@@ -44,4 +34,14 @@ export const finalConfig = {
 };
 export function safeCalculate(x: number) {
     return validate(x) ? calculate(x) : 0;
+}
+// Chain 2: Function composition
+function add(a: number, b: number) {
+    return a + b;
+}
+function multiply(a: number, b: number) {
+    return a * b;
+}
+function validate(n: number) {
+    return n > 0;
 }

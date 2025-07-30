@@ -20,13 +20,6 @@ const level3 = level2 + '_final';
 const privateA = 1;
 const privateB = publicA + 1;
 const privateC = publicB + 1;
-// Mixed private and public chain
-function privateHelper() {
-    return 42;
-}
-function usesPublicHelper() {
-    return publicHelper() + 10;
-}
 export class FinalClass extends ExtendedClass {
     tripleValue() {
         return this.doubleValue() + this.getValue();
@@ -47,3 +40,10 @@ export function publicHelper() {
     return privateHelper() * 2;
 }
 export const publicLevel3 = level3;
+// Mixed private and public chain
+function privateHelper() {
+    return 42;
+}
+function usesPublicHelper() {
+    return publicHelper() + 10;
+}

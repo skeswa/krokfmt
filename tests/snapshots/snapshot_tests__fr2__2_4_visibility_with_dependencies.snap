@@ -12,16 +12,6 @@ const DATABASE_CONFIG = {
     host: 'localhost',
     port: 5432
 };
-// Internal type used by exported interface
-type UserId = string;
-// Another internal helper used by exported function
-function formatOutput(data: string): string {
-    return data.toUpperCase();
-}
-// Internal helper used by exported function
-function validateInput(input: unknown): boolean {
-    return input !== null && input !== undefined;
-}
 // Exported class extending internal base
 export class ApiService extends BaseService {
     getName() {
@@ -51,7 +41,17 @@ export function processData(input: unknown): string {
 export function standaloneExport() {
     return 'exported standalone';
 }
+// Internal type used by exported interface
+type UserId = string;
+// Another internal helper used by exported function
+function formatOutput(data: string): string {
+    return data.toUpperCase();
+}
 // Standalone internal function (no dependencies)
 function standaloneHelper() {
     return 'standalone';
+}
+// Internal helper used by exported function
+function validateInput(input: unknown): boolean {
+    return input !== null && input !== undefined;
 }

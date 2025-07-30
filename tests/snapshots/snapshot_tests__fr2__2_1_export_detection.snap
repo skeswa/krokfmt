@@ -8,15 +8,6 @@ expression: output
 class PrivateClass {
     value = 1;
 }
-// Non-exported interface
-interface PrivateInterface {
-    id: number;
-}
-// Non-exported type
-type PrivateType = number | string;
-function privateHelper() {
-    return 'private';
-}
 // Exported class
 export class PublicClass {
     instance = new PrivateClass();
@@ -33,5 +24,14 @@ const b = 2;
 // Exported function
 export function publicApi() {
     return privateHelper() + ' api';
+}
+// Non-exported interface
+interface PrivateInterface {
+    id: number;
+}
+// Non-exported type
+type PrivateType = number | string;
+function privateHelper() {
+    return 'private';
 }
 export { a, b };

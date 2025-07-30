@@ -3,21 +3,28 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.3: Dependencies must be preserved when reordering
-// Base values that exported values depend on
+// This tests RUNTIME dependencies that must maintain order
+// Base values that exported values depend on (runtime dependency)
 const API_VERSION = 'v1';
 const BASE_URL = 'https://api.example.com';
-// Base class
+// Base class (can be reordered due to hoisting)
 class BaseHandler {
     protected name = 'base';
 }
-// Complex dependency chain
+// Arrow function dependency (must appear after config)
+const config = {
+    timeout: 5000
+};
+// Function expression dependency
+const multiply = (a: number, b: number)=>a * b;
+// Object property access dependency
+const settings = {
+    debug: true
+};
+// Complex dependency chain with variables (runtime dependencies)
 const step1 = 1;
 const step2 = step1 + 1;
 const step4 = step3 + 1;
-// Helper function used by exported function
-function validateInput(input: string): boolean {
-    return input.length > 0;
-}
 // Exported value that depends on non-exported values
 export const API_ENDPOINT = `${BASE_URL}/${API_VERSION}`;
 // Exported class that extends base
@@ -26,6 +33,13 @@ export class ApiHandler extends BaseHandler {
         return this.name;
     }
 }
+export const double = (n: number)=>multiply(n, 2);
+export const fetchData = async ()=>{
+    return fetch('/api', {
+        timeout: config.timeout
+    });
+};
+export const isDebugMode = settings.debug;
 // Exported function that depends on helper
 export function processInput(input: string): string {
     if (!validateInput(input)) {
@@ -35,3 +49,7 @@ export function processInput(input: string): string {
 }
 export const step3 = step2 + 1;
 export const step5 = step4 + 1;
+// Helper function used by exported function (function hoisting allows reordering)
+function validateInput(input: string): boolean {
+    return input.length > 0;
+}

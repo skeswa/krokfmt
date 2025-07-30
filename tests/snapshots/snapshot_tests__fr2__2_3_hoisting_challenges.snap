@@ -7,18 +7,8 @@ expression: output
 class MyClass {
     value = 42;
 }
-const base = 10;
-function computeValue() {
-    return base * 2;
-}
-function helperFunction() {
-    return 'helper';
-}
 // Mixed declarations
 var hoistedVar = initialValue();
-function initialValue() {
-    return 100;
-}
 // Const temporal dead zone
 export const earlyUse = computeValue();
 export const exportedConst = hoistedVar;
@@ -26,4 +16,14 @@ export const exportedConst = hoistedVar;
 export const instance = new MyClass();
 export function publicApi() {
     return helperFunction();
+}
+const base = 10;
+function computeValue() {
+    return base * 2;
+}
+function helperFunction() {
+    return 'helper';
+}
+function initialValue() {
+    return 100;
 }

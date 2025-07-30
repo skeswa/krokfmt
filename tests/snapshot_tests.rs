@@ -148,6 +148,11 @@ fn test_fr2_3_hoisting_challenges() {
 }
 
 #[test]
+fn test_fr2_3_forward_references() {
+    test_fixture("fr2/2_3_forward_references");
+}
+
+#[test]
 fn test_fr2_4_visibility_grouping() {
     test_fixture("fr2/2_4_visibility_grouping");
 }

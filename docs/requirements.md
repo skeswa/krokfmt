@@ -143,6 +143,74 @@ import g from "../../g";
 - Class inheritance chains are maintained
 - Circular dependencies are handled gracefully
 
+**Forward Reference Exceptions**:
+
+TypeScript allows forward references for certain constructs. The formatter must recognize these cases and not require dependencies to be declared first:
+
+1. **Function Declarations** - Can be called before declaration due to hoisting
+   ```typescript
+   foo(); // Valid - function declarations are hoisted
+   function foo() {}
+   ```
+
+2. **Class Declarations** - Can be referenced in type positions before declaration
+   ```typescript
+   function createInstance(): MyClass { return new MyClass(); } // Valid in type position
+   class MyClass {}
+   ```
+
+3. **Interface Declarations** - Can be used in type positions or extended before declaration
+   ```typescript
+   interface A extends B {} // Valid - interfaces can reference later interfaces
+   interface B {}
+   ```
+
+4. **Type Aliases** - Can be referenced in other type declarations before definition
+   ```typescript
+   type A = B | string; // Valid - types can reference later types
+   type B = number;
+   ```
+
+5. **Enum Declarations** - Can be used in type positions before declaration
+   ```typescript
+   let status: Status; // Valid - enums can be referenced before declaration
+   enum Status { Active, Inactive }
+   ```
+
+**Runtime Dependency Rules**:
+
+These constructs MUST have their dependencies declared first as they execute at runtime:
+
+1. **Variable Declarations** - Cannot use undeclared variables
+   ```typescript
+   const a = b; // Error - b is not defined
+   const b = 1;
+   ```
+
+2. **Arrow Functions and Function Expressions** - Not hoisted, must be declared before use
+   ```typescript
+   foo(); // Error - cannot access before initialization
+   const foo = () => {};
+   ```
+
+3. **Class Expressions** - Not hoisted, must be declared before use
+   ```typescript
+   new MyClass(); // Error - cannot access before initialization
+   const MyClass = class {};
+   ```
+
+4. **Object/Array Destructuring** - Requires values to exist
+   ```typescript
+   const { x } = obj; // Error - obj is not defined
+   const obj = { x: 1 };
+   ```
+
+5. **Method Calls and Property Access** - Requires object to exist
+   ```typescript
+   console.log(config.url); // Error - config is not defined
+   const config = { url: 'api' };
+   ```
+
 #### FR2.4: Visibility Grouping and Alphabetization
 
 **Description**: The system shall group declarations by visibility level and alphabetize within each group.
