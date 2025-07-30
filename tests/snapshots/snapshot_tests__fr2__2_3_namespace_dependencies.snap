@@ -4,19 +4,19 @@ expression: output
 ---
 // FR2.3: Namespace and module dependencies
 // Internal namespace
+type AsyncHandler = (data: any) => Promise<void>;
 // Type dependencies
 type Handler = (data: any) => void;
-type AsyncHandler = (data: any) => Promise<void>;
-export type Middleware = {
-    before: Handler;
-    after: AsyncHandler;
-};
 // Const assertions
 const MODES = [
     'dev',
     'prod'
 ] as const;
 type Mode = typeof MODES[number];
+export type Middleware = {
+    before: Handler;
+    after: AsyncHandler;
+};
 export const currentMode: Mode = MODES[0];
 namespace Internal {
     export interface Config {

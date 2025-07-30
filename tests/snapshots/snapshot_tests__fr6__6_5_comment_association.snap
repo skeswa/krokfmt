@@ -4,9 +4,9 @@ expression: output
 ---
 // FR6.5: Comment association - comments should move with their associated code
 // This comment belongs to export b (even though b comes before a after sorting)
-export const b = 2;
 // This comment belongs to export a
 export const a = 1;
+export const b = 2;
 // This function comment
 // has multiple lines
 // and should move as a unit
@@ -15,15 +15,6 @@ z: number, // param a comment
 a: string) {
     // body comment
 }
-// This belongs to the function definition below
-// Even with a blank line
-function myFunction() {
-    // Internal comment
-}
-const x = 5; // This stays with x
-// This is a floating comment not associated with anything
-// This belongs to y despite the floating comment above
-const y = 10;
 // Comment for class
 class MyClass {
     // Comment for method a (should move with methodA during sorting)
@@ -38,3 +29,12 @@ interface Props {
     // Should stay with 'age'
     age: number;
 }
+// This belongs to the function definition below
+// Even with a blank line
+function myFunction() {
+    // Internal comment
+}
+const x = 5; // This stays with x
+// This is a floating comment not associated with anything
+// This belongs to y despite the floating comment above
+const y = 10;

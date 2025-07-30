@@ -14,9 +14,13 @@ interface User {
     // @ts-ignore
     legacyField: any;
 }
-// #endregion
-// eslint-disable-next-line no-unused-vars
-const unused = 42;
+// eslint-enable no-console
+// #region Utils
+// @ts-ignore: Deprecated but still needed
+function oldFunction() {
+    // prettier-ignore
+    return 42 + 10;
+}
 function riskyFunction() {
     // @ts-expect-error
     return nonExistentVariable;
@@ -27,13 +31,9 @@ const uglyFormatted = {
     b: 3,
     z: 1
 };
-// eslint-enable no-console
-// #region Utils
-// @ts-ignore: Deprecated but still needed
-function oldFunction() {
-    // prettier-ignore
-    return 42 + 10;
-}
+// #endregion
+// eslint-disable-next-line no-unused-vars
+const unused = 42;
 // #endregion
 /* eslint-disable */ const x = 1;
 const y = 2; /* eslint-enable */  // TODO: Fix this later

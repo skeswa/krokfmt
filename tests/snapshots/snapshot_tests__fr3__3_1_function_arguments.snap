@@ -4,6 +4,18 @@ expression: output
 ---
 // FR3.1: Function arguments should be sorted when destructured
 // Object destructuring parameters should be sorted
+// Positional parameters should NOT be sorted
+function add(b: number, a: number) {
+    return a + b;
+}
+// Arrow function with destructured params
+const handleConfig = ({ baseURL, headers, retries, timeout }: Config)=>{
+    console.log(baseURL, headers, retries, timeout);
+};
+// Mixed parameters - only destructured should be sorted
+function mixedParams(first: number, { apple, zebra }: Options, last: string) {
+    return `${first} ${apple} ${zebra} ${last}`;
+}
 function processOptions({ apple, banana, zebra }: Options) {
     return {
         apple,
@@ -11,10 +23,6 @@ function processOptions({ apple, banana, zebra }: Options) {
         zebra
     };
 }
-// Arrow function with destructured params
-const handleConfig = ({ baseURL, headers, retries, timeout }: Config)=>{
-    console.log(baseURL, headers, retries, timeout);
-};
 // Nested destructuring
 function processUser({ settings: { language, theme }, user: { age, id, name } }: UserData) {
     return {
@@ -24,12 +32,4 @@ function processUser({ settings: { language, theme }, user: { age, id, name } }:
         name,
         theme
     };
-}
-// Mixed parameters - only destructured should be sorted
-function mixedParams(first: number, { apple, zebra }: Options, last: string) {
-    return `${first} ${apple} ${zebra} ${last}`;
-}
-// Positional parameters should NOT be sorted
-function add(b: number, a: number) {
-    return a + b;
 }

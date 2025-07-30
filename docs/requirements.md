@@ -120,36 +120,77 @@ import g from "../../g";
 - Variables
 - Enums
 
-#### FR2.2: Export Prioritization
+#### FR2.2: Visibility-Based Organization
 
-**Description**: The system shall move exported members toward the top of the file when possible.
+**Description**: The system shall organize file contents by visibility level, with exported members at the top and non-exported members at the bottom.
 
-**Constraints**:
+**Organization Rules**:
 
-- Maintains dependency order
-- Preserves lexical scoping
-- Respects temporal dead zones
+- Exported members (public API) appear first
+- Non-exported members (internal implementation) appear last
+- Clear visual separation between visibility groups
+- Maintains semantic correctness
 
 #### FR2.3: Dependency Preservation
 
-**Description**: The system shall never reorder members in a way that breaks code functionality.
+**Description**: The system shall never reorder members in a way that breaks code functionality, even when organizing by visibility.
 
-**Analysis Required**:
+**Dependency Rules**:
 
-- Variable usage before declaration
-- Function hoisting behavior
-- Class inheritance chains
-- Circular dependencies
+- If an exported member depends on a non-exported member, the dependency must appear first
+- Variable usage before declaration is prevented
+- Function hoisting behavior is respected
+- Class inheritance chains are maintained
+- Circular dependencies are handled gracefully
 
-#### FR2.4: Intelligent Grouping
+#### FR2.4: Visibility Grouping and Alphabetization
 
-**Description**: The system shall keep related members together when reordering.
+**Description**: The system shall group declarations by visibility level and alphabetize within each group.
 
 **Grouping Rules**:
 
-- Class with its methods
-- Interface with its implementations
-- Type with its guards/assertions
+1. **Visibility Groups** (in order):
+   - Exported declarations (functions, classes, types, interfaces, enums, variables)
+   - Non-exported declarations (same types as above)
+
+2. **Within Each Group**:
+   - Sort alphabetically by declaration name
+   - Maintain stable sort for items with identical names
+
+3. **Visual Separation**:
+   - Add empty line between visibility groups
+   - No empty lines within a visibility group (unless preserving existing formatting)
+
+4. **Dependency Override**:
+   - Dependencies can be hoisted above their visibility group if required
+   - Hoisted dependencies maintain their relative order
+
+**Example**:
+
+```typescript
+// Before
+function helperB() { return 'b'; }
+export function mainA() { return helperB(); }
+const configC = { url: 'api' };
+export class ServiceD { 
+    config = configC;
+}
+function helperE() { return 'e'; }
+
+// After
+// Hoisted dependencies (required by exports)
+const configC = { url: 'api' };
+function helperB() { return 'b'; }
+
+// Exported members (alphabetized)
+export function mainA() { return helperB(); }
+export class ServiceD { 
+    config = configC;
+}
+
+// Non-exported members (alphabetized)
+function helperE() { return 'e'; }
+```
 
 ### FR3: Alphabetical Sorting
 

@@ -4,20 +4,14 @@ expression: output
 ---
 // FR2.2: Exported members should be prioritized over non-exported
 // Mix of exported and non-exported members
-export const publicConfig = {
-    api: 'https://api.example.com'
-};
-export function publicHelper() {
-    return 'public';
+class InternalService {
+    name = 'internal';
 }
 interface PrivateOptions {
     internal: boolean;
 }
 export interface PublicOptions extends PrivateOptions {
     external: boolean;
-}
-class InternalService {
-    name = 'internal';
 }
 export class PublicService {
     service = new InternalService();
@@ -26,11 +20,17 @@ export class PublicService {
 export const constant1 = 1;
 export const constant2 = 3;
 export const constant3 = 5;
+export const publicConfig = {
+    api: 'https://api.example.com'
+};
+export function publicHelper() {
+    return 'public';
+}
+const anotherPrivate = 4;
 const privateConfig = {
     debug: false
 };
+const privateConstant = 2;
 function privateHelper() {
     return 'private';
 }
-const privateConstant = 2;
-const anotherPrivate = 4;

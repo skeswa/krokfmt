@@ -63,12 +63,12 @@ impl CodeGenerator {
         Ok(self.add_import_spacing(with_fixed_comments, module))
     }
 
-    /// Add empty lines between import categories and after the import section.
+    /// Add empty lines between import categories, after imports, and between visibility groups.
     ///
     /// This string-based approach is necessary because SWC's AST doesn't model
-    /// empty lines. We parse the generated code to identify import boundaries
-    /// and inject newlines at category transitions. This creates the visual
-    /// grouping that makes large import sections readable.
+    /// empty lines. We parse the generated code to identify boundaries and inject
+    /// newlines at transitions. This creates visual grouping for both import
+    /// categories and visibility levels.
     fn add_import_spacing(&self, code: String, _module: &Module) -> String {
         let lines: Vec<&str> = code.lines().collect();
         let mut result = Vec::new();

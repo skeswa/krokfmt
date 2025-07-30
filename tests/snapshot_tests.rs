@@ -148,8 +148,18 @@ fn test_fr2_3_hoisting_challenges() {
 }
 
 #[test]
-fn test_fr2_4_intelligent_grouping() {
-    test_fixture("fr2/2_4_intelligent_grouping");
+fn test_fr2_4_visibility_grouping() {
+    test_fixture("fr2/2_4_visibility_grouping");
+}
+
+#[test]
+fn test_fr2_4_visibility_with_dependencies() {
+    test_fixture("fr2/2_4_visibility_with_dependencies");
+}
+
+#[test]
+fn test_fr2_4_visibility_alphabetization() {
+    test_fixture("fr2/2_4_visibility_alphabetization");
 }
 
 #[test]
@@ -163,8 +173,8 @@ fn test_fr2_2_export_prioritization_complex() {
 }
 
 #[test]
-fn test_fr2_4_intelligent_grouping_advanced() {
-    test_fixture("fr2/2_4_intelligent_grouping_advanced");
+fn test_fr2_4_visibility_mixed_declarations() {
+    test_fixture("fr2/2_4_visibility_mixed_declarations");
 }
 
 #[test]

@@ -28,6 +28,13 @@ Tasks are ordered by priority. Always work on tasks from the top of this list fi
 
 ### Medium Priority
 
+1. **Implement visual separation between visibility groups in codegen**
+   - Add empty lines between exported and non-exported groups
+   - Update codegen.rs to detect transitions between visibility levels
+   - Similar to how import category separation is handled
+   - Update snapshot tests to reflect new spacing
+   - Files: `src/codegen.rs`, snapshot tests
+
 2. **Implement and test FR4 requirements (CLI Interface)**
    - FR4.1: Single File Processing - Already implemented
    - FR4.2: Directory Processing - Already implemented
@@ -83,6 +90,15 @@ Tasks are ordered by priority. Always work on tasks from the top of this list fi
 
 ## Completed
 <!-- Move completed tasks here with completion date -->
+
+- ✅ Rework FR2.4 to visibility-based grouping (2025-07-30)
+  - Completely rewrote FR2.2, FR2.3, and FR2.4 requirements
+  - Changed from export prioritization to visibility-based organization
+  - Exported members appear at top, non-exported at bottom
+  - Alphabetical sorting within each visibility group
+  - Dependencies can override visibility ordering when necessary
+  - Created 4 new test fixtures for visibility grouping
+  - Updated all affected snapshot tests
 
 - ✅ Fix comment preservation issues (FR6: NFR2.2) - Fixed indentation (2025-07-30)
   - Added comment_fixer module to fix comment indentation post-generation

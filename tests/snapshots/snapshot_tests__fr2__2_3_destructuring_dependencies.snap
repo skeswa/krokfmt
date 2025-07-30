@@ -4,14 +4,6 @@ expression: output
 ---
 // FR2.3: Destructuring and spread dependencies
 // Object with dependencies
-// Array destructuring
-const values = [
-    1,
-    2,
-    3
-];
-const [first, second] = values;
-export const sum = first + second;
 // Function parameter destructuring
 interface Options {
     timeout: number;
@@ -21,12 +13,8 @@ const defaultOptions: Options = {
     retries: 3,
     timeout: 5000
 };
-export function createClient({ retries, timeout }: Options = defaultOptions) {
-    return {
-        retries,
-        timeout
-    };
-}
+const [first, second] = values;
+const { user: { profile: { name } } } = nested;
 // Nested destructuring
 const nested = {
     user: {
@@ -35,7 +23,19 @@ const nested = {
         }
     }
 };
-const { user: { profile: { name } } } = nested;
+// Array destructuring
+const values = [
+    1,
+    2,
+    3
+];
+export function createClient({ retries, timeout }: Options = defaultOptions) {
+    return {
+        retries,
+        timeout
+    };
+}
+export const sum = first + second;
 export const username = name;
 const extendedConfig = {
     ...baseConfig,

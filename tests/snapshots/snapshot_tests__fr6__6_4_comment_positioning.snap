@@ -22,12 +22,12 @@ export const c = 3; // Final floating comment
 const a = 1; // Trailing on a
 // Floating comment 2
 const b = 2;
+// Gap before bar
+// This belongs to bar
+function bar() {} // Inline with bar
 // Floating comment 3
 // This comment belongs to function foo
 // It has multiple lines
 function foo() {
     // Inside foo
 }
-// Gap before bar
-// This belongs to bar
-function bar() {} // Inline with bar

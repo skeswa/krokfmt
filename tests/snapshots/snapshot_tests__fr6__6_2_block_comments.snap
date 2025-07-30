@@ -15,10 +15,10 @@ expression: output
 Multiple line comment
 without stars
 */ export const y = 100; /* Mixed comment */  // with line comment
-const x = /* inline comment */ 42;
 /* Comment before function */ function foo(/* param comment */ a: number): /* return comment */ number {
     /*
      * Comment inside function
      * with multiple lines
      */ return a * 2;
 }
+const x = /* inline comment */ 42;

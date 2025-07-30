@@ -1,0 +1,90 @@
+// FR2.4: Complex visibility grouping with mixed declaration types
+
+// Internal Error class and utilities
+class InternalError extends Error {
+    constructor(public code: string) {
+        super(`Internal error: ${code}`);
+    }
+}
+
+function isInternalError(error: unknown): error is InternalError {
+    return error instanceof InternalError;
+}
+
+// Exported Error class and utilities  
+export class PublicError extends Error {
+    constructor(public statusCode: number, message: string) {
+        super(message);
+    }
+}
+
+export function isPublicError(error: unknown): error is PublicError {
+    return error instanceof PublicError;
+}
+
+export function createPublicError(statusCode: number, message: string): PublicError {
+    return new PublicError(statusCode, message);
+}
+
+// Internal state management
+interface PrivateState {
+    counter: number;
+    cache: Map<string, unknown>;
+}
+
+const privateInitialState: PrivateState = {
+    counter: 0,
+    cache: new Map()
+};
+
+// Exported state management
+export interface AppState {
+    user: string | null;
+    loading: boolean;
+}
+
+export const initialAppState: AppState = {
+    user: null,
+    loading: false
+};
+
+export type AppAction = 
+    | { type: 'SET_USER'; payload: string }
+    | { type: 'SET_LOADING'; payload: boolean };
+
+export function appReducer(state: AppState, action: AppAction): AppState {
+    switch (action.type) {
+        case 'SET_USER':
+            return { ...state, user: action.payload };
+        case 'SET_LOADING':
+            return { ...state, loading: action.payload };
+    }
+}
+
+// Internal validation utilities
+type InternalValidator<T> = (value: T) => boolean;
+
+const isPositive: InternalValidator<number> = (value) => value > 0;
+const isNonEmpty: InternalValidator<string> = (value) => value.length > 0;
+
+// Exported validation utilities
+export type Validator<T> = (value: unknown) => value is T;
+
+export const isString: Validator<string> = (value): value is string => {
+    return typeof value === 'string';
+};
+
+export const isNumber: Validator<number> = (value): value is number => {
+    return typeof value === 'number';
+};
+
+// Mixed async utilities
+async function fetchInternal(path: string): Promise<unknown> {
+    // Internal implementation
+    return {};
+}
+
+export async function fetchPublic(endpoint: string): Promise<Response> {
+    // Public API
+    return new Response();
+}

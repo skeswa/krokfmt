@@ -1,0 +1,47 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+// FR2.4: Test alphabetization within visibility groups
+// Exports in random order
+export interface Apple {
+    type: string;
+}
+export type Banana = string;
+export class Cat {
+    meow = true;
+}
+export enum Dog {
+    WOOF
+}
+export const ELEPHANT = 'e';
+export class Monkey {
+    name = 'm';
+}
+export function aardvark() {
+    return 'a';
+}
+export function zebra() {
+    return 'z';
+}
+enum Fox {
+    RED
+}
+interface Giraffe {
+    height: number;
+}
+const HIPPO = 'h';
+type Lion = 'king';
+class Rabbit {
+    hop = true;
+}
+class Tiger {
+    roar = true;
+}
+function bear() {
+    return 'b';
+}
+// Non-exports in random order
+function walrus() {
+    return 'w';
+}

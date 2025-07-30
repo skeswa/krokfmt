@@ -1,0 +1,57 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+// FR2.4: Visibility grouping with dependencies - dependencies must be hoisted
+// Internal config used by exported class
+// Internal base class
+class BaseService {
+    protected name = 'base';
+}
+const DATABASE_CONFIG = {
+    host: 'localhost',
+    port: 5432
+};
+// Internal type used by exported interface
+type UserId = string;
+// Another internal helper used by exported function
+function formatOutput(data: string): string {
+    return data.toUpperCase();
+}
+// Internal helper used by exported function
+function validateInput(input: unknown): boolean {
+    return input !== null && input !== undefined;
+}
+// Exported class extending internal base
+export class ApiService extends BaseService {
+    getName() {
+        return this.name;
+    }
+}
+// Exported class that depends on internal config
+export class DatabaseConnection {
+    private config = DATABASE_CONFIG;
+    connect() {
+        return `Connecting to ${this.config.host}:${this.config.port}`;
+    }
+}
+// Exported interface using internal type
+export interface User {
+    id: UserId;
+    name: string;
+}
+// Exported function that depends on internal helpers
+export function processData(input: unknown): string {
+    if (!validateInput(input)) {
+        throw new Error('Invalid input');
+    }
+    return formatOutput(String(input));
+}
+// Standalone export (no dependencies)
+export function standaloneExport() {
+    return 'exported standalone';
+}
+// Standalone internal function (no dependencies)
+function standaloneHelper() {
+    return 'standalone';
+}

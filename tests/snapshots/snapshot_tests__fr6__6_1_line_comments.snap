@@ -16,15 +16,6 @@ import { helper } from './helper';
 // Comment before export
 export const z = 100; // Trailing on export
  // Final comment
-// Comment before const
-const x = 42; // Trailing comment on const
-// Comment before function
-function foo() {
-    // Comment inside function
-    const y = 10; // Trailing in function
-    // Comment before return
-    return y * 2; // Trailing on return
-}
 // Floating comment between functions
 // Comment for bar function
 function bar() {
@@ -32,3 +23,12 @@ function bar() {
     console.log('bar');
     // Last line in bar
 }
+// Comment before function
+function foo() {
+    // Comment inside function
+    const y = 10; // Trailing in function
+    // Comment before return
+    return y * 2; // Trailing on return
+}
+// Comment before const
+const x = 42; // Trailing comment on const

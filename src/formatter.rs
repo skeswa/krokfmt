@@ -460,9 +460,9 @@ impl KrokFormatter {
             .into_iter()
             .partition(|item| matches!(item, ModuleItem::ModuleDecl(ModuleDecl::Import(_))));
 
-        // Step 4: Prioritize exports while preserving dependencies
-        let prioritized_items =
-            self.prioritize_exports(other_items, &export_info, &dependency_graph)?;
+        // Step 4: Organize by visibility with alphabetization
+        let organized_items =
+            self.organize_by_visibility(other_items, &export_info, &dependency_graph)?;
 
         // Step 5: Reconstruct module with organized imports and prioritized declarations
         let mut new_body = Vec::new();
@@ -487,8 +487,8 @@ impl KrokFormatter {
             last_category = Some(import_info.category);
         }
 
-        // Add prioritized items
-        new_body.extend(prioritized_items);
+        // Add organized items
+        new_body.extend(organized_items);
 
         // Add exports at the end
         new_body.extend(exports);
@@ -502,13 +502,14 @@ impl KrokFormatter {
         Ok(module)
     }
 
-    /// Reorder declarations to prioritize exports while preserving dependencies.
+    /// Organize declarations by visibility level with alphabetization.
     ///
-    /// This is the heart of FR2 implementation. We maintain a delicate balance:
-    /// - Exported items should appear before internal ones (better readability)
-    /// - Dependencies must be preserved (correctness)
-    /// - Original order is maintained when there's no specific requirement
-    fn prioritize_exports(
+    /// This implements FR2.4: visibility-based grouping with alphabetization.
+    /// - Exported items appear first (public API)
+    /// - Non-exported items appear last (internal implementation)
+    /// - Within each group, items are sorted alphabetically
+    /// - Dependencies can override visibility ordering when necessary
+    fn organize_by_visibility(
         &self,
         items: Vec<ModuleItem>,
         export_info: &ExportInfo,
@@ -529,7 +530,7 @@ impl KrokFormatter {
             }
         }
 
-        // Separate exported and non-exported names while preserving order
+        // Separate exported and non-exported names
         let mut exported_names = Vec::new();
         let mut non_exported_names = Vec::new();
 
@@ -541,9 +542,24 @@ impl KrokFormatter {
             }
         }
 
-        // Build the final list, respecting dependencies
+        // Sort each group alphabetically
+        exported_names.sort();
+        non_exported_names.sort();
+
+        // Find dependencies that need to be hoisted
+        let mut hoisted_deps = HashSet::new();
         let mut result = Vec::new();
         let mut added = HashSet::new();
+
+        // First pass: identify non-exported dependencies of exported items
+        for exported_name in &exported_names {
+            Self::collect_non_exported_deps(
+                exported_name,
+                dependency_graph,
+                &non_exported_names,
+                &mut hoisted_deps,
+            );
+        }
 
         // Recursive helper to add items with their dependencies in correct order.
         // This implements a modified depth-first traversal that ensures all
@@ -595,34 +611,79 @@ impl KrokFormatter {
             }
         }
 
-        // Add exported items with their dependencies
-        for name in &exported_names {
-            add_with_dependencies(
-                name,
-                &mut name_to_item,
-                dependency_graph,
-                &mut result,
-                &mut added,
-                &ordered_items,
-            );
+        // Second pass: add hoisted dependencies first (maintaining their relative order)
+        let mut hoisted_sorted: Vec<_> = hoisted_deps.iter().cloned().collect();
+        hoisted_sorted.sort();
+
+        for name in hoisted_sorted {
+            if let Some(item) = name_to_item.remove(&name) {
+                result.push(item);
+                added.insert(name);
+            }
         }
 
-        // Add non-exported items with their dependencies
+        // Add a marker for visual separation if we have hoisted deps
+        let _needs_separation = !hoisted_deps.is_empty();
+
+        // Third pass: add exported items (already sorted alphabetically)
+        for name in &exported_names {
+            if !added.contains(name) {
+                add_with_dependencies(
+                    name,
+                    &mut name_to_item,
+                    dependency_graph,
+                    &mut result,
+                    &mut added,
+                    &ordered_items,
+                );
+            }
+        }
+
+        // Add another marker for visual separation between exports and non-exports
+        let _has_exports = !exported_names.is_empty();
+        let _has_non_exports = non_exported_names.iter().any(|n| !hoisted_deps.contains(n));
+
+        // Fourth pass: add non-exported items (already sorted alphabetically)
         for name in &non_exported_names {
-            add_with_dependencies(
-                name,
-                &mut name_to_item,
-                dependency_graph,
-                &mut result,
-                &mut added,
-                &ordered_items,
-            );
+            if !added.contains(name) {
+                add_with_dependencies(
+                    name,
+                    &mut name_to_item,
+                    dependency_graph,
+                    &mut result,
+                    &mut added,
+                    &ordered_items,
+                );
+            }
         }
 
         // Add remaining items (like expression statements)
         result.extend(other_items);
 
         Ok(result)
+    }
+
+    /// Collect all non-exported dependencies of a given item.
+    fn collect_non_exported_deps(
+        item_name: &str,
+        dependency_graph: &DependencyGraph,
+        non_exported_names: &[String],
+        hoisted_deps: &mut HashSet<String>,
+    ) {
+        if let Some(deps) = dependency_graph.dependencies.get(item_name) {
+            for dep in deps {
+                if non_exported_names.contains(dep) && !hoisted_deps.contains(dep) {
+                    hoisted_deps.insert(dep.clone());
+                    // Recursively collect dependencies of this dependency
+                    Self::collect_non_exported_deps(
+                        dep,
+                        dependency_graph,
+                        non_exported_names,
+                        hoisted_deps,
+                    );
+                }
+            }
+        }
     }
 
     fn get_item_name(item: &ModuleItem) -> Option<String> {
@@ -1408,8 +1469,10 @@ type Size = 'xl' | 'sm' | 'lg' | 'md' | 'xs';
 
         let formatted = format_source(source).unwrap();
 
-        // Find the type aliases
-        let mut type_unions = Vec::new();
+        // Find the type aliases by name
+        let mut status_union = None;
+        let mut size_union = None;
+
         for item in &formatted.body {
             if let ModuleItem::Stmt(Stmt::Decl(Decl::TsTypeAlias(ts_type))) = item {
                 if let TsType::TsUnionOrIntersectionType(TsUnionOrIntersectionType::TsUnionType(
@@ -1428,16 +1491,24 @@ type Size = 'xl' | 'sm' | 'lg' | 'md' | 'xs';
                             None
                         })
                         .collect();
-                    type_unions.push(union_members);
+
+                    // Identify by name
+                    match ts_type.id.sym.as_ref() {
+                        "Status" => status_union = Some(union_members),
+                        "Size" => size_union = Some(union_members),
+                        _ => {}
+                    }
                 }
             }
         }
 
-        assert_eq!(type_unions.len(), 2);
         // Status type should be sorted: error, idle, pending, success
-        assert_eq!(type_unions[0], vec!["error", "idle", "pending", "success"]);
+        assert_eq!(
+            status_union.unwrap(),
+            vec!["error", "idle", "pending", "success"]
+        );
         // Size type should be sorted: lg, md, sm, xl, xs
-        assert_eq!(type_unions[1], vec!["lg", "md", "sm", "xl", "xs"]);
+        assert_eq!(size_union.unwrap(), vec!["lg", "md", "sm", "xl", "xs"]);
     }
 
     #[test]
@@ -1517,8 +1588,12 @@ enum Color {
 
         assert_eq!(enums.len(), 2);
 
+        // Find enums by name since they may be reordered
+        let status_enum = enums.iter().find(|e| e.id.sym == "Status").unwrap();
+        let color_enum = enums.iter().find(|e| e.id.sym == "Color").unwrap();
+
         // Check Status enum members are sorted
-        let status_members: Vec<String> = enums[0]
+        let status_members: Vec<String> = status_enum
             .members
             .iter()
             .map(|member| member.id.as_ident().unwrap().sym.to_string())
@@ -1529,7 +1604,7 @@ enum Color {
         );
 
         // Check Color enum members are sorted
-        let color_members: Vec<String> = enums[1]
+        let color_members: Vec<String> = color_enum
             .members
             .iter()
             .map(|member| member.id.as_ident().unwrap().sym.to_string())
@@ -1569,8 +1644,12 @@ enum HttpStatus {
 
         assert_eq!(enums.len(), 2);
 
+        // Find enums by name since they may be reordered
+        let priority_enum = enums.iter().find(|e| e.id.sym == "Priority").unwrap();
+        let http_status_enum = enums.iter().find(|e| e.id.sym == "HttpStatus").unwrap();
+
         // Check Priority enum members are NOT sorted (preserved original order)
-        let priority_members: Vec<String> = enums[0]
+        let priority_members: Vec<String> = priority_enum
             .members
             .iter()
             .map(|member| member.id.as_ident().unwrap().sym.to_string())
@@ -1578,7 +1657,7 @@ enum HttpStatus {
         assert_eq!(priority_members, vec!["Low", "Medium", "High", "Critical"]);
 
         // Check HttpStatus enum members are NOT sorted (preserved original order)
-        let status_members: Vec<String> = enums[1]
+        let status_members: Vec<String> = http_status_enum
             .members
             .iter()
             .map(|member| member.id.as_ident().unwrap().sym.to_string())
@@ -1977,12 +2056,12 @@ export const publicConst = privateConst + 5;
             }
         }
 
-        // Exported items should come before non-exported ones, but dependencies must be preserved
-        // privateFunc must come before publicFunc (dependency)
-        // privateConst must come before publicConst (dependency)
+        // With visibility-based organization:
+        // - Dependencies are hoisted first (privateConst, privateFunc)
+        // - Then exported items alphabetically (publicConst, publicFunc)
         assert_eq!(
             declarations,
-            vec!["privateFunc", "publicFunc", "privateConst", "publicConst"]
+            vec!["privateConst", "privateFunc", "publicConst", "publicFunc"]
         );
     }
 
