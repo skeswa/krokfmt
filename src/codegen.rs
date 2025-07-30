@@ -57,19 +57,21 @@ impl CodeGenerator {
         let generated = String::from_utf8(buf)?;
 
         // Two-phase post-processing is necessary because SWC's emitter doesn't
-        // understand our import grouping requirements. First we fix comments that
-        // may have been misaligned during AST manipulation, then we add spacing.
+        // understand our custom formatting requirements. First we fix comments that
+        // may have been misaligned during AST manipulation, then we add visual spacing.
         let with_fixed_comments = fix_comment_indentation(generated);
-        Ok(self.add_import_spacing(with_fixed_comments, module))
+        Ok(self.add_visual_spacing(with_fixed_comments, module))
     }
 
-    /// Add empty lines between import categories, after imports, and between visibility groups.
+    /// Add visual spacing between logical groups in the formatted code.
     ///
     /// This string-based approach is necessary because SWC's AST doesn't model
     /// empty lines. We parse the generated code to identify boundaries and inject
-    /// newlines at transitions. This creates visual grouping for both import
-    /// categories and visibility levels.
-    fn add_import_spacing(&self, code: String, _module: &Module) -> String {
+    /// newlines at transitions to create visual separation between:
+    /// - Different import categories (external, absolute, relative)
+    /// - Imports and the rest of the code
+    /// - Different visibility groups (exported vs non-exported) [TODO]
+    fn add_visual_spacing(&self, code: String, _module: &Module) -> String {
         let lines: Vec<&str> = code.lines().collect();
         let mut result = Vec::new();
         let mut last_import_category: Option<ImportCategory> = None;
