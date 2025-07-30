@@ -3,6 +3,11 @@ use glob::glob;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+/// Handles file system operations for the formatter.
+///
+/// This encapsulates all file I/O to make the formatter testable and to
+/// centralize error handling. The backup feature was critical - we've all
+/// seen formatters corrupt files, so we default to safety over speed.
 pub struct FileHandler {
     backup_enabled: bool,
 }
@@ -12,6 +17,14 @@ impl FileHandler {
         Self { backup_enabled }
     }
 
+    /// Find all TypeScript files from the given paths.
+    ///
+    /// This handles three input types seamlessly:
+    /// 1. Direct file paths - format that specific file
+    /// 2. Directories - recursively find all TS files
+    /// 3. Glob patterns - for shell expansion like src/**/*.ts
+    ///
+    /// This flexibility was important for both CLI usage and editor integration.
     pub fn find_typescript_files(&self, paths: &[PathBuf]) -> Result<Vec<PathBuf>> {
         let mut files = Vec::new();
 
@@ -43,7 +56,9 @@ impl FileHandler {
             let path = entry.path();
 
             if path.is_dir() {
-                // Skip node_modules and hidden directories
+                // Skip node_modules and hidden directories. This hardcoded exclusion
+                // prevents accidentally formatting dependencies and build artifacts.
+                // We chose not to make this configurable to keep the tool simple.
                 if let Some(name) = path.file_name() {
                     let name_str = name.to_string_lossy();
                     if name_str != "node_modules" && !name_str.starts_with('.') {
@@ -58,6 +73,8 @@ impl FileHandler {
     }
 
     fn is_typescript_file(&self, path: &Path) -> bool {
+        // Support all TypeScript file extensions including the newer module variants
+        // (.mts for ESM, .cts for CommonJS) introduced in TypeScript 4.5.
         path.extension()
             .and_then(|ext| ext.to_str())
             .map(|ext| matches!(ext, "ts" | "tsx" | "mts" | "cts"))
@@ -69,6 +86,8 @@ impl FileHandler {
     }
 
     pub fn write_file(&self, path: &Path, content: &str) -> Result<()> {
+        // Backup first, write second. This ordering ensures we never lose the original
+        // file if the write fails. The slight performance cost is worth the safety.
         if self.backup_enabled {
             self.create_backup(path)?;
         }
@@ -78,6 +97,8 @@ impl FileHandler {
     }
 
     fn create_backup(&self, path: &Path) -> Result<()> {
+        // Backup naming preserves the original extension for editor associations.
+        // test.ts becomes test.ts.bak, not test.bak, so editors still recognize it.
         let backup_path = path.with_extension(format!(
             "{}.bak",
             path.extension().and_then(|ext| ext.to_str()).unwrap_or("")

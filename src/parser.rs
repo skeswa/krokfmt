@@ -3,6 +3,11 @@ use swc_common::{comments::SingleThreadedComments, sync::Lrc, FileName, SourceMa
 use swc_ecma_ast::Module;
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
 
+/// Wrapper around SWC's TypeScript parser with our specific configuration.
+///
+/// We store source_map and comments as public fields because the formatter pipeline
+/// needs to pass them through to the code generator. This preserves comment positioning
+/// and source locations across the entire transformation.
 pub struct TypeScriptParser {
     pub source_map: Lrc<SourceMap>,
     pub comments: SingleThreadedComments,
@@ -27,13 +32,17 @@ impl TypeScriptParser {
             .source_map
             .new_source_file(FileName::Custom(filename.to_string()), source.to_string());
 
+        // TSX detection is file extension based - we chose this over content sniffing
+        // to avoid ambiguity and match common tooling behavior (webpack, tsc, etc).
         let syntax = Syntax::Typescript(TsConfig {
             tsx: filename.ends_with(".tsx"),
-            decorators: true,
-            no_early_errors: true,
+            decorators: true,      // Always enabled since Angular/NestJS are popular
+            no_early_errors: true, // We want to format even partially invalid code
             ..Default::default()
         });
 
+        // The lexer needs comment tracking enabled to preserve them through formatting.
+        // Without this, all comments would be stripped from the output.
         let lexer = Lexer::new(
             syntax,
             Default::default(),

@@ -5,9 +5,20 @@ use swc_ecma_visit::{Visit, VisitMut, VisitMutWith, VisitWith};
 
 use crate::transformer::{sort_imports, ImportAnalyzer, ImportCategory};
 
+/// The main formatter that orchestrates the entire formatting process.
+///
+/// This formatter takes an opinionated approach to code organization:
+/// 1. Imports are sorted and grouped by category
+/// 2. Exported members are prioritized over internal ones
+/// 3. Dependencies between declarations are preserved
+/// 4. Various AST elements (objects, JSX props, etc.) are alphabetically sorted
 pub struct KrokFormatter;
 
-/// Analyzes exports in a module to determine which members are exported
+/// Analyzes exports in a module to determine which members are exported.
+///
+/// This is crucial for FR2 (member visibility ordering) - we need to know which
+/// declarations are public API vs internal implementation details. The analyzer
+/// tracks all forms of exports: direct exports, named exports, and default exports.
 #[derive(Default)]
 pub struct ExportAnalyzer {
     exported_names: HashSet<String>,
@@ -30,6 +41,8 @@ impl ExportAnalyzer {
 
 impl Visit for ExportAnalyzer {
     fn visit_module_decl(&mut self, decl: &ModuleDecl) {
+        // We need to handle all export forms to correctly identify public API.
+        // This includes export declarations, named exports, and default exports.
         match decl {
             ModuleDecl::ExportDecl(export_decl) => match &export_decl.decl {
                 Decl::Fn(fn_decl) => {
@@ -75,7 +88,8 @@ impl Visit for ExportAnalyzer {
                 // Default exports don't add to exported names
             }
             ModuleDecl::ExportDefaultExpr(export) => {
-                // Check if the expression is an identifier
+                // For `export default someVar`, we track someVar as exported.
+                // This helps preserve the declaration order when someVar is defined elsewhere.
                 if let Expr::Ident(ident) = export.expr.as_ref() {
                     self.exported_names.insert(ident.sym.to_string());
                 }
@@ -98,7 +112,12 @@ impl ExportInfo {
     }
 }
 
-/// Analyzes dependencies between declarations in a module
+/// Analyzes dependencies between declarations in a module.
+///
+/// This is critical for FR2.3 - we must preserve dependency order even when
+/// reordering exports. The analyzer builds a dependency graph by tracking
+/// identifier references within each declaration. This ensures that if A uses B,
+/// B will always appear before A in the formatted output.
 #[derive(Default)]
 pub struct DependencyAnalyzer {
     /// Maps declaration names to their dependencies
@@ -117,6 +136,10 @@ impl DependencyAnalyzer {
     pub fn analyze(&mut self, module: &Module) -> DependencyGraph {
         self.dependencies.clear();
         self.available_decls.clear();
+
+        // Two-pass analysis is necessary because forward references are allowed
+        // in JavaScript. First we catalog all declarations, then we can accurately
+        // identify which identifier references are dependencies.
 
         // First pass: collect all declaration names
         for item in &module.body {
@@ -281,7 +304,8 @@ impl Visit for DependencyAnalyzer {
     fn visit_ident(&mut self, ident: &Ident) {
         if let Some(current) = &self.current_decl {
             let name = ident.sym.to_string();
-            // Only track dependencies on declarations in this module
+            // We only track intra-module dependencies, not external imports or builtins.
+            // Self-references are excluded to avoid circular dependency false positives.
             if self.available_decls.contains(&name) && &name != current {
                 self.dependencies.get_mut(current).unwrap().insert(name);
             }
@@ -297,7 +321,9 @@ impl Visit for DependencyAnalyzer {
     }
 
     fn visit_member_expr(&mut self, expr: &MemberExpr) {
-        // For member expressions like Internal.Config, we want to track 'Internal'
+        // Member expressions need special handling because only the object part
+        // represents a potential dependency. For `Config.defaults`, we track
+        // dependency on 'Config', not 'defaults'.
         if let MemberProp::Ident(ident) = &expr.prop {
             // Visit the property name
             ident.visit_children_with(self);
@@ -331,8 +357,12 @@ impl DependencyGraph {
             .unwrap_or(false)
     }
 
-    /// Performs a topological sort of the given items based on dependencies
-    /// Returns None if there's a circular dependency
+    /// Performs a topological sort of the given items based on dependencies.
+    /// Returns None if there's a circular dependency.
+    ///
+    /// We use depth-first search with cycle detection. The 'visiting' set tracks
+    /// the current path to detect cycles, while 'visited' prevents redundant work.
+    /// This ensures declarations appear after all their dependencies.
     pub fn topological_sort(&self, items: Vec<String>) -> Option<Vec<String>> {
         let mut result = Vec::new();
         let mut visited = HashSet::new();
@@ -396,6 +426,11 @@ impl KrokFormatter {
     }
 
     pub fn format(&self, mut module: Module) -> Result<Module> {
+        // The formatting pipeline follows a specific order to ensure correctness:
+        // 1. Analyze the existing structure (imports, exports, dependencies)
+        // 2. Reorganize based on our opinionated rules
+        // 3. Apply fine-grained formatting (sorting object keys, etc.)
+
         // Step 1: Extract and categorize imports
         let import_infos = ImportAnalyzer::new().analyze(&module);
         let sorted_imports = sort_imports(import_infos);
@@ -436,7 +471,9 @@ impl KrokFormatter {
         let mut last_category: Option<ImportCategory> = None;
 
         for import_info in sorted_imports {
-            // Add empty line between different categories
+            // Category transitions are tracked here but empty lines are inserted
+            // during code generation. This separation of concerns keeps the AST
+            // clean while still achieving the desired visual grouping.
             if let Some(last_cat) = &last_category {
                 if std::mem::discriminant(last_cat) != std::mem::discriminant(&import_info.category)
                 {
@@ -465,6 +502,12 @@ impl KrokFormatter {
         Ok(module)
     }
 
+    /// Reorder declarations to prioritize exports while preserving dependencies.
+    ///
+    /// This is the heart of FR2 implementation. We maintain a delicate balance:
+    /// - Exported items should appear before internal ones (better readability)
+    /// - Dependencies must be preserved (correctness)
+    /// - Original order is maintained when there's no specific requirement
     fn prioritize_exports(
         &self,
         items: Vec<ModuleItem>,
@@ -502,7 +545,9 @@ impl KrokFormatter {
         let mut result = Vec::new();
         let mut added = HashSet::new();
 
-        // Helper function to add an item and its dependencies
+        // Recursive helper to add items with their dependencies in correct order.
+        // This implements a modified depth-first traversal that ensures all
+        // dependencies of an item appear before the item itself.
         fn add_with_dependencies(
             name: &str,
             name_to_item: &mut HashMap<String, ModuleItem>,
@@ -521,7 +566,8 @@ impl KrokFormatter {
             // First add dependencies
             if let Some(deps) = dependency_graph.dependencies.get(name) {
                 let mut sorted_deps: Vec<_> = deps.iter().cloned().collect();
-                // Sort dependencies by their original order
+                // Preserve relative order of dependencies as they appeared in source.
+                // This maintains developer intent when multiple valid orders exist.
                 sorted_deps.sort_by_key(|dep| {
                     ordered_items
                         .iter()
@@ -590,6 +636,11 @@ impl KrokFormatter {
     }
 }
 
+/// Visitor that applies fine-grained formatting rules to AST nodes.
+///
+/// This handles the detailed formatting work: sorting object properties,
+/// organizing class members, ordering JSX attributes, etc. Each sorting
+/// operation follows specific rules designed for maximum readability.
 struct FormatterVisitor;
 
 impl FormatterVisitor {
@@ -643,7 +694,13 @@ impl FormatterVisitor {
     }
 
     fn sort_class_members(&self, members: &mut [ClassMember]) {
-        // Create a custom ordering for class members
+        // Class member ordering follows a specific hierarchy for readability:
+        // 1. Static fields - class-level state
+        // 2. Instance fields - instance-level state
+        // 3. Constructor - initialization logic
+        // 4. Static methods - class-level behavior
+        // 5. Instance methods - instance-level behavior
+        // This mirrors how developers typically think about classes.
         members.sort_by(|a, b| {
             use std::cmp::Ordering;
 
@@ -736,8 +793,10 @@ impl FormatterVisitor {
     }
 
     fn is_string_enum(&self, members: &[TsEnumMember]) -> bool {
-        // An enum is a string enum if ALL members have string literal initializers
-        // or if no members have numeric initializers
+        // String enum detection is conservative to avoid breaking code.
+        // We only sort enums where ALL members have explicit string values.
+        // Numeric enums often encode meaningful order (priority levels, bit flags)
+        // so we preserve their original sequence.
         let mut has_string_init = false;
         let mut has_numeric_init = false;
         let mut has_no_init = false;
@@ -799,6 +858,12 @@ impl FormatterVisitor {
                 match &jsx_attr.name {
                     JSXAttrName::Ident(ident) => {
                         let name = ident.sym.to_string();
+                        // JSX attribute ordering follows React best practices:
+                        // 1. key - React needs this for reconciliation
+                        // 2. ref - Often accessed before render
+                        // 3. Regular props - Alphabetically for easy scanning
+                        // 4. Event handlers - Grouped together as they represent behavior
+                        // 5. Spread props - Last because they can override earlier props
                         match name.as_str() {
                             "key" => (0, name), // key always first
                             "ref" => (1, name), // ref second

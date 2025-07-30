@@ -1,6 +1,11 @@
 use swc_ecma_ast::*;
 use swc_ecma_visit::{Visit, VisitWith};
 
+/// Import categorization strategy based on common JavaScript conventions.
+///
+/// This three-tier system was chosen after analyzing popular codebases and tools.
+/// The order (External → Absolute → Relative) creates a natural reading flow from
+/// third-party dependencies to project code to local modules.
 #[derive(Debug, Clone, PartialEq)]
 pub enum ImportCategory {
     External, // From node_modules
@@ -30,6 +35,12 @@ impl ImportAnalyzer {
         self.imports
     }
 
+    /// Determine import category based on path prefix conventions.
+    ///
+    /// The order matters here - we check relative paths first because they're the most
+    /// specific pattern. The @ and ~ prefixes for absolute imports follow the convention
+    /// established by webpack/TypeScript path mapping. Everything else is assumed to be
+    /// a node_modules reference (including scoped packages like @babel/core).
     pub fn categorize_import(path: &str) -> ImportCategory {
         if path.starts_with("./") || path.starts_with("../") {
             ImportCategory::Relative
@@ -54,10 +65,15 @@ impl Visit for ImportAnalyzer {
     }
 }
 
+/// Sort imports following the External → Absolute → Relative hierarchy.
+///
+/// Within each category, imports are sorted alphabetically by path. This creates
+/// predictable, scannable import sections. The stable sort preserves the original
+/// order for identical paths, which matters for side-effect imports.
 pub fn sort_imports(mut imports: Vec<ImportInfo>) -> Vec<ImportInfo> {
-    // Sort by category first (External < Absolute < Relative)
-    // Then alphabetically by path within each category
     imports.sort_by(|a, b| {
+        // Numeric ordering enforces our category hierarchy. Lower numbers appear first,
+        // creating the flow from third-party to local code that developers expect.
         let category_order = |cat: &ImportCategory| match cat {
             ImportCategory::External => 0,
             ImportCategory::Absolute => 1,

@@ -6,6 +6,12 @@ use swc_ecma_codegen::{text_writer::JsWriter, Config, Emitter};
 use crate::comment_fixer::fix_comment_indentation;
 use crate::transformer::{ImportAnalyzer, ImportCategory};
 
+/// Generates formatted TypeScript/JavaScript code from the AST.
+///
+/// This is a wrapper around SWC's code generator with custom post-processing.
+/// We handle two critical tasks that the standard emitter doesn't:
+/// 1. Adding empty lines between import categories for visual grouping
+/// 2. Fixing comment indentation to match the reformatted code structure
 pub struct CodeGenerator {
     source_map: Lrc<SourceMap>,
     comments: Option<SingleThreadedComments>,
@@ -50,11 +56,19 @@ impl CodeGenerator {
 
         let generated = String::from_utf8(buf)?;
 
-        // Post-process to fix comment indentation and add import spacing
+        // Two-phase post-processing is necessary because SWC's emitter doesn't
+        // understand our import grouping requirements. First we fix comments that
+        // may have been misaligned during AST manipulation, then we add spacing.
         let with_fixed_comments = fix_comment_indentation(generated);
         Ok(self.add_import_spacing(with_fixed_comments, module))
     }
 
+    /// Add empty lines between import categories and after the import section.
+    ///
+    /// This string-based approach is necessary because SWC's AST doesn't model
+    /// empty lines. We parse the generated code to identify import boundaries
+    /// and inject newlines at category transitions. This creates the visual
+    /// grouping that makes large import sections readable.
     fn add_import_spacing(&self, code: String, _module: &Module) -> String {
         let lines: Vec<&str> = code.lines().collect();
         let mut result = Vec::new();
@@ -110,7 +124,8 @@ impl CodeGenerator {
 
                 last_was_import = true;
             } else {
-                // First non-import after imports - add empty line
+                // First non-import after imports needs separation for visual clarity.
+                // We skip if the line is already empty to avoid double spacing.
                 if last_was_import && !first_non_import_found && !line.trim().is_empty() {
                     result.push("");
                     first_non_import_found = true;

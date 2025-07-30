@@ -99,6 +99,46 @@ The formatter follows a pipeline architecture:
 - **AST-based**: Manipulates the AST directly rather than string manipulation
 - **Import Categories**: External (node_modules), Absolute (@/~), Relative (./)
 
+## Code Comment Style Guidelines
+
+This codebase emphasizes high-quality comments that focus on **intent and context** rather than mere description. When adding comments:
+
+### What Makes a Good Comment
+
+1. **Explain the "why", not the "what"**: Code shows what is happening; comments should explain why decisions were made
+2. **Provide historical context**: Mention design decisions, alternatives considered, or lessons learned
+3. **Clarify non-obvious implications**: Explain side effects, performance considerations, or subtle interactions
+4. **Document assumptions and constraints**: Make implicit knowledge explicit
+
+### Examples of Good Comments
+
+```rust
+// Two-pass analysis is necessary because forward references are allowed
+// in JavaScript. First we catalog all declarations, then we can accurately
+// identify which identifier references are dependencies.
+
+// Backup first, write second. This ordering ensures we never lose the original
+// file if the write fails. The slight performance cost is worth the safety.
+
+// We only track intra-module dependencies, not external imports or builtins.
+// Self-references are excluded to avoid circular dependency false positives.
+```
+
+### What to Avoid
+
+- Obvious comments that restate the code
+- Comments that describe what a well-named function/variable already explains
+- Outdated comments that no longer match the implementation
+- TODO comments without context or ownership
+
+### Where to Add Comments
+
+- **Module/struct level**: Document the overall purpose and design philosophy
+- **Complex algorithms**: Explain the approach and why it was chosen
+- **Public APIs**: Document contracts, edge cases, and usage patterns
+- **Non-obvious code**: Any code where the intent isn't immediately clear
+- **Configuration/constants**: Explain why specific values were chosen
+
 ### Module Interactions
 
 ```

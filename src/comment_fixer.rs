@@ -69,7 +69,7 @@ function bar() {} // another inline"#;
 
     #[test]
     fn test_nested_indentation() {
-        let input = r#"class Foo {
+        let _input = r#"class Foo {
     method() {
 // Should be double indented
         return true;
