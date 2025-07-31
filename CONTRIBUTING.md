@@ -38,7 +38,7 @@ By participating in this project, you agree to abide by our code of conduct: be 
 
 ## Development Setup
 
-1. Install Rust (1.70.0 or later)
+1. Install Rust (1.82.0 or later)
 2. Clone the repository
 3. Run `cargo build` to build the project
 4. Run `cargo test` to run tests
