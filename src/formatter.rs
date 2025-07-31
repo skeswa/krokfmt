@@ -459,11 +459,9 @@ impl Visit for DependencyAnalyzer {
         if let Some(ident) = expr.obj.as_ident() {
             if let Some(current) = &self.current_decl {
                 let name = ident.sym.to_string();
-                if self.decl_types.get(&name).is_some() {
-                    if &name != current {
-                        // Member access always requires runtime value
-                        self.dependencies.get_mut(current).unwrap().insert(name);
-                    }
+                if self.decl_types.contains_key(&name) && &name != current {
+                    // Member access always requires runtime value
+                    self.dependencies.get_mut(current).unwrap().insert(name);
                 }
             }
         }
