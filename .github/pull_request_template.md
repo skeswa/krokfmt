@@ -29,5 +29,5 @@ Please delete options that are not relevant.
 Please describe the tests that you ran to verify your changes. Provide instructions so we can reproduce. Please also list any relevant details for your test configuration.
 
 - [ ] `cargo test` passes
-- [ ] `cargo clippy` shows no warnings
+- [ ] `cargo clippy --all-targets --all-features -- -D warnings` shows no warnings
 - [ ] `cargo fmt` was run

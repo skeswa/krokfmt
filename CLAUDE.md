@@ -45,7 +45,7 @@ cargo build
 cargo build --release
 
 # Run linter
-cargo clippy
+cargo clippy --all-targets --all-features -- -D warnings
 
 # Format Rust code
 cargo fmt
@@ -68,7 +68,7 @@ cargo bench -- --baseline main
 **After EVERY code change, you MUST run the following commands in order:**
 
 1. `cargo fmt` - Format the code according to Rust standards
-2. `cargo clippy` - Check for common mistakes and improve code quality
+2. `cargo clippy --all-targets --all-features -- -D warnings` - Check for common mistakes and improve code quality
 3. `cargo test` - Ensure all tests pass
 
 This is non-negotiable. These commands must be run after:
@@ -79,7 +79,7 @@ This is non-negotiable. These commands must be run after:
 
 If any of these commands fail:
 - `cargo fmt` - The changes will be applied automatically, commit them
-- `cargo clippy` - Fix all warnings before proceeding
+- `cargo clippy --all-targets --all-features -- -D warnings` - Fix all warnings before proceeding
 - `cargo test` - Fix failing tests before moving on
 
 ## Architecture Overview

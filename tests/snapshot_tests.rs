@@ -18,9 +18,9 @@ fn format_code(input: &str) -> String {
 }
 
 fn test_fixture(fixture_path: &str) {
-    let input_path = format!("tests/fixtures/{}.input.ts", fixture_path);
+    let input_path = format!("tests/fixtures/{fixture_path}.input.ts");
     let input = fs::read_to_string(&input_path)
-        .unwrap_or_else(|_| panic!("Failed to read fixture: {}", input_path));
+        .unwrap_or_else(|_| panic!("Failed to read fixture: {input_path}"));
 
     let output = format_code(&input);
 

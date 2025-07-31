@@ -32,7 +32,7 @@ By participating in this project, you agree to abide by our code of conduct: be 
 4. Add tests for your changes
 5. Ensure all tests pass: `cargo test`
 6. Run formatting: `cargo fmt`
-7. Run linting: `cargo clippy`
+7. Run linting: `cargo clippy --all-targets --all-features -- -D warnings`
 8. Commit your changes with clear, descriptive messages
 9. Push to your fork and create a pull request
 
@@ -71,7 +71,7 @@ cargo test --release
 
 - Follow Rust naming conventions
 - Use `cargo fmt` before committing
-- Fix all `cargo clippy` warnings
+- Fix all `cargo clippy --all-targets --all-features -- -D warnings` warnings
 - Add documentation comments for public APIs
 - Keep functions small and focused
 

@@ -19,7 +19,7 @@ fn format_code(input: &str) -> String {
 
 fn load_fixture(fixture_path: &str) -> String {
     let path = Path::new("tests/fixtures").join(fixture_path);
-    fs::read_to_string(&path).expect(&format!("Failed to read fixture: {:?}", path))
+    fs::read_to_string(&path).unwrap_or_else(|_| panic!("Failed to read fixture: {path:?}"))
 }
 
 fn bench_real_fixtures(c: &mut Criterion) {

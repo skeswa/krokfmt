@@ -168,8 +168,7 @@ fn bench_large_file(c: &mut Criterion) {
     let mut imports = String::new();
     for i in 0..50 {
         imports.push_str(&format!(
-            "import {{ Module{} }} from '@modules/module{}';\n",
-            i, i
+            "import {{ Module{i} }} from '@modules/module{i}';\n"
         ));
     }
 
@@ -177,9 +176,9 @@ fn bench_large_file(c: &mut Criterion) {
     for i in 0..20 {
         classes.push_str(&format!(
             r#"
-export class Component{} {{
+export class Component{i} {{
     property1: string = 'value';
-    property2: number = {};
+    property2: number = {i};
     property3: boolean = true;
     
     method1() {{
@@ -194,12 +193,11 @@ export class Component{} {{
         return prop1 + prop2 + prop3;
     }}
 }}
-"#,
-            i, i
+"#
         ));
     }
 
-    let input = format!("{}\n{}", imports, classes);
+    let input = format!("{imports}\n{classes}");
 
     c.bench_function("format_large_file", |b| {
         b.iter(|| format_code(black_box(&input)))
