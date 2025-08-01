@@ -270,3 +270,8 @@ fn test_fr6_5_comment_association() {
 fn test_fr6_6_special_comments() {
     test_fixture("fr6/6_6_special_comments");
 }
+
+#[test]
+fn test_fr6_7_standalone_comments() {
+    test_fixture("fr6/6_7_standalone_comments");
+}

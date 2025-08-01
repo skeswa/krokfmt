@@ -630,6 +630,25 @@ function c() {}
 - File-level directives stay at appropriate file position
 - Region markers maintain their pairing
 
+#### FR6.7: Standalone Comment Preservation
+
+**Description**: The system shall preserve the position of standalone comments within their local context, particularly when those comments provide section headers or contextual information.
+
+**Scope**:
+
+1. **Within Classes** - Standalone comments at the beginning of a class body remain at the top after member reordering
+2. **Within Functions** - Section comments maintain their position relative to the code blocks they describe
+3. **Module Level** - Due to visibility-based organization (FR2.4), top-level declarations may be reordered, which can affect section organization
+
+**Rules**:
+
+- Comments separated from code by blank lines are considered standalone
+- Within classes/functions, standalone comments maintain their relative position
+- Comments directly preceding code (no blank line) are attached to that code and move with it
+- Class-level descriptive comments stay at the top of the class body
+
+**Note**: At the module level, the formatter prioritizes visibility-based organization (exported members first, non-exported second) which may reorder declarations and their associated comments. This is by design to maintain a consistent public API surface at the top of modules.
+
 ## Non-Functional Requirements
 
 ### NFR1: Performance

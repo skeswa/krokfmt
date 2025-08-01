@@ -91,6 +91,14 @@ Tasks are ordered by priority. Always work on tasks from the top of this list fi
 ## Completed
 <!-- Move completed tasks here with completion date -->
 
+- ✅ Fix FR6 comment handling for class/function-level comments (2025-08-01)
+  - Added FR6.7 requirement for class/function-level comment positioning
+  - Implemented post-processing fix in comment_fixer.rs to detect and relocate misplaced class-level comments
+  - Created comprehensive test fixtures covering various scenarios
+  - Updated 5 existing snapshots to reflect improved comment positioning
+  - Used heuristics to differentiate between class-level and member-specific comments
+  - All tests now passing with proper comment placement
+
 - ✅ Rework FR2.4 to visibility-based grouping (2025-07-30)
   - Completely rewrote FR2.2, FR2.3, and FR2.4 requirements
   - Changed from export prioritization to visibility-based organization
