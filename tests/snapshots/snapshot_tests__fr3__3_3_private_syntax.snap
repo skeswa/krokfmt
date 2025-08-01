@@ -1,0 +1,55 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+// FR3.3: Test private field syntax with # prefix
+class PrivateFieldsClass {
+    // Public static fields
+    static staticBanana = 'static public banana';
+    static staticCherry = 'static public cherry';
+    static #staticApple = 100;
+    // Private static fields
+    static #staticZebra = 'static private zebra';
+    static staticAlphaMethod() {
+        return this.staticCherry;
+    }
+    // Public static methods
+    static staticBetaMethod() {
+        return this.staticBanana;
+    }
+    static #staticAlphaMethod() {
+        return this.#staticApple;
+    }
+    // Private static methods
+    static #staticZeroMethod() {
+        return this.#staticZebra;
+    }
+    // Public fields
+    public cherry = 'public cherry';
+    durian = 'durian';
+    elderberry: string;
+    #apple = 42;
+    #banana = {
+        type: 'fruit'
+    };
+    // Mix of private and public members to test proper categorization
+    // Private fields with initializers
+    #zebra = 'private zebra';
+    constructor(){
+        this.elderberry = 'initialized';
+    }
+    alphaMethod() {
+        return this.durian;
+    }
+    // Public methods
+    betaMethod() {
+        return this.#banana;
+    }
+    #alphaMethod() {
+        return this.#apple;
+    }
+    // Private methods
+    #zeroMethod() {
+        return this.#zebra;
+    }
+}

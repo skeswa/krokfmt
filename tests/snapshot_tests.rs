@@ -205,6 +205,26 @@ fn test_fr3_3_class_members() {
 }
 
 #[test]
+fn test_fr3_3_visibility_groups() {
+    test_fixture("fr3/3_3_visibility_groups");
+}
+
+#[test]
+fn test_fr3_3_private_syntax() {
+    test_fixture("fr3/3_3_private_syntax");
+}
+
+#[test]
+fn test_fr3_3_mixed_visibility() {
+    test_fixture("fr3/3_3_mixed_visibility");
+}
+
+#[test]
+fn test_fr3_3_typescript_private() {
+    test_fixture("fr3/3_3_typescript_private");
+}
+
+#[test]
 fn test_fr3_4_type_members() {
     test_fixture("fr3/3_4_type_members");
 }

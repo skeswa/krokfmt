@@ -1,30 +1,50 @@
-// FR3.3: Class members should be sorted within their groups
+// FR3.3: Class members should be sorted within visibility groups
 
 class MyClass {
-    // Instance fields out of order
-    zebra: string;
-    apple: number;
-    banana: boolean;
-    
-    // Static fields out of order
+    // Public static fields (should be first, alphabetically)
     static zoo = 'zoo';
     static bar = 'bar';
     static foo = 'foo';
     
-    // Constructor should remain in place
+    // Private static fields (should be second, alphabetically)
+    static #privateZoo = 'pzoo';
+    static #privateBar = 'pbar';
+    static #privateFoo = 'pfoo';
+    
+    // Public instance fields (should be fifth, alphabetically)
+    zebra: string;
+    apple: number;
+    banana: boolean;
+    
+    // Private instance fields (should be sixth, alphabetically)
+    #privateZebra = 'pz';
+    #privateApple = 1;
+    #privateBanana = true;
+    
+    // Constructor should be seventh
     constructor() {
         this.apple = 1;
         this.banana = true;
         this.zebra = 'z';
     }
     
-    // Instance methods out of order
+    // Public static methods (should be third, alphabetically)
+    static zStatic() { return 'z'; }
+    static aStatic() { return 'a'; }
+    static bStatic() { return 'b'; }
+    
+    // Private static methods (should be fourth, alphabetically)
+    static #privateZStatic() { return 'pz'; }
+    static #privateAStatic() { return 'pa'; }
+    static #privateBStatic() { return 'pb'; }
+    
+    // Public instance methods (should be eighth, alphabetically)
     zMethod() { return this.zebra; }
     aMethod() { return this.apple; }
     bMethod() { return this.banana; }
     
-    // Static methods out of order
-    static zStatic() { return 'z'; }
-    static aStatic() { return 'a'; }
-    static bStatic() { return 'b'; }
+    // Private instance methods (should be ninth, alphabetically)
+    #privateZMethod() { return this.#privateZebra; }
+    #privateAMethod() { return this.#privateApple; }
+    #privateBMethod() { return this.#privateBanana; }
 }

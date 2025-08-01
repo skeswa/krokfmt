@@ -886,13 +886,20 @@ impl FormatterVisitor {
     }
 
     fn sort_class_members(&self, members: &mut [ClassMember]) {
-        // Class member ordering follows a specific hierarchy for readability:
-        // 1. Static fields - class-level state
-        // 2. Instance fields - instance-level state
-        // 3. Constructor - initialization logic
-        // 4. Static methods - class-level behavior
-        // 5. Instance methods - instance-level behavior
-        // This mirrors how developers typically think about classes.
+        // Class member ordering follows a visibility-based hierarchy for clarity:
+        // 1. Public static fields (alphabetically) - public class-level state
+        // 2. Private static fields (alphabetically) - private class-level state
+        // 3. Public static methods (alphabetically) - public class-level behavior
+        // 4. Private static methods (alphabetically) - private class-level behavior
+        // 5. Public instance fields (alphabetically) - public instance state
+        // 6. Private instance fields (alphabetically) - private instance state
+        // 7. Constructor - initialization logic (always singular)
+        // 8. Public instance methods (alphabetically) - public instance behavior
+        // 9. Private instance methods (alphabetically) - private instance behavior
+        //
+        // This organization clearly separates public API from private implementation
+        // while maintaining logical grouping of related members. Private members use
+        // the # syntax for true runtime privacy.
         members.sort_by(|a, b| {
             use std::cmp::Ordering;
 
@@ -914,33 +921,55 @@ impl FormatterVisitor {
     fn categorize_class_member(&self, member: &ClassMember) -> (u8, String) {
         match member {
             ClassMember::ClassProp(prop) => {
-                let key = prop
-                    .key
-                    .as_ident()
-                    .map(|ident| ident.sym.to_string())
-                    .unwrap_or_default();
-                if prop.is_static {
-                    (0, key) // Static fields first
-                } else {
-                    (1, key) // Instance fields second
+                let (is_private, key) = self.get_prop_key_and_visibility(&prop.key);
+
+                match (prop.is_static, is_private) {
+                    (true, false) => (0, key),  // Public static fields
+                    (true, true) => (1, key),   // Private static fields
+                    (false, false) => (4, key), // Public instance fields
+                    (false, true) => (5, key),  // Private instance fields
                 }
             }
             ClassMember::Constructor(_) => {
-                (2, "constructor".to_string()) // Constructor third
+                (6, "constructor".to_string()) // Constructor is 7th
             }
             ClassMember::Method(method) => {
-                let key = method
-                    .key
-                    .as_ident()
-                    .map(|ident| ident.sym.to_string())
-                    .unwrap_or_default();
-                if method.is_static {
-                    (3, key) // Static methods fourth
+                let (is_private, key) = self.get_prop_key_and_visibility(&method.key);
+
+                match (method.is_static, is_private) {
+                    (true, false) => (2, key),  // Public static methods
+                    (true, true) => (3, key),   // Private static methods
+                    (false, false) => (7, key), // Public instance methods
+                    (false, true) => (8, key),  // Private instance methods
+                }
+            }
+            ClassMember::PrivateProp(prop) => {
+                let key = prop.key.id.sym.to_string();
+                if prop.is_static {
+                    (1, key) // Private static fields
                 } else {
-                    (4, key) // Instance methods last
+                    (5, key) // Private instance fields
+                }
+            }
+            ClassMember::PrivateMethod(method) => {
+                let key = method.key.id.sym.to_string();
+                if method.is_static {
+                    (3, key) // Private static methods
+                } else {
+                    (8, key) // Private instance methods
                 }
             }
             _ => (99, String::new()), // Other members at the end
+        }
+    }
+
+    fn get_prop_key_and_visibility(&self, prop_name: &PropName) -> (bool, String) {
+        match prop_name {
+            PropName::Ident(ident) => (false, ident.sym.to_string()),
+            PropName::Str(s) => (false, s.value.to_string()),
+            PropName::Num(n) => (false, n.value.to_string()),
+            PropName::BigInt(b) => (false, b.value.to_string()),
+            PropName::Computed(_) => (false, String::new()),
         }
     }
 
@@ -1573,19 +1602,19 @@ class Config {
             .collect();
 
         // Order should be:
-        // 1. Static fields (sorted): apple, zebra
-        // 2. Instance fields (sorted): instanceApple, instanceZebra
-        // 3. Static methods (sorted): getApple, getZebra
-        // 4. Instance methods: getInstanceData
+        // 1. Public static fields (sorted): apple, zebra
+        // 2. Public static methods (sorted): getApple, getZebra
+        // 3. Public instance fields (sorted): instanceApple, instanceZebra
+        // 4. Public instance methods: getInstanceData
         assert_eq!(
             members,
             vec![
                 ("apple".to_string(), true),
                 ("zebra".to_string(), true),
-                ("instanceApple".to_string(), false),
-                ("instanceZebra".to_string(), false),
                 ("getApple".to_string(), true),
                 ("getZebra".to_string(), true),
+                ("instanceApple".to_string(), false),
+                ("instanceZebra".to_string(), false),
                 ("getInstanceData".to_string(), false),
             ]
         );

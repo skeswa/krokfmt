@@ -143,39 +143,51 @@ const process = ({ config, input, output }) => { };
 ```
 
 #### Class Members
-Classes are organized in a specific order for readability:
-1. Static fields (alphabetically)
-2. Instance fields (alphabetically)
-3. Constructor
-4. Static methods (alphabetically)
-5. Instance methods (alphabetically)
+Classes are organized by visibility and type in a specific order:
+1. Public static fields (alphabetically)
+2. Private static fields (alphabetically)  
+3. Public static methods (alphabetically)
+4. Private static methods (alphabetically)
+5. Public instance fields (alphabetically)
+6. Private instance fields (alphabetically)
+7. Constructor
+8. Public instance methods (alphabetically)
+9. Private instance methods (alphabetically)
+
+**Note:** Private members use the `#` syntax for true privacy. TypeScript's `private` keyword is treated as public for sorting purposes since it's only a compile-time check.
 
 ```typescript
 // Before
 class User {
     name: string;
-    private id: number;
+    #privateId: number;
     static VERSION = '1.0';
+    static #SECRET = 'hidden';
     
     greet() { }
+    #validate() { }
     constructor() { }
     static create() { }
-    private validate() { }
+    static #generate() { }
+    age: number;
 }
 
 // After
 class User {
     static VERSION = '1.0';
+    static #SECRET = 'hidden';
     
-    private id: number;
+    static create() { }
+    static #generate() { }
+    
+    age: number;
     name: string;
+    #privateId: number;
     
     constructor() { }
     
-    static create() { }
-    
     greet() { }
-    private validate() { }
+    #validate() { }
 }
 ```
 

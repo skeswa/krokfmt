@@ -148,24 +148,30 @@ import g from "../../g";
 TypeScript allows forward references for certain constructs. The formatter must recognize these cases and not require dependencies to be declared first:
 
 1. **Function Declarations** - Can be called before declaration due to hoisting
+
    ```typescript
    foo(); // Valid - function declarations are hoisted
    function foo() {}
    ```
 
 2. **Class Declarations** - Can be referenced in type positions before declaration
+
    ```typescript
-   function createInstance(): MyClass { return new MyClass(); } // Valid in type position
+   function createInstance(): MyClass {
+     return new MyClass();
+   } // Valid in type position
    class MyClass {}
    ```
 
 3. **Interface Declarations** - Can be used in type positions or extended before declaration
+
    ```typescript
    interface A extends B {} // Valid - interfaces can reference later interfaces
    interface B {}
    ```
 
 4. **Type Aliases** - Can be referenced in other type declarations before definition
+
    ```typescript
    type A = B | string; // Valid - types can reference later types
    type B = number;
@@ -174,7 +180,10 @@ TypeScript allows forward references for certain constructs. The formatter must 
 5. **Enum Declarations** - Can be used in type positions before declaration
    ```typescript
    let status: Status; // Valid - enums can be referenced before declaration
-   enum Status { Active, Inactive }
+   enum Status {
+     Active,
+     Inactive,
+   }
    ```
 
 **Runtime Dependency Rules**:
@@ -182,24 +191,28 @@ TypeScript allows forward references for certain constructs. The formatter must 
 These constructs MUST have their dependencies declared first as they execute at runtime:
 
 1. **Variable Declarations** - Cannot use undeclared variables
+
    ```typescript
    const a = b; // Error - b is not defined
    const b = 1;
    ```
 
 2. **Arrow Functions and Function Expressions** - Not hoisted, must be declared before use
+
    ```typescript
    foo(); // Error - cannot access before initialization
    const foo = () => {};
    ```
 
 3. **Class Expressions** - Not hoisted, must be declared before use
+
    ```typescript
    new MyClass(); // Error - cannot access before initialization
    const MyClass = class {};
    ```
 
 4. **Object/Array Destructuring** - Requires values to exist
+
    ```typescript
    const { x } = obj; // Error - obj is not defined
    const obj = { x: 1 };
@@ -208,7 +221,7 @@ These constructs MUST have their dependencies declared first as they execute at 
 5. **Method Calls and Property Access** - Requires object to exist
    ```typescript
    console.log(config.url); // Error - config is not defined
-   const config = { url: 'api' };
+   const config = { url: "api" };
    ```
 
 #### FR2.4: Visibility Grouping and Alphabetization
@@ -218,14 +231,17 @@ These constructs MUST have their dependencies declared first as they execute at 
 **Grouping Rules**:
 
 1. **Visibility Groups** (in order):
+
    - Exported declarations (functions, classes, types, interfaces, enums, variables)
    - Non-exported declarations (same types as above)
 
 2. **Within Each Group**:
+
    - Sort alphabetically by declaration name
    - Maintain stable sort for items with identical names
 
 3. **Visual Separation**:
+
    - Add empty line between visibility groups
    - No empty lines within a visibility group (unless preserving existing formatting)
 
@@ -237,27 +253,39 @@ These constructs MUST have their dependencies declared first as they execute at 
 
 ```typescript
 // Before
-function helperB() { return 'b'; }
-export function mainA() { return helperB(); }
-const configC = { url: 'api' };
-export class ServiceD { 
-    config = configC;
+function helperB() {
+  return "b";
 }
-function helperE() { return 'e'; }
+export function mainA() {
+  return helperB();
+}
+const configC = { url: "api" };
+export class ServiceD {
+  config = configC;
+}
+function helperE() {
+  return "e";
+}
 
 // After
 // Hoisted dependencies (required by exports)
-const configC = { url: 'api' };
-function helperB() { return 'b'; }
+const configC = { url: "api" };
+function helperB() {
+  return "b";
+}
 
 // Exported members (alphabetized)
-export function mainA() { return helperB(); }
-export class ServiceD { 
-    config = configC;
+export function mainA() {
+  return helperB();
+}
+export class ServiceD {
+  config = configC;
 }
 
 // Non-exported members (alphabetized)
-function helperE() { return 'e'; }
+function helperE() {
+  return "e";
+}
 ```
 
 ### FR3: Alphabetical Sorting
@@ -297,11 +325,15 @@ function process({ apple, banana, zebra }: Options) {}
 
 **Order**:
 
-1. Static fields (alphabetically)
-2. Instance fields (alphabetically)
-3. Constructor
-4. Static methods (alphabetically)
-5. Instance methods (alphabetically)
+1. Public static fields (alphabetically)
+2. Private static fields (alphabetically)
+3. Public static methods (alphabetically)
+4. Private static methods (alphabetically)
+5. Public instance fields (alphabetically)
+6. Private instance fields (alphabetically)
+7. Constructor
+8. Public instance methods (alphabetically)
+9. Private instance methods (alphabetically)
 
 #### FR3.4: Type Member Sorting
 
