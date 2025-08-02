@@ -869,6 +869,37 @@ mod theoretical_solution {
 }
 ```
 
+## Why Can't We Just Reassociate Comments?
+
+A common question is: "Why not just track comment associations and reapply them after reordering?" Here's why this doesn't work:
+
+```mermaid
+sequenceDiagram
+    participant S as Source Code
+    participant A as AST
+    participant C as Comments
+    participant O as Output
+    
+    Note over S: // Comment A<br/>const a = 1;<br/>// Comment B<br/>const b = 2;
+    
+    S->>A: Parse
+    Note over A: const_a: span(16-28)<br/>const_b: span(44-56)
+    
+    S->>C: Extract Comments
+    Note over C: leading[16] = "Comment A"<br/>leading[44] = "Comment B"
+    
+    Note over A: Reorder: [b, a]
+    Note over A: ❌ Spans unchanged!<br/>const_b: span(44-56)<br/>const_a: span(16-28)
+    
+    A->>C: Try to reassociate
+    Note over C: Still at old positions!<br/>leading[16] = "Comment A"<br/>leading[44] = "Comment B"
+    
+    A->>O: Generate Code
+    Note over O: const b = 2; (from pos 44)<br/>const a = 1; (from pos 16)<br/><br/>Comments appear at<br/>original byte positions!
+```
+
+The fundamental issue: **You can move nodes in the AST, but their spans (and thus comment positions) remain unchanged.**
+
 ## Key Takeaways
 
 1. **Comments are position-based, not node-based**: They're stored at BytePos locations, not attached to AST nodes
