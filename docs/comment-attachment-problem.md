@@ -272,6 +272,13 @@ Restrict the formatter to transformations that don't require moving comments acr
 3. **Position vs. Structure**: Position-based systems are fundamentally incompatible with structural transformations
 4. **Open Source Limitations**: When building on open-source tools, their architectural decisions become your constraints
 
+## Related Documentation
+
+For a comprehensive understanding of how SWC handles comments and AST structures, see:
+- [SWC AST and Comment Handling Guide](./swc-ast-and-comments-guide.md) - Detailed explanation with examples
+- [SWC Comment Example](./swc-comment-example.ts) - Annotated TypeScript showing byte positions
+- [SWC Comment Manipulation Example](./swc-comment-manipulation-example.rs) - Rust code examples
+
 ## Conclusion
 
 The comment attachment problem represents a fundamental mismatch between krokfmt's requirements (reordering code while preserving comment associations) and SWC's architecture (position-based comment handling). While various creative solutions have been attempted, none have successfully overcome the core limitation.
