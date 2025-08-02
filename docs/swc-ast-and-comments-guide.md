@@ -125,6 +125,33 @@ Comments are stored at the BytePos where their associated code STARTS, not where
 // The comment is stored at BytePos(23), NOT BytePos(0)!
 ```
 
+```mermaid
+graph LR
+    subgraph "Source File"
+        direction TB
+        Bytes["Byte Positions"]
+        Comment["0-20: // This is a comment"]
+        Code["23-35: const x = 1;"]
+        
+        Bytes --> Comment
+        Bytes --> Code
+    end
+    
+    subgraph "Comment Storage"
+        Map["SingleThreadedComments<br/>HashMap"]
+        Entry["BytePos(23) => [Comment]"]
+        
+        Map --> Entry
+    end
+    
+    Comment -.->|"Stored at code start position"| Entry
+    Code -.->|"Start position: 23"| Entry
+    
+    style Comment fill:#fcc,stroke:#333,stroke-width:2px
+    style Code fill:#cfc,stroke:#333,stroke-width:2px
+    style Entry fill:#ccf,stroke:#333,stroke-width:2px
+```
+
 ## Comment Types and Positions
 
 ### Leading Comments
@@ -190,6 +217,43 @@ Trailing comments appear on the same line after code:
 // trailing[BytePos(103)] = [Comment { text: " Trailing on const" }]
 ```
 
+```mermaid
+graph TB
+    subgraph "Code Elements"
+        Import["import { x } from './x';<br/>Span: 23-47"]
+        Const["const a = 1;<br/>Span: 91-103"]
+    end
+    
+    subgraph "Comment Storage Structure"
+        STC["SingleThreadedComments"]
+        
+        subgraph "Leading Comments"
+            L23["BytePos(23):<br/>- ' Leading for import'"]
+            L91["BytePos(91):<br/>- ' Block comment '<br/>- ' Leading for const'"]
+        end
+        
+        subgraph "Trailing Comments"
+            T47["BytePos(47):<br/>- ' Trailing on import'"]
+            T103["BytePos(103):<br/>- ' Trailing on const'"]
+        end
+    end
+    
+    Import -->|"Start pos"| L23
+    Import -->|"End pos"| T47
+    Const -->|"Start pos"| L91
+    Const -->|"End pos"| T103
+    
+    STC --> Leading Comments
+    STC --> Trailing Comments
+    
+    style Import fill:#ff9,stroke:#333,stroke-width:2px
+    style Const fill:#ff9,stroke:#333,stroke-width:2px
+    style L23 fill:#cfc,stroke:#333,stroke-width:2px
+    style L91 fill:#cfc,stroke:#333,stroke-width:2px
+    style T47 fill:#fcf,stroke:#333,stroke-width:2px
+    style T103 fill:#fcf,stroke:#333,stroke-width:2px
+```
+
 ## Working with Comments in Practice
 
 ### Reading Comments
@@ -250,46 +314,109 @@ export const b = 2;
 
 ### Diagram: Comment Storage Architecture
 
-```
-Source Code                AST                     Comments Storage
------------                ---                     ----------------
-                                                   
-"// Comment"               Module                  SingleThreadedComments {
-"const x = 1;"    ------>    |                      leading: {
-                             +-- VarDecl               BytePos(11) => [Comment]
-                                  |                  },
-                                  +-- span            trailing: {}
-                                      lo: 11        }
-                                      hi: 23
+```mermaid
+graph LR
+    subgraph "Source Code"
+        SC["// Comment<br/>const x = 1;"]
+    end
+    
+    subgraph "AST"
+        Module["Module"]
+        VarDecl["VarDecl"]
+        Span["span<br/>lo: 11<br/>hi: 23"]
+        
+        Module --> VarDecl
+        VarDecl --> Span
+    end
+    
+    subgraph "Comments Storage"
+        STC["SingleThreadedComments"]
+        Leading["leading: {<br/>BytePos(11) => [Comment]<br/>}"]
+        Trailing["trailing: { }"]
+        
+        STC --> Leading
+        STC --> Trailing
+    end
+    
+    SC -.->|"Parsed into"| Module
+    SC -.->|"Comments extracted to"| STC
+    
+    style SC fill:#f9f,stroke:#333,stroke-width:2px
+    style STC fill:#9ff,stroke:#333,stroke-width:2px
+    style Module fill:#ff9,stroke:#333,stroke-width:2px
 ```
 
 ### Diagram: The Reordering Problem
 
-```
-BEFORE REORDERING:
-Source Positions:    0-10        11-20        21-30
-                    Comment1     Code1       Comment2     Code2
-                       |           |            |           |
-Comments Storage:      |           |            |           |
-  leading[11] --------+            |            |           |
-  leading[31] ---------------------+------------+           |
-                                                            |
-AST Nodes:            VarDecl1 (span: 11-20)               |
-                      VarDecl2 (span: 31-40) <-------------+
+#### Before Reordering
 
-AFTER REORDERING (moving VarDecl2 before VarDecl1):
-Source Positions:    0-10        11-20        21-30
-                    Code2       Code1       [empty]
-                      |           |
-AST Nodes:           VarDecl2    VarDecl1
-                    (span: 31-40) (span: 11-20)  <- Spans unchanged!
-                         |              |
-Comments Storage:        |              |
-  leading[11] ----------+               |  <- Comment1 still here!
-  leading[31] --------------------------  <- Comment2 still here!
-
-Result: Comments appear in wrong positions!
+```mermaid
+graph TB
+    subgraph "Source Positions"
+        P1["0-10<br/>Comment1"]
+        P2["11-20<br/>Code1"]
+        P3["21-30<br/>Comment2"]
+        P4["31-40<br/>Code2"]
+    end
+    
+    subgraph "AST Nodes"
+        V1["VarDecl1<br/>span: 11-20"]
+        V2["VarDecl2<br/>span: 31-40"]
+    end
+    
+    subgraph "Comments Storage"
+        C1["leading[11] = Comment1"]
+        C2["leading[31] = Comment2"]
+    end
+    
+    P1 -.->|"Stored at"| C1
+    P2 -.->|"AST node"| V1
+    P3 -.->|"Stored at"| C2
+    P4 -.->|"AST node"| V2
+    
+    C1 -->|"Associated with"| V1
+    C2 -->|"Associated with"| V2
+    
+    style P1 fill:#fcc,stroke:#333,stroke-width:2px
+    style P3 fill:#fcc,stroke:#333,stroke-width:2px
+    style C1 fill:#cfc,stroke:#333,stroke-width:2px
+    style C2 fill:#cfc,stroke:#333,stroke-width:2px
 ```
+
+#### After Reordering (Moving VarDecl2 before VarDecl1)
+
+```mermaid
+graph TB
+    subgraph "Rendered Output"
+        R1["Position 1<br/>Code2"]
+        R2["Position 2<br/>Code1"]
+    end
+    
+    subgraph "AST Nodes"
+        V2["VarDecl2<br/>span: 31-40<br/>⚠️ Unchanged!"]
+        V1["VarDecl1<br/>span: 11-20<br/>⚠️ Unchanged!"]
+    end
+    
+    subgraph "Comments Storage"
+        C1["leading[11] = Comment1<br/>❌ Wrong position!"]
+        C2["leading[31] = Comment2<br/>❌ Wrong position!"]
+    end
+    
+    R1 -.->|"Rendered from"| V2
+    R2 -.->|"Rendered from"| V1
+    
+    C1 -->|"Still at BytePos(11)"| V1
+    C2 -->|"Still at BytePos(31)"| V2
+    
+    style V2 fill:#faa,stroke:#333,stroke-width:3px
+    style V1 fill:#faa,stroke:#333,stroke-width:3px
+    style C1 fill:#fcc,stroke:#333,stroke-width:2px
+    style C2 fill:#fcc,stroke:#333,stroke-width:2px
+```
+
+**Result**: Comments appear in wrong positions because:
+- Comment1 (for Code1) appears where Code2 is now rendered
+- Comment2 (for Code2) appears at BytePos(31) which no longer exists in output
 
 ## Real-World Example with Byte Positions
 
