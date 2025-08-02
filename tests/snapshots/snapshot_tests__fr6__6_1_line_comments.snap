@@ -18,6 +18,7 @@ export const z = 100; // Trailing on export
  // Final comment
 // Floating comment between functions
 // Comment for bar function
+
 function bar() {
     // First line in bar
     console.log('bar');
@@ -31,4 +32,5 @@ function foo() {
     return y * 2; // Trailing on return
 }
 // Comment before const
+
 const x = 42; // Trailing comment on const

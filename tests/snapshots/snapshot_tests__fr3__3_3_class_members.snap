@@ -8,10 +8,12 @@ class MyClass {
     static foo = 'foo';
     // Public static fields (should be first, alphabetically)
     static zoo = 'zoo';
+
     static #privateBar = 'pbar';
     static #privateFoo = 'pfoo';
     // Private static fields (should be second, alphabetically)
     static #privateZoo = 'pzoo';
+
     static aStatic() {
         return 'a';
     }
@@ -22,6 +24,7 @@ class MyClass {
     static zStatic() {
         return 'z';
     }
+
     static #privateAStatic() {
         return 'pa';
     }
@@ -32,20 +35,24 @@ class MyClass {
     static #privateZStatic() {
         return 'pz';
     }
+
     apple: number;
     banana: boolean;
     // Public instance fields (should be fifth, alphabetically)
     zebra: string;
+
     #privateApple = 1;
     #privateBanana = true;
     // Private instance fields (should be sixth, alphabetically)
     #privateZebra = 'pz';
     // Constructor should be seventh
+
     constructor(){
         this.apple = 1;
         this.banana = true;
         this.zebra = 'z';
     }
+
     aMethod() {
         return this.apple;
     }
@@ -56,6 +63,7 @@ class MyClass {
     zMethod() {
         return this.zebra;
     }
+
     #privateAMethod() {
         return this.#privateApple;
     }

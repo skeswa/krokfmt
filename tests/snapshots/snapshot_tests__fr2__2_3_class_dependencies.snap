@@ -32,6 +32,7 @@ export class LoggingDecorator extends BaseDecorator {
 export class Service {
     private emitter = new EventEmitter();
     private logger = new Logger();
+
     doWork() {
         this.logger.log('working');
         this.emitter.emit('work');

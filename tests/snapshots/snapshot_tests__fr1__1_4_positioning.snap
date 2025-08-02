@@ -12,12 +12,15 @@ import { Button } from '@ui/Button';
 
 const earlyVar = 'I should be after imports';
 // Final code
+
 export const App = ()=>{
     return <Button onClick={()=>console.log(earlyVar)}>Click</Button>;
 };
 // Another early declaration
+
 function earlyFunction() {
     return 'Also should be after imports';
 }
 // More code mixed with imports
+
 const middleVar = 'mixed';

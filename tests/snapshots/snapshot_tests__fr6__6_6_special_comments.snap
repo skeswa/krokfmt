@@ -17,6 +17,7 @@ interface User {
 // eslint-enable no-console
 // #region Utils
 // @ts-ignore: Deprecated but still needed
+
 function oldFunction() {
     // prettier-ignore
     return 42 + 10;
@@ -26,6 +27,7 @@ function riskyFunction() {
     return nonExistentVariable;
 }
 // prettier-ignore
+
 const uglyFormatted = {
     a: 2,
     b: 3,

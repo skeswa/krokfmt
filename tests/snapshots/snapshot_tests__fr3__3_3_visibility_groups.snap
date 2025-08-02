@@ -7,9 +7,11 @@ class CompleteClass {
     static aStatic = 'a';
     // Public static fields (should be 1st)
     static zStatic = 'z';
+
     static #aPrivateStaticField = 'a';
     // Private static fields (should be 2nd)
     static #zPrivateStaticField = 'z';
+
     static aStaticMethod() {
         return 'a';
     }
@@ -17,6 +19,7 @@ class CompleteClass {
     static zStaticMethod() {
         return 'z';
     }
+
     static #aPrivateStatic() {
         return 'a';
     }
@@ -24,17 +27,21 @@ class CompleteClass {
     static #zPrivateStatic() {
         return 'z';
     }
+
     aField: string = 'a';
     // Public instance fields (should be 5th)
     zField: string = 'z';
+
     #aPrivateField = 'a';
     // Private instance fields (should be 6th)
     #zPrivateField = 'z';
     // Constructor (should be 7th)
+
     constructor(){
         this.aField = 'a';
         this.zField = 'z';
     }
+
     aMethod() {
         return this.aField;
     }
@@ -42,6 +49,7 @@ class CompleteClass {
     zMethod() {
         return this.zField;
     }
+
     #aPrivateMethod() {
         return 'a';
     }

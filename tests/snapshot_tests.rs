@@ -275,3 +275,15 @@ fn test_fr6_6_special_comments() {
 fn test_fr6_7_standalone_comments() {
     test_fixture("fr6/6_7_standalone_comments");
 }
+
+// FR7: Visual Separation Tests
+
+#[test]
+fn test_fr7_1_module_separation() {
+    test_fixture("fr7/7_1_module_separation");
+}
+
+#[test]
+fn test_fr7_3_class_member_separation() {
+    test_fixture("fr7/7_3_class_member_separation");
+}

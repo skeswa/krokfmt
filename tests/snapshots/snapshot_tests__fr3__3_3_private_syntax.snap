@@ -7,9 +7,11 @@ class PrivateFieldsClass {
     // Public static fields
     static staticBanana = 'static public banana';
     static staticCherry = 'static public cherry';
+
     static #staticApple = 100;
     // Private static fields
     static #staticZebra = 'static private zebra';
+
     static staticAlphaMethod() {
         return this.staticCherry;
     }
@@ -17,6 +19,7 @@ class PrivateFieldsClass {
     static staticBetaMethod() {
         return this.staticBanana;
     }
+
     static #staticAlphaMethod() {
         return this.#staticApple;
     }
@@ -25,9 +28,11 @@ class PrivateFieldsClass {
         return this.#staticZebra;
     }
     // Public fields
+
     public cherry = 'public cherry';
     durian = 'durian';
     elderberry: string;
+
     #apple = 42;
     #banana = {
         type: 'fruit'
@@ -35,9 +40,11 @@ class PrivateFieldsClass {
     // Mix of private and public members to test proper categorization
     // Private fields with initializers
     #zebra = 'private zebra';
+
     constructor(){
         this.elderberry = 'initialized';
     }
+
     alphaMethod() {
         return this.durian;
     }
@@ -45,6 +52,7 @@ class PrivateFieldsClass {
     betaMethod() {
         return this.#banana;
     }
+
     #alphaMethod() {
         return this.#apple;
     }

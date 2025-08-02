@@ -242,7 +242,7 @@ These constructs MUST have their dependencies declared first as they execute at 
 
 3. **Visual Separation**:
 
-   - Add empty line between visibility groups
+   - Add empty line between visibility groups (see FR7.1 for comprehensive visual separation rules)
    - No empty lines within a visibility group (unless preserving existing formatting)
 
 4. **Dependency Override**:
@@ -334,6 +334,8 @@ function process({ apple, banana, zebra }: Options) {}
 7. Constructor
 8. Public instance methods (alphabetically)
 9. Private instance methods (alphabetically)
+
+**Visual Separation**: See FR7.3 for rules on adding empty lines between these visibility groups.
 
 #### FR3.4: Type Member Sorting
 
@@ -648,6 +650,190 @@ function c() {}
 - Class-level descriptive comments stay at the top of the class body
 
 **Note**: At the module level, the formatter prioritizes visibility-based organization (exported members first, non-exported second) which may reorder declarations and their associated comments. This is by design to maintain a consistent public API surface at the top of modules.
+
+### FR7: Visual Separation
+
+#### FR7.1: Module-Level Declaration Separation
+
+**Description**: The system shall add visual separation between different types of top-level declarations to improve code readability.
+
+**Rules**:
+
+- One empty line between different declaration types (function, class, interface, type, const/let/var, enum)
+- One empty line between exported and non-exported visibility groups (see FR2.4)
+- No empty lines between consecutive declarations of the same type and visibility
+- Related items may stay together (e.g., a type and its type guard function)
+
+**Example**:
+
+```typescript
+// Imports (see FR1.5 for import group separation)
+import React from 'react';
+import { helper } from './utils';
+
+// Constants grouped together (no separation)
+export const API_URL = '/api';
+export const TIMEOUT = 5000;
+
+// Empty line between const and function declarations
+export function fetchData() {
+    return fetch(API_URL);
+}
+export function processData(data: unknown) {
+    return transform(data);
+}
+
+// Empty line between exported and non-exported groups
+const INTERNAL_CACHE = new Map();
+
+// Empty line between const and function
+function validateCache() {
+    return INTERNAL_CACHE.size > 0;
+}
+
+// Empty line between function and class
+class DataProcessor {
+    process() { /* ... */ }
+}
+
+// Empty line between class and interface
+interface Config {
+    url: string;
+    timeout: number;
+}
+
+// Empty line between interface and type
+type Status = 'idle' | 'loading' | 'error';
+
+// Related items can stay together
+type User = { id: string; name: string };
+function isUser(value: unknown): value is User {
+    return typeof value === 'object' && value !== null && 'id' in value;
+}
+```
+
+#### FR7.2: Import Group Separation
+
+**Description**: Import groups shall be visually separated (this updates and clarifies FR1.5).
+
+**Rules**: See FR1.5 - no changes, just referenced here for completeness.
+
+#### FR7.3: Class Member Group Separation
+
+**Description**: The system shall add visual separation between class member visibility groups to improve class readability.
+
+**Groups** (in order per FR3.3):
+
+1. Public static fields
+2. Private static fields
+3. Public static methods
+4. Private static methods
+5. Public instance fields
+6. Private instance fields
+7. Constructor
+8. Public instance methods
+9. Private instance methods
+
+**Rules**:
+
+- One empty line between each visibility group
+- No empty lines within a visibility group
+- Comments remain with their associated members
+
+**Example**:
+
+```typescript
+class ApiClient {
+    // Public static fields
+    static defaultTimeout = 5000;
+    static version = '1.0.0';
+    
+    // Private static fields
+    static #instance: ApiClient;
+    static #secretKey = process.env.SECRET_KEY;
+    
+    // Public static methods
+    static getInstance() {
+        if (!ApiClient.#instance) {
+            ApiClient.#instance = new ApiClient();
+        }
+        return ApiClient.#instance;
+    }
+    
+    // Private static methods
+    static #validateKey(key: string) {
+        return key.length > 10;
+    }
+    
+    // Public instance fields
+    baseUrl: string;
+    timeout: number;
+    
+    // Private instance fields
+    #authToken?: string;
+    #retryCount = 0;
+    
+    // Constructor
+    constructor(baseUrl = '/api') {
+        this.baseUrl = baseUrl;
+        this.timeout = ApiClient.defaultTimeout;
+    }
+    
+    // Public instance methods
+    async get(endpoint: string) {
+        return this.#request('GET', endpoint);
+    }
+    
+    setAuth(token: string) {
+        this.#authToken = token;
+    }
+    
+    // Private instance methods
+    async #request(method: string, endpoint: string) {
+        // Implementation
+    }
+    
+    #handleError(error: Error) {
+        this.#retryCount++;
+        throw error;
+    }
+}
+```
+
+#### FR7.4: Declaration Type Preservation
+
+**Description**: The system shall preserve logical groupings indicated by the programmer.
+
+**Rules**:
+
+- Multiple consecutive empty lines in the source are normalized to one empty line
+- Section header comments create logical boundaries that are preserved
+- Related declarations (e.g., a constant and its type) maintain their grouping
+- The formatter should not break apart obviously related code
+
+**Example**:
+
+```typescript
+// ========== Configuration Types ==========
+// This section header creates a logical boundary
+
+export interface AppConfig {
+    name: string;
+    version: string;
+}
+
+export const DEFAULT_CONFIG: AppConfig = {
+    name: 'MyApp',
+    version: '1.0.0'
+};
+
+// ========== Utility Functions ==========
+// Another logical section
+
+export function parseConfig(json: string): AppConfig {
+    return JSON.parse(json);
+}
+```
 
 ## Non-Functional Requirements
 

@@ -12,7 +12,8 @@ use crate::transformer::{sort_imports, ImportAnalyzer, ImportCategory};
 /// 2. Exported members are prioritized over internal ones
 /// 3. Dependencies between declarations are preserved
 /// 4. Various AST elements (objects, JSX props, etc.) are alphabetically sorted
-pub struct KrokFormatter;
+#[derive(Default)]
+pub struct KrokFormatter {}
 
 /// Analyzes exports in a module to determine which members are exported.
 ///
@@ -545,15 +546,9 @@ impl DependencyGraph {
     }
 }
 
-impl Default for KrokFormatter {
-    fn default() -> Self {
-        Self
-    }
-}
-
 impl KrokFormatter {
     pub fn new() -> Self {
-        Self
+        Self::default()
     }
 
     pub fn format(&self, mut module: Module) -> Result<Module> {

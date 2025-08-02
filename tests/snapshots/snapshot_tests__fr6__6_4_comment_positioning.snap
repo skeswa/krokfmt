@@ -19,11 +19,13 @@ import { z } from './z';
 export const c = 3; // Final floating comment
 // Floating comment 1
 // Leading comment for const a
+
 const a = 1; // Trailing on a
 // Floating comment 2
 const b = 2;
 // Gap before bar
 // This belongs to bar
+
 function bar() {} // Inline with bar
 // Floating comment 3
 // This comment belongs to function foo

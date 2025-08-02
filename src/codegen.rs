@@ -6,6 +6,29 @@ use swc_ecma_codegen::{text_writer::JsWriter, Config, Emitter};
 use crate::comment_fixer::fix_comment_indentation;
 use crate::transformer::{ImportAnalyzer, ImportCategory};
 
+#[derive(Debug, Clone, PartialEq)]
+enum DeclarationType {
+    Function,
+    Class,
+    Interface,
+    Type,
+    Const,
+    Enum,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+enum ClassMemberGroup {
+    PublicStaticFields,
+    PrivateStaticFields,
+    PublicStaticMethods,
+    PrivateStaticMethods,
+    PublicInstanceFields,
+    PrivateInstanceFields,
+    Constructor,
+    PublicInstanceMethods,
+    PrivateInstanceMethods,
+}
+
 /// Generates formatted TypeScript/JavaScript code from the AST.
 ///
 /// This is a wrapper around SWC's code generator with custom post-processing.
@@ -70,17 +93,39 @@ impl CodeGenerator {
     /// newlines at transitions to create visual separation between:
     /// - Different import categories (external, absolute, relative)
     /// - Imports and the rest of the code
-    /// - Different visibility groups (exported vs non-exported) [TODO]
+    /// - Different visibility groups (exported vs non-exported)
     fn add_visual_spacing(&self, code: String, _module: &Module) -> String {
         let lines: Vec<&str> = code.lines().collect();
         let mut result = Vec::new();
         let mut last_import_category: Option<ImportCategory> = None;
         let mut last_was_import = false;
         let mut first_non_import_found = false;
+        let mut last_was_exported: Option<bool> = None;
+        let mut in_imports_section = true;
+        let mut brace_depth: i32 = 0;
+        let mut last_declaration_type: Option<DeclarationType> = None;
+        let mut in_class = false;
+        let mut last_member_group: Option<ClassMemberGroup> = None;
 
         for line in lines.iter() {
+            let trimmed = line.trim_start();
+
+            // Update brace depth based on closing braces at the start of the line
+            // This ensures we correctly identify when we're back at top level
+            for ch in trimmed.chars() {
+                if ch == '}' {
+                    brace_depth = brace_depth.saturating_sub(1);
+                    if brace_depth == 0 && in_class {
+                        in_class = false;
+                        last_member_group = None;
+                    }
+                } else if ch != ' ' && ch != '\t' {
+                    break; // Stop at first non-whitespace, non-brace character
+                }
+            }
+
             // Check if this line is an import statement
-            let is_import = line.trim_start().starts_with("import ");
+            let is_import = trimmed.starts_with("import ");
 
             if is_import {
                 // Extract the import path to determine category
@@ -131,14 +176,172 @@ impl CodeGenerator {
                 if last_was_import && !first_non_import_found && !line.trim().is_empty() {
                     result.push("");
                     first_non_import_found = true;
+                    in_imports_section = false;
                 }
                 last_was_import = false;
+
+                // Check for visibility transitions in non-import declarations
+                // Only consider top-level declarations (brace_depth == 0)
+                if !in_imports_section
+                    && !trimmed.is_empty()
+                    && !trimmed.starts_with("//")
+                    && brace_depth == 0
+                {
+                    // Check if this line starts an exported declaration
+                    let is_exported = trimmed.starts_with("export ");
+
+                    // Remove "export " prefix to detect the actual declaration type
+                    let declaration_part = if is_exported {
+                        trimmed.strip_prefix("export ").unwrap_or(trimmed)
+                    } else {
+                        trimmed
+                    };
+
+                    // Detect declaration type
+                    let declaration_type = if declaration_part.starts_with("function ")
+                        || declaration_part.starts_with("async function ")
+                    {
+                        Some(DeclarationType::Function)
+                    } else if declaration_part.starts_with("class ")
+                        || declaration_part.starts_with("abstract class ")
+                    {
+                        Some(DeclarationType::Class)
+                    } else if declaration_part.starts_with("interface ") {
+                        Some(DeclarationType::Interface)
+                    } else if declaration_part.starts_with("type ") {
+                        Some(DeclarationType::Type)
+                    } else if declaration_part.starts_with("const ")
+                        || declaration_part.starts_with("let ")
+                        || declaration_part.starts_with("var ")
+                    {
+                        Some(DeclarationType::Const)
+                    } else if declaration_part.starts_with("enum ") {
+                        Some(DeclarationType::Enum)
+                    } else {
+                        None
+                    };
+
+                    if let Some(current_type) = declaration_type {
+                        let mut need_separator = false;
+
+                        // Check for visibility transition
+                        if let Some(last_exported) = last_was_exported {
+                            if last_exported != is_exported {
+                                need_separator = true;
+                            }
+                        }
+
+                        // Check for declaration type transition (FR7.1)
+                        if !need_separator {
+                            if let Some(last_type) = &last_declaration_type {
+                                if last_type != &current_type {
+                                    need_separator = true;
+                                }
+                            }
+                        }
+
+                        if need_separator {
+                            result.push("");
+                        }
+
+                        last_was_exported = Some(is_exported);
+                        last_declaration_type = Some(current_type);
+                    }
+                }
+
+                // Handle class member separation (FR7.3)
+                // Skip lines that are just closing braces or empty statements
+                if in_class
+                    && brace_depth == 1
+                    && !trimmed.is_empty()
+                    && !trimmed.starts_with("//")
+                    && !trimmed.starts_with("}")
+                {
+                    let member_group = detect_class_member_group(trimmed);
+
+                    if let Some(current_group) = member_group {
+                        if let Some(last_group) = &last_member_group {
+                            if last_group != &current_group {
+                                // Add empty line between different member groups
+                                result.push("");
+                            }
+                        }
+                        last_member_group = Some(current_group);
+                    }
+                }
             }
 
             result.push(line);
+
+            // Check if this line declares a class (for next iteration)
+            if (trimmed.starts_with("class ")
+                || trimmed.starts_with("export class ")
+                || trimmed.starts_with("abstract class ")
+                || trimmed.starts_with("export abstract class "))
+                && line.trim().ends_with('{')
+            {
+                in_class = true;
+                last_member_group = None;
+            }
+
+            // Update brace depth after processing the line (for opening braces)
+            // Count only the last brace on the line to avoid counting braces in method bodies
+            if line.trim().ends_with('{') {
+                brace_depth += 1;
+            }
         }
 
         result.join("\n")
+    }
+}
+
+/// Detects the class member group based on the line content
+fn detect_class_member_group(line: &str) -> Option<ClassMemberGroup> {
+    let trimmed = line.trim();
+
+    // Constructor
+    if trimmed.starts_with("constructor") {
+        return Some(ClassMemberGroup::Constructor);
+    }
+
+    // Detect static members
+    if trimmed.starts_with("static ") {
+        let after_static = trimmed.strip_prefix("static ").unwrap();
+        let is_private = after_static.starts_with("#") || after_static.starts_with("private ");
+
+        // Check if it's a method (has parentheses) or field
+        let is_method = after_static.contains('(') && after_static.contains(')');
+
+        return match (is_private, is_method) {
+            (false, false) => Some(ClassMemberGroup::PublicStaticFields),
+            (true, false) => Some(ClassMemberGroup::PrivateStaticFields),
+            (false, true) => Some(ClassMemberGroup::PublicStaticMethods),
+            (true, true) => Some(ClassMemberGroup::PrivateStaticMethods),
+        };
+    }
+
+    // Instance members
+    let is_private = trimmed.starts_with("#") || trimmed.starts_with("private ");
+    // Check if it's a method or field
+    // Methods have parentheses, fields have : or = for assignment
+    let has_parens = trimmed.contains('(') && trimmed.contains(')');
+
+    // Heuristic: if it has parentheses before any = or :, it's likely a method
+    let is_method = if has_parens {
+        if let (Some(paren_pos), Some(assign_pos)) = (trimmed.find('('), trimmed.find('=')) {
+            paren_pos < assign_pos
+        } else {
+            true
+        }
+    } else {
+        false
+    };
+
+    match (is_private, is_method) {
+        (false, false) => Some(ClassMemberGroup::PublicInstanceFields),
+        (true, false) => Some(ClassMemberGroup::PrivateInstanceFields),
+        (false, true) => Some(ClassMemberGroup::PublicInstanceMethods),
+        (true, true) => Some(ClassMemberGroup::PrivateInstanceMethods),
     }
 }
 
