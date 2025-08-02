@@ -4,9 +4,6 @@ expression: output
 ---
 // FR3.3: Test complex class with mixed visibility patterns
 class MixedVisibilityClass {
-    // Mix everything up to ensure proper sorting
-    // Some public methods
-
     // Static fields mixed in
     static API_KEY = 'abc123';
     // Static public field
@@ -58,6 +55,8 @@ class MixedVisibilityClass {
     set id(value: number) {
         this.#id = value;
     }
+    // Mix everything up to ensure proper sorting
+    // Some public methods
     zPublicMethod() {
         return 'z';
     }

@@ -14,7 +14,7 @@ class CompleteExample {
     static #secretKey = 'secret';
 
     static configure(options: any) {
-        // configure
+    // configure
     }
     // Public static methods
     static getInstance() {

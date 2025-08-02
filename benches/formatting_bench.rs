@@ -4,15 +4,17 @@ use krokfmt::{codegen::CodeGenerator, formatter::KrokFormatter, parser::TypeScri
 fn format_code(input: &str) -> String {
     let parser = TypeScriptParser::new();
     let source_map = parser.source_map.clone();
+    let comments = parser.comments.clone();
     let filename = if input.contains("<") && input.contains(">") {
         "bench.tsx"
     } else {
         "bench.ts"
     };
     let module = parser.parse(input, filename).unwrap();
-    let formatted = KrokFormatter::new().format(module).unwrap();
-    let generator = CodeGenerator::new(source_map);
-    generator.generate(&formatted).unwrap()
+    let formatter = KrokFormatter::new();
+    let formatted_module = formatter.format(module).unwrap();
+    let generator = CodeGenerator::with_comments(source_map, comments);
+    generator.generate(&formatted_module).unwrap()
 }
 
 fn bench_small_file(c: &mut Criterion) {

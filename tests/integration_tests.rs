@@ -11,9 +11,10 @@ fn format_code(input: &str) -> String {
         "test.ts"
     };
     let module = parser.parse(input, filename).unwrap();
-    let formatted = KrokFormatter::new().format(module).unwrap();
+    let formatter = KrokFormatter::new();
+    let formatted_module = formatter.format(module).unwrap();
     let generator = CodeGenerator::with_comments(source_map, comments);
-    generator.generate(&formatted).unwrap()
+    generator.generate(&formatted_module).unwrap()
 }
 
 #[test]

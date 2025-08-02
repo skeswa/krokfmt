@@ -3,7 +3,6 @@ use swc_common::{comments::SingleThreadedComments, sync::Lrc, SourceMap};
 use swc_ecma_ast::*;
 use swc_ecma_codegen::{text_writer::JsWriter, Config, Emitter};
 
-use crate::comment_fixer::fix_comment_indentation;
 use crate::transformer::{ImportAnalyzer, ImportCategory};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -79,11 +78,9 @@ impl CodeGenerator {
 
         let generated = String::from_utf8(buf)?;
 
-        // Two-phase post-processing is necessary because SWC's emitter doesn't
-        // understand our custom formatting requirements. First we fix comments that
-        // may have been misaligned during AST manipulation, then we add visual spacing.
-        let with_fixed_comments = fix_comment_indentation(generated);
-        Ok(self.add_visual_spacing(with_fixed_comments, module))
+        // Post-processing is necessary because SWC's emitter doesn't
+        // understand our custom formatting requirements for visual spacing.
+        Ok(self.add_visual_spacing(generated, module))
     }
 
     /// Add visual spacing between logical groups in the formatted code.

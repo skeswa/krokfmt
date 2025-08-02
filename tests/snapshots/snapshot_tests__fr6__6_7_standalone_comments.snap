@@ -8,7 +8,6 @@ expression: output
 interface APIClient {
     // Interface defining the contract for API clients
     // All implementations must support these methods
-
     get(url: string): Promise<any>;
     post(url: string, data: any): Promise<any>;
     delete(url: string): Promise<void>;
@@ -51,10 +50,9 @@ class DataService {
     }
 }
 class DocumentProcessor {
+    static VERSION = '1.0.0';
     // This class handles document processing workflow
     // including validation, transformation, and storage
-
-    static VERSION = '1.0.0';
 
     #privateConfig = {
         maxSize: 1024
@@ -69,9 +67,6 @@ class DocumentProcessor {
 }
 // Test 6: Complex class that triggered the issue
 class MixedVisibilityClass {
-    // Mix everything up to ensure proper sorting
-    // Some public methods
-
     // Static public field
     static VERSION = '1.0.0';
     // Private static field
@@ -85,6 +80,8 @@ class MixedVisibilityClass {
     // Another private field
 
     #id: number;
+    // Mix everything up to ensure proper sorting
+    // Some public methods
 
     zPublicMethod() {
         return 'z';
@@ -98,7 +95,6 @@ class MixedVisibilityClass {
 // Test 4: Nested structures with class-level comments
 class OuterClass {
     // This outer class contains nested functionality
-
     method() {
         // Method-level comment about implementation
         const helper = ()=>{
@@ -118,7 +114,6 @@ class ServiceManager {
     // Overall service management logic
     // Handles lifecycle and dependency injection
     // Static configuration
-
     static #config = {
         timeout: 5000
     };

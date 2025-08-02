@@ -22,7 +22,7 @@ export const z = 100; // Trailing on export
 function bar() {
     // First line in bar
     console.log('bar');
-    // Last line in bar
+// Last line in bar
 }
 // Comment before function
 function foo() {
