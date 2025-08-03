@@ -55,6 +55,15 @@ impl CodeGenerator {
     }
 
     pub fn generate(&self, module: &Module) -> Result<String> {
+        self.generate_with_options(module, true)
+    }
+
+    /// Generate code without comments (for two-phase comment replacement)
+    pub fn generate_without_comments(&self, module: &Module) -> Result<String> {
+        self.generate_with_options(module, false)
+    }
+
+    fn generate_with_options(&self, module: &Module, include_comments: bool) -> Result<String> {
         let mut buf = Vec::new();
 
         {
@@ -65,10 +74,13 @@ impl CodeGenerator {
             let mut emitter = Emitter {
                 cfg: config,
                 cm: self.source_map.clone(),
-                comments: self
-                    .comments
-                    .as_ref()
-                    .map(|c| c as &dyn swc_common::comments::Comments),
+                comments: if include_comments {
+                    self.comments
+                        .as_ref()
+                        .map(|c| c as &dyn swc_common::comments::Comments)
+                } else {
+                    None
+                },
                 wr: Box::new(writer),
             };
 
@@ -91,7 +103,7 @@ impl CodeGenerator {
     /// - Different import categories (external, absolute, relative)
     /// - Imports and the rest of the code
     /// - Different visibility groups (exported vs non-exported)
-    fn add_visual_spacing(&self, code: String, _module: &Module) -> String {
+    pub fn add_visual_spacing(&self, code: String, _module: &Module) -> String {
         let lines: Vec<&str> = code.lines().collect();
         let mut result = Vec::new();
         let mut last_import_category: Option<ImportCategory> = None;
@@ -139,7 +151,22 @@ impl CodeGenerator {
                                 if std::mem::discriminant(last_cat)
                                     != std::mem::discriminant(&category)
                                 {
-                                    result.push("");
+                                    // Check if the previous line is a comment
+                                    // If so, add the empty line before the comment
+                                    if !result.is_empty() {
+                                        let last_idx = result.len() - 1;
+                                        let last_line: &str = result[last_idx];
+                                        if last_line.trim().starts_with("//")
+                                            || last_line.trim().starts_with("/*")
+                                        {
+                                            // Insert empty line before the comment
+                                            result.insert(last_idx, "");
+                                        } else {
+                                            result.push("");
+                                        }
+                                    } else {
+                                        result.push("");
+                                    }
                                 }
                             }
 
@@ -158,7 +185,22 @@ impl CodeGenerator {
                         if let Some(last_cat) = &last_import_category {
                             if std::mem::discriminant(last_cat) != std::mem::discriminant(&category)
                             {
-                                result.push("");
+                                // Check if the previous line is a comment
+                                // If so, add the empty line before the comment
+                                if !result.is_empty() {
+                                    let last_idx = result.len() - 1;
+                                    let last_line: &str = result[last_idx];
+                                    if last_line.trim().starts_with("//")
+                                        || last_line.trim().starts_with("/*")
+                                    {
+                                        // Insert empty line before the comment
+                                        result.insert(last_idx, "");
+                                    } else {
+                                        result.push("");
+                                    }
+                                } else {
+                                    result.push("");
+                                }
                             }
                         }
 

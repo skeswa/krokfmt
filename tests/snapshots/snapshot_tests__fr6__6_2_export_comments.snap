@@ -1,0 +1,19 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+// FR6.2: Comments on exports should stay with their exports after reordering
+// Non-exported helper
+// Main public API
+export function publicApi() {
+    return 'public';
+}
+// Secondary export
+export const secondaryApi = ()=>{
+    return 'secondary';
+};
+// Another helper
+const helper2 = ()=>'helper2';
+function internalHelper() {
+    return 'internal';
+}

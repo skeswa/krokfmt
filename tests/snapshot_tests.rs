@@ -243,38 +243,33 @@ fn test_fr3_6_jsx_properties() {
 // FR6: Comment Handling Tests
 
 #[test]
-fn test_fr6_1_line_comments() {
-    test_fixture("fr6/6_1_line_comments");
+fn test_fr6_1_import_comments() {
+    test_fixture("fr6/6_1_import_comments");
 }
 
 #[test]
-fn test_fr6_2_block_comments() {
-    test_fixture("fr6/6_2_block_comments");
+fn test_fr6_2_export_comments() {
+    test_fixture("fr6/6_2_export_comments");
 }
 
 #[test]
-fn test_fr6_3_jsdoc_comments() {
-    test_fixture("fr6/6_3_jsdoc_comments");
+fn test_fr6_3_class_member_comments() {
+    test_fixture("fr6/6_3_class_member_comments");
 }
 
 #[test]
-fn test_fr6_4_comment_positioning() {
-    test_fixture("fr6/6_4_comment_positioning");
+fn test_fr6_4_object_property_comments() {
+    test_fixture("fr6/6_4_object_property_comments");
 }
 
 #[test]
-fn test_fr6_5_comment_association() {
-    test_fixture("fr6/6_5_comment_association");
+fn test_fr6_5_jsx_comments() {
+    test_fixture("fr6/6_5_jsx_comments");
 }
 
 #[test]
-fn test_fr6_6_special_comments() {
-    test_fixture("fr6/6_6_special_comments");
-}
-
-#[test]
-fn test_fr6_7_standalone_comments() {
-    test_fixture("fr6/6_7_standalone_comments");
+fn test_fr6_6_complex_comments() {
+    test_fixture("fr6/6_6_complex_comments");
 }
 
 // FR7: Visual Separation Tests

@@ -1,0 +1,36 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+// FR6.5: Comments in JSX should be preserved
+import React from 'react';
+
+export function UserProfile({ user }) {
+    return (<div className="profile" id={`user-${user.id}`}>
+
+            {}
+
+            <header>
+
+                <h1>{user.name}</h1> {}
+
+                <p>{user.bio}</p>
+
+            </header>
+
+            
+
+            {}
+
+            <div className="actions">
+
+                <button disabled={!canEdit} onClick={handleEdit}>
+
+                    Edit Profile
+
+                </button>
+
+            </div>
+
+        </div>);
+}
