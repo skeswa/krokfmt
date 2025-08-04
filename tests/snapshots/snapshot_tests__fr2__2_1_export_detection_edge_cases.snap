@@ -28,9 +28,11 @@ export const external = 'external';
 // Export list at bottom
 const item1 = 'one';
 const item2 = 'two';
+
 namespace InternalNS {
     export const value = 42;
 }
+
 export namespace ExportedNS {
     export const value = InternalNS.value;
 }

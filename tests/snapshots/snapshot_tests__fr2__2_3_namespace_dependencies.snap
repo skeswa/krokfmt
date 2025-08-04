@@ -16,6 +16,7 @@ export type Middleware = {
 };
 
 export const currentMode: Mode = MODES[0];
+
 namespace Internal {
     export interface Config {
         timeout: number;
@@ -24,6 +25,7 @@ namespace Internal {
         timeout: 5000
     };
 }
+
 export namespace Api {
     export interface Options extends Internal.Config {
         retries: number;

@@ -13,6 +13,7 @@ enum DeclarationType {
     Type,
     Const,
     Enum,
+    Namespace,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -334,6 +335,8 @@ impl CodeGenerator {
                         Some(DeclarationType::Const)
                     } else if declaration_part.starts_with("enum ") {
                         Some(DeclarationType::Enum)
+                    } else if declaration_part.starts_with("namespace ") {
+                        Some(DeclarationType::Namespace)
                     } else {
                         None
                     };
