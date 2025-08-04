@@ -29,7 +29,6 @@ export function serviceA() {
 // Dependencies scattered throughout the file
 const helperA = ()=>"a";
 
-// Export statement depending on non-exported members
 export { helperA, configB };
 
 // Independent export with no dependencies
@@ -50,6 +49,7 @@ export function serviceB() {
     return dataD.map(utilityC);
 }
 
+// Export statement depending on non-exported members
 // Non-exported helper that no export depends on
 function unusedHelper() {
     return "not used by exports";

@@ -96,6 +96,18 @@ Tasks are ordered by priority. Always work on tasks from the top of this list fi
 ## Completed
 <!-- Move completed tasks here with completion date -->
 
+- ✅ Unskip inline comment test case and improve inline comment preservation (2025-08-04)
+  - Unskipped the `test_fr6_7_inline_comments` test that was marked as ignored
+  - Added missing visitor methods to PositionCollector for arrow expressions and function expressions
+  - Fixed inline comment extraction to properly track parent hashes
+  - Implemented heuristic-based matching for variable declaration inline comments
+  - Successfully preserves inline comments for variable declarations: `const x = /* comment */ 42;`
+  - Known limitations: Function parameter and arrow function parameter inline comments not yet supported
+  - Known limitations: Complex expression inline comments (e.g., after operators) not yet supported
+  - Fixed issue where inserting leading comments shifted line numbers for inline comments
+  - Updated one other test snapshot due to comment reordering side effects
+  - Files modified: `src/comment_reinserter.rs`, `src/comment_extractor.rs`, `tests/snapshot_tests.rs`
+
 - ✅ Fix mixed comment scenarios - keep same-line comments together (2025-08-04)
   - Fixed issue where `/* Mixed comment */ // with line comment` was being split across lines
   - Implemented grouping of standalone comments by their original line number

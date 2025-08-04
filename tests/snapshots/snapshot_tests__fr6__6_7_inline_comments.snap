@@ -1,0 +1,44 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+// FR6.7: Inline comment preservation - comments within expressions and parameters
+
+// Array with inline comments (not yet supported)
+const arr = [
+    1,
+    2,
+    3
+];
+// Variable declarations with inline comments
+const x = /* inline comment */ 42;
+let y = /* another inline */ "hello";
+// Arrow functions with inline comments
+const arrow = (x: number, y: number)=>x + y;
+// Complex expressions with inline comments (not yet supported)
+const complex = (10 + 20) * 30;
+
+// Method with inline comments
+class Example {
+    method(value: string): void {
+        console.log(value);
+    }
+}
+
+// Function parameters with inline comments
+function foo(a: number, b: string) {
+    return a + b.length;
+}
+
+// Object with inline comments (not yet supported)
+const obj = {
+    key1: "hello",
+    key2: 42
+};
+
+// Type annotations with inline comments
+function typed(param: string): number {
+    return param.length;
+}
+
+var z = /* number */ 100 + 50;

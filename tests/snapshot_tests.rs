@@ -324,7 +324,6 @@ fn test_fr6_5_jsx_comments() {
 }
 
 #[test]
-#[ignore = "Inline comments need more work - visitor pattern issues with nested structures"]
 fn test_fr6_7_inline_comments() {
     test_fixture("fr6/6_7_inline_comments");
 }
