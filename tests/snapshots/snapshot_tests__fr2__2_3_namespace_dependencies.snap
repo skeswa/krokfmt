@@ -9,12 +9,12 @@ const MODES = [
     'prod'
 ] as const;
 
+export const currentMode: Mode = MODES[0];
+
 export type Middleware = {
     before: Handler;
     after: AsyncHandler;
 };
-
-export const currentMode: Mode = MODES[0];
 
 namespace Internal {
     export interface Config {

@@ -6,7 +6,6 @@ expression: output
 const ADJUSTED = RESULT + 5;
 // Chain 1: Constants building on each other
 const BASE = 10;
-const MULTIPLIER = 2;
 // Chain 3: Object builders
 const defaults = {
     color: 'blue',
@@ -16,12 +15,10 @@ const extended = {
     ...config,
     name: 'test'
 };
+const MULTIPLIER = 2;
 const overrides = {
     size: 20
 };
-
-export const FINAL = ADJUSTED * 2;
-export const RESULT = BASE * MULTIPLIER;
 
 export function calculate(x: number) {
     return multiply(add(x, 5), 2);
@@ -31,10 +28,12 @@ export const config = {
     ...defaults,
     ...overrides
 };
+export const FINAL = ADJUSTED * 2;
 export const finalConfig = {
     ...extended,
     id: 1
 };
+export const RESULT = BASE * MULTIPLIER;
 
 export function safeCalculate(x: number) {
     return validate(x) ? calculate(x) : 0;

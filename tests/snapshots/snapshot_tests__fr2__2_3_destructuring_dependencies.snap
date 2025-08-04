@@ -34,12 +34,6 @@ export function createClient({ retries, timeout }: Options = defaultOptions) {
 export const sum = first + second;
 export const username = name;
 
-// Function parameter destructuring
-interface Options {
-    timeout: number;
-    retries: number;
-}
-
 const extendedConfig = {
     ...baseConfig,
     ssl: true
@@ -52,3 +46,9 @@ const baseConfig = {
     host: 'localhost',
     port: 3000
 };
+
+// Function parameter destructuring
+interface Options {
+    timeout: number;
+    retries: number;
+}

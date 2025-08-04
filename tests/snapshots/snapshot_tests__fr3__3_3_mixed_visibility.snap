@@ -7,10 +7,10 @@ class MixedVisibilityClass {
     static API_KEY = 'abc123';
     static VERSION = '1.0.0';
 
-    static #SECRET_KEY = 'secret';
     static #config = {
         api: 'https://api.example.com'
     };
+    static #SECRET_KEY = 'secret';
 
     static getInstance() {
         return new MixedVisibilityClass('default');

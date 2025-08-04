@@ -1,0 +1,67 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+// FR2.4: Test case-insensitive alphabetization within visibility groups
+export class ApiHandler {
+    handle() {}
+}
+
+export const apiKey = 'secret';
+
+export function authenticateUser() {
+    return true;
+}
+
+export class Database {
+    connect() {}
+}
+
+export enum LogLevel {
+    INFO,
+    ERROR
+}
+
+export type UserId = string;
+
+export interface UserProfile {
+    name: string;
+}
+
+// Exported members with mixed case
+export function validateUser() {
+    return true;
+}
+
+export const VERSION = '1.0.0';
+
+class Analytics {
+    track() {}
+}
+
+function analyzeResults() {
+    return {};
+}
+
+const baseUrl = 'http://localhost';
+const MAX_RETRIES = 3;
+
+enum Priority {
+    LOW,
+    HIGH
+}
+
+// Non-exported members with mixed case
+function processData() {
+    return [];
+}
+
+interface ResponseData {
+    status: number;
+}
+
+type SessionId = string;
+
+class WebSocket {
+    send() {}
+}

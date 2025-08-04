@@ -697,9 +697,9 @@ impl KrokFormatter {
             }
         }
 
-        // Sort each group alphabetically
-        exported_names.sort();
-        non_exported_names.sort();
+        // Sort each group alphabetically (case-insensitive)
+        exported_names.sort_by_key(|a| a.to_lowercase());
+        non_exported_names.sort_by_key(|a| a.to_lowercase());
 
         // Find dependencies that need to be hoisted
         let mut hoisted_deps = HashSet::new();
@@ -768,7 +768,7 @@ impl KrokFormatter {
 
         // Second pass: add hoisted dependencies first (maintaining their relative order)
         let mut hoisted_sorted: Vec<_> = hoisted_deps.iter().cloned().collect();
-        hoisted_sorted.sort();
+        hoisted_sorted.sort_by_key(|a| a.to_lowercase());
 
         for name in hoisted_sorted {
             if let Some(item) = name_to_item.remove(&name) {
@@ -868,7 +868,7 @@ impl FormatterVisitor {
         props.sort_by(|a, b| {
             let key_a = self.get_prop_key(a);
             let key_b = self.get_prop_key(b);
-            key_a.cmp(&key_b)
+            key_a.to_lowercase().cmp(&key_b.to_lowercase())
         });
     }
 
@@ -892,7 +892,7 @@ impl FormatterVisitor {
         props.sort_by(|a, b| {
             let key_a = self.get_object_pat_prop_key(a);
             let key_b = self.get_object_pat_prop_key(b);
-            key_a.cmp(&key_b)
+            key_a.to_lowercase().cmp(&key_b.to_lowercase())
         });
     }
 
@@ -935,7 +935,7 @@ impl FormatterVisitor {
             match cat_a.cmp(&cat_b) {
                 Ordering::Equal => {
                     // Within the same category, sort alphabetically by key
-                    key_a.cmp(&key_b)
+                    key_a.to_lowercase().cmp(&key_b.to_lowercase())
                 }
                 other => other,
             }
@@ -1001,7 +1001,7 @@ impl FormatterVisitor {
         types.sort_by(|a, b| {
             let key_a = self.get_type_sort_key(a);
             let key_b = self.get_type_sort_key(b);
-            key_a.cmp(&key_b)
+            key_a.to_lowercase().cmp(&key_b.to_lowercase())
         });
     }
 
@@ -1009,7 +1009,7 @@ impl FormatterVisitor {
         types.sort_by(|a, b| {
             let key_a = self.get_type_sort_key(a);
             let key_b = self.get_type_sort_key(b);
-            key_a.cmp(&key_b)
+            key_a.to_lowercase().cmp(&key_b.to_lowercase())
         });
     }
 
@@ -1081,7 +1081,7 @@ impl FormatterVisitor {
                 b.id.as_ident()
                     .map(|ident| ident.sym.to_string())
                     .unwrap_or_default();
-            key_a.cmp(&key_b)
+            key_a.to_lowercase().cmp(&key_b.to_lowercase())
         });
     }
 
@@ -1091,7 +1091,7 @@ impl FormatterVisitor {
             let (cat_b, key_b) = self.categorize_jsx_attr(b);
 
             match cat_a.cmp(&cat_b) {
-                std::cmp::Ordering::Equal => key_a.cmp(&key_b),
+                std::cmp::Ordering::Equal => key_a.to_lowercase().cmp(&key_b.to_lowercase()),
                 other => other,
             }
         });

@@ -81,6 +81,11 @@ fn test_fr1_3_sorting() {
 }
 
 #[test]
+fn test_fr1_3_case_insensitive_sorting() {
+    test_fixture("fr1/1_3_case_insensitive_sorting");
+}
+
+#[test]
 fn test_fr1_4_positioning() {
     test_fixture_with_extension("fr1/1_4_positioning", "tsx");
 }
@@ -189,6 +194,11 @@ fn test_fr2_4_visibility_alphabetization() {
 }
 
 #[test]
+fn test_fr2_4_case_insensitive_visibility() {
+    test_fixture("fr2/2_4_case_insensitive_visibility");
+}
+
+#[test]
 fn test_fr2_1_export_detection_edge_cases() {
     test_fixture("fr2/2_1_export_detection_edge_cases");
 }
@@ -218,6 +228,11 @@ fn test_fr3_1_function_arguments() {
 #[test]
 fn test_fr3_2_object_properties() {
     test_fixture("fr3/3_2_object_properties");
+}
+
+#[test]
+fn test_fr3_2_case_insensitive_object_props() {
+    test_fixture("fr3/3_2_case_insensitive_object_props");
 }
 
 #[test]

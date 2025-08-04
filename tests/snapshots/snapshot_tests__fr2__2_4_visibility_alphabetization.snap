@@ -3,6 +3,10 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.4: Test alphabetization within visibility groups
+export function aardvark() {
+    return 'a';
+}
+
 export interface Apple {
     type: string;
 }
@@ -23,12 +27,13 @@ export class Monkey {
     name = 'm';
 }
 
-export function aardvark() {
-    return 'a';
-}
 // Exports in random order
 export function zebra() {
     return 'z';
+}
+
+function bear() {
+    return 'b';
 }
 
 enum Fox {
@@ -50,9 +55,6 @@ class Tiger {
     roar = true;
 }
 
-function bear() {
-    return 'b';
-}
 // Non-exports in random order
 function walrus() {
     return 'w';

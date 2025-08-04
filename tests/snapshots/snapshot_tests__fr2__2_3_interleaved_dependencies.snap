@@ -3,6 +3,14 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.3: Interleaved dependencies - exports and non-exports mixed
+export function checkAdmin(user: User): boolean {
+    const admin = user as AdminUser;
+    return validateAdmin(admin);
+}
+export function getUsername(user: User): string {
+    return processUser(user);
+}
+
 // Export depends on non-export that depends on export
 export interface SuperAdmin extends AdminUser {
     superPowers: boolean;
@@ -10,14 +18,6 @@ export interface SuperAdmin extends AdminUser {
 // Export depends on non-export
 export interface User extends BaseUser {
     name: string;
-}
-
-export function checkAdmin(user: User): boolean {
-    const admin = user as AdminUser;
-    return validateAdmin(admin);
-}
-export function getUsername(user: User): string {
-    return processUser(user);
 }
 
 // Non-export depends on export

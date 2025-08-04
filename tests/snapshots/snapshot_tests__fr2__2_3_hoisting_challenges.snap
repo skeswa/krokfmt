@@ -3,12 +3,12 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.3: Hoisting and temporal dead zone challenges
+// Mixed declarations
+var hoistedVar = initialValue();
+
 class MyClass {
     value = 42;
 }
-
-// Mixed declarations
-var hoistedVar = initialValue();
 
 // Const temporal dead zone
 export const earlyUse = computeValue();

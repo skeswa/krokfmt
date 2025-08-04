@@ -1,0 +1,38 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+// FR3.2: Test case-insensitive object property sorting
+const config = {
+    Apple: 'fruit',
+    banana: 'yellow',
+    CAR: 'vehicle',
+    dog: 'animal',
+    ELEPHANT: 'big',
+    fish: 'swim',
+    zebra: 'last'
+};
+// Nested object with mixed case keys
+const settings = {
+    api: {
+        headers: {},
+        RetryCount: 3,
+        timeout: 5000,
+        URL: 'http://api.example.com'
+    },
+    Theme: {
+        backgroundColor: 'white',
+        COLOR_SCHEME: 'light',
+        FontSize: 14,
+        margin: 10
+    }
+};
+const user = {
+    AGE: 25,
+    DEPARTMENT: 'IT',
+    email: 'john@example.com',
+    isActive: true,
+    lastLogin: new Date(),
+    Role: 'admin',
+    Username: 'john'
+};

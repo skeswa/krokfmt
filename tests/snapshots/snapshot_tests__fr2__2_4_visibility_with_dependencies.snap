@@ -29,12 +29,6 @@ export class DatabaseConnection {
     }
 }
 
-// Exported interface using internal type
-export interface User {
-    id: UserId;
-    name: string;
-}
-
 // Exported function that depends on internal helpers
 export function processData(input: unknown): string {
     if (!validateInput(input)) {
@@ -47,8 +41,11 @@ export function standaloneExport() {
     return 'exported standalone';
 }
 
-// Internal type used by exported interface
-type UserId = string;
+// Exported interface using internal type
+export interface User {
+    id: UserId;
+    name: string;
+}
 
 // Another internal helper used by exported function
 function formatOutput(data: string): string {
@@ -58,6 +55,10 @@ function formatOutput(data: string): string {
 function standaloneHelper() {
     return 'standalone';
 }
+
+// Internal type used by exported interface
+type UserId = string;
+
 // Internal helper used by exported function
 function validateInput(input: unknown): boolean {
     return input !== null && input !== undefined;

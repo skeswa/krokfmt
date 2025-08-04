@@ -7,14 +7,6 @@ class InternalService {
     name = 'internal';
 }
 
-export interface PublicOptions extends PrivateOptions {
-    external: boolean;
-}
-
-export class PublicService {
-    service = new InternalService();
-}
-
 // Multiple exports should all be prioritized
 export const constant1 = 1;
 export const constant2 = 3;
@@ -27,8 +19,12 @@ export function publicHelper() {
     return 'public';
 }
 
-interface PrivateOptions {
-    internal: boolean;
+export interface PublicOptions extends PrivateOptions {
+    external: boolean;
+}
+
+export class PublicService {
+    service = new InternalService();
 }
 
 const anotherPrivate = 4;
@@ -40,4 +36,8 @@ const privateConstant = 2;
 
 function privateHelper() {
     return 'private';
+}
+
+interface PrivateOptions {
+    internal: boolean;
 }

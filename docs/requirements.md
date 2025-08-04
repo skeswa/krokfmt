@@ -58,7 +58,7 @@ import { User } from "../types";
 
 **Rules**:
 
-- Case-sensitive alphabetical ordering
+- Case-insensitive alphabetical ordering (uppercase and lowercase are treated as equal)
 - Special characters follow ASCII ordering
 - Path comparison ignores quotes
 
@@ -124,7 +124,7 @@ import g from "../../g";
 **Sorting Rules**:
 
 - Alphabetical sorting by source path within each category
-- Case-sensitive ordering
+- Case-insensitive ordering (uppercase and lowercase are treated as equal)
 - Special characters follow ASCII ordering
 
 **Positioning**:
@@ -295,7 +295,7 @@ These constructs MUST have their dependencies declared first as they execute at 
 
 2. **Within Each Group**:
 
-   - Sort alphabetically by declaration name
+   - Sort alphabetically by declaration name (case-insensitive)
    - Maintain stable sort for items with identical names
 
 3. **Visual Separation**:
@@ -347,6 +347,8 @@ function helperE() {
 ```
 
 ### FR3: Alphabetical Sorting
+
+**General Rule**: All alphabetical sorting in this section is case-insensitive, meaning uppercase and lowercase letters are treated as equal for ordering purposes.
 
 #### FR3.1: Function Argument Sorting
 

@@ -9,9 +9,6 @@ class DataService {
     }
 }
 
-// Base values for computed properties
-const PREFIX = 'api';
-const VERSION = 'v1';
 // Object with computed properties
 const endpoints = {
     [`${PREFIX}_${VERSION}_users`]: '/users',
@@ -23,8 +20,11 @@ const obj = {
     [privateKey]: 'secret',
     public: 'visible'
 };
+// Base values for computed properties
+const PREFIX = 'api';
 // Symbol-based properties
 const privateKey = Symbol('private');
+const VERSION = 'v1';
 
 export const apiEndpoints = endpoints;
 

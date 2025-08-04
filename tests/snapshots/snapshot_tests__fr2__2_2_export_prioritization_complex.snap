@@ -27,14 +27,15 @@ export class FinalClass extends ExtendedClass {
         return this.doubleValue() + this.getValue();
     }
 }
+
+export function finalPublicFunction() {
+    return usesPublicHelper();
+}
+
 export class MiddleClass extends BaseClass {
     getValue() {
         return this.value;
     }
-}
-
-export function finalPublicFunction() {
-    return usesPublicHelper();
 }
 
 export const publicA = privateA * 2;

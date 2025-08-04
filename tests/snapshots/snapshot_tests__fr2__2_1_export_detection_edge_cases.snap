@@ -20,13 +20,14 @@ export interface ExportedInterface extends InternalInterface {
 }
 
 export type ExportedType = InternalType;
-export type Value = typeof VALUES[number];
 
 export const external = 'external';
 
 // Export list at bottom
 const item1 = 'one';
 const item2 = 'two';
+
+export type Value = typeof VALUES[number];
 
 namespace InternalNS {
     export const value = 42;
@@ -36,6 +37,9 @@ export namespace ExportedNS {
     export const value = InternalNS.value;
 }
 
+// Mixed export patterns
+const internal = 'internal';
+
 // Interface exports
 interface InternalInterface {
     x: number;
@@ -44,8 +48,6 @@ interface InternalInterface {
 // Type exports
 type InternalType = string;
 
-// Mixed export patterns
-const internal = 'internal';
 const item3 = 'three';
 
 // Re-exports

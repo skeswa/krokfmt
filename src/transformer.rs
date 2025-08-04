@@ -81,7 +81,7 @@ pub fn sort_imports(mut imports: Vec<ImportInfo>) -> Vec<ImportInfo> {
         };
 
         match category_order(&a.category).cmp(&category_order(&b.category)) {
-            std::cmp::Ordering::Equal => a.path.cmp(&b.path),
+            std::cmp::Ordering::Equal => a.path.to_lowercase().cmp(&b.path.to_lowercase()),
             other => other,
         }
     });
@@ -163,7 +163,7 @@ pub fn sort_re_exports(mut re_exports: Vec<ReExportInfo>) -> Vec<ReExportInfo> {
         };
 
         match category_order(&a.category).cmp(&category_order(&b.category)) {
-            std::cmp::Ordering::Equal => a.path.cmp(&b.path),
+            std::cmp::Ordering::Equal => a.path.to_lowercase().cmp(&b.path.to_lowercase()),
             other => other,
         }
     });

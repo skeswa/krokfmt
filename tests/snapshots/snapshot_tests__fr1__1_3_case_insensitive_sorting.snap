@@ -1,0 +1,32 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+// FR1.3: Test case-insensitive alphabetical sorting of imports
+import axios from 'axios';
+import express from 'express';
+import lodash from 'lodash';
+import NextAuth from 'next-auth';
+import React from 'react';
+import { Component } from 'react';
+import VueRouter from 'vue-router';
+// External imports with mixed case
+import zod from 'zod';
+
+import { Modal } from '@components/Modal';
+import { CONSTANTS } from '@config/CONSTANTS';
+import { useAuth } from '@hooks/useAuth';
+import { ApiClient } from '@services/ApiClient';
+// Absolute imports with mixed case
+import { Button } from '@UI/Button';
+import { helper } from '@utils/helper';
+import { validate } from '@utils/validate';
+
+import { Config } from '../config/Config';
+import { database } from '../db/database';
+import { Store } from '../store/Store';
+import { api } from './api';
+// Relative imports with mixed case
+import { Widget } from './components/Widget';
+import { Analytics } from './services/Analytics';
+import { logger } from './utils/logger';

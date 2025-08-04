@@ -30,11 +30,6 @@ export class DataService {
     }
 }
 
-// Types should be separated from interfaces
-export type Status = 'error' | 'idle' | 'loading';
-
-export const TIMEOUT = 5000;
-
 // Functions of same visibility should stay together  
 export function fetchData() {
     return fetch(API_URL);
@@ -42,6 +37,11 @@ export function fetchData() {
 export function processData(data: unknown) {
     return transform(data);
 }
+
+// Types should be separated from interfaces
+export type Status = 'error' | 'idle' | 'loading';
+
+export const TIMEOUT = 5000;
 
 const INTERNAL_CONSTANT = 100;
 
@@ -53,6 +53,10 @@ interface InternalConfig {
     debug: boolean;
 }
 
+function internalHelper() {
+    return INTERNAL_CONSTANT;
+}
+
 class InternalService {
     process() {
         return 'internal';
@@ -60,7 +64,3 @@ class InternalService {
 }
 
 type InternalStatus = 'busy' | 'ready';
-
-function internalHelper() {
-    return INTERNAL_CONSTANT;
-}

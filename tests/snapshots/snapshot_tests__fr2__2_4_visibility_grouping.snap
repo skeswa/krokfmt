@@ -3,11 +3,20 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.4: Basic visibility grouping - exports at top, non-exports at bottom, alphabetized within groups
+// Another export
+export function anotherPublicApi() {
+    return 'another api';
+}
+
 export interface ExternalInterface {
     name: string;
 }
 
 export const PUBLIC_CONSTANT = 200;
+
+export function publicApi() {
+    return 'api';
+}
 
 export class PublicClass {
     name = 'public';
@@ -20,12 +29,9 @@ export enum PublicEnum {
 
 export type PublicType = 'A' | 'B' | 'C';
 
-// Another export
-export function anotherPublicApi() {
-    return 'another api';
-}
-export function publicApi() {
-    return 'api';
+// Another internal function
+function anotherHelper() {
+    return 'another';
 }
 
 const INTERNAL_CONSTANT = 100;
@@ -33,6 +39,11 @@ const INTERNAL_CONSTANT = 100;
 enum InternalEnum {
     ONE,
     TWO
+}
+
+// Mixed order of exports and non-exports
+function internalHelper() {
+    return 'helper';
 }
 
 interface InternalInterface {
@@ -44,12 +55,3 @@ class PrivateClass {
 }
 
 type PrivateType = number | string;
-
-// Another internal function
-function anotherHelper() {
-    return 'another';
-}
-// Mixed order of exports and non-exports
-function internalHelper() {
-    return 'helper';
-}
