@@ -2,9 +2,9 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
-// FR3.1: Function arguments should be sorted when destructured
-// Object destructuring parameters should be sorted
 // Positional parameters should NOT be sorted
+// FR3.1: Function arguments should be sorted when destructured
+
 function add(b: number, a: number) {
     return a + b;
 }
@@ -16,6 +16,7 @@ const handleConfig = ({ baseURL, headers, retries, timeout }: Config)=>{
 function mixedParams(first: number, { apple, zebra }: Options, last: string) {
     return `${first} ${apple} ${zebra} ${last}`;
 }
+// Object destructuring parameters should be sorted
 function processOptions({ apple, banana, zebra }: Options) {
     return {
         apple,

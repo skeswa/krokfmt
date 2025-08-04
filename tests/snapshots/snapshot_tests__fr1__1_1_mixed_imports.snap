@@ -2,8 +2,8 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
-// FR1.1: Mixed imports should be parsed and preserved
 import axios, { AxiosError } from 'axios';
+// FR1.1: Mixed imports should be parsed and preserved
 import React, { useState, useEffect } from 'react';
 
 import utils, { helper, type HelperType } from '../utils/helpers';

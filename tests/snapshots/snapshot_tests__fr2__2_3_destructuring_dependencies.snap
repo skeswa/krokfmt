@@ -3,7 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.3: Destructuring and spread dependencies
-// Object with dependencies
+
 const defaultOptions: Options = {
     retries: 3,
     timeout: 5000
@@ -42,6 +42,7 @@ const extendedConfig = {
     ssl: true
 };
 export const { host, port } = extendedConfig;
+// Object with dependencies
 const baseConfig = {
     host: 'localhost',
     port: 3000

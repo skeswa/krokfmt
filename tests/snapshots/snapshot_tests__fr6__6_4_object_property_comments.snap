@@ -3,18 +3,18 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR6.4: Comments on object properties should stay with properties after sorting
+
 const config = {
     // Database config
     database: {
         host: 'db.local',
         name: 'myapp',
-        port: 5432 // PostgreSQL default
+        // Server settings // PostgreSQL default
+        port: 5432
     },
-    enableCache: false // Caching disabled in dev
-    ,
+    enableCache: false, // Caching disabled in dev
     // Feature flags
     enableLogging: true,
     host: 'localhost',
-    // Server settings
     port: 3000
 };

@@ -3,15 +3,14 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR3.3: Test TypeScript visibility keywords (private, protected, public)
+
 class TypeScriptVisibility {
     protected static staticProtected = 'static protected';
     public static staticPublic = 'static public';
 
     static readonly staticReadonly = 'static readonly';
-    // Static with TypeScript keywords
 
     private static staticTsPrivate = 'static ts private';
-    // True private static
 
     static #staticTruePrivate = 'static true private';
 
@@ -21,32 +20,22 @@ class TypeScriptVisibility {
     public static staticPublicMethod() {
         return 'static public';
     }
-    // Static methods with keywords
 
     private static staticTsPrivateMethod() {
         return 'static ts private';
     }
-    // True private static method
 
     static #staticTruePrivateMethod() {
         return 'static true private';
     }
-    // Implicit public (no keyword)
 
     implicitPublic = 'implicit';
-    // Protected fields (treated as public for sorting)
     protected protectedField = 'protected';
-    // Explicit public keyword
     public publicField = 'public';
-    // Readonly modifier (treated as public)
     readonly readonlyField = 'readonly';
-    // TypeScript visibility keywords mixed with # private syntax
-    // TypeScript private keyword (treated as public for sorting since it's a runtime construct)
 
     private tsPrivateField = 'ts private';
-    // True private with # syntax
     #truePrivate = 'true private';
-    // Constructor with parameter properties
 
     constructor(private ctorPrivate: string, protected ctorProtected: string, public ctorPublic: string, readonly ctorReadonly: string){}
 
@@ -59,12 +48,10 @@ class TypeScriptVisibility {
     public publicMethod() {
         return 'public method';
     }
-    // Methods with TypeScript keywords
 
     private tsPrivateMethod() {
         return 'ts private method';
     }
-    // True private methods
     #truePrivateMethod() {
         return 'true private method';
     }

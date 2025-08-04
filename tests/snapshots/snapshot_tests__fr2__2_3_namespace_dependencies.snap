@@ -2,9 +2,9 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
-// FR2.3: Namespace and module dependencies
-// Internal namespace
 // Const assertions
+// FR2.3: Namespace and module dependencies
+
 const MODES = [
     'dev',
     'prod'
@@ -22,7 +22,6 @@ namespace Internal {
         timeout: 5000
     };
 }
-// Exported namespace depending on internal
 export namespace Api {
     export interface Options extends Internal.Config {
         retries: number;

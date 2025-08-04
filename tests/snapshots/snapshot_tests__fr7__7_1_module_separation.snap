@@ -2,40 +2,40 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
-// FR7.1: Module-level declaration separation
-// Should add empty lines between different declaration types and visibility groups
 import React from 'react';
 
+// FR7.1: Module-level declaration separation
+// Should add empty lines between different declaration types and visibility groups
 import { helper } from './utils';
 
 // Multiple constants should stay together
 export const API_URL = '/api';
-// Enums should be separated from types
 
+// Enums should be separated from types
 export enum Color {
     Blue = 'blue',
     Red = 'red'
 }
-// Interfaces should be separated from classes
 
+// Interfaces should be separated from classes
 export interface Config {
     url: string;
     timeout: number;
 }
-// Classes should be separated from functions
 
+// Classes should be separated from functions
 export class DataService {
     fetch() {
         return fetchData();
     }
 }
-// Types should be separated from interfaces
 
+// Types should be separated from interfaces
 export type Status = 'error' | 'idle' | 'loading';
 
 export const TIMEOUT = 5000;
-// Functions of same visibility should stay together  
 
+// Functions of same visibility should stay together  
 export function fetchData() {
     return fetch(API_URL);
 }

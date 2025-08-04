@@ -5,41 +5,31 @@ expression: output
 // FR7.3: Class member group separation
 // Should add empty lines between different member visibility groups
 class CompleteExample {
-    // Public static fields
     static defaultTimeout = 5000;
     static version = '1.0.0';
-    // Private static fields
 
     static #instance: CompleteExample;
     static #secretKey = 'secret';
 
-    static configure(options: any) {
-    // configure
-    }
-    // Public static methods
+    static configure(options: any) {}
     static getInstance() {
         return new CompleteExample();
     }
-    // Private static methods
 
     static #validateKey(key: string) {
         return key === this.#secretKey;
     }
-    // Public instance fields
 
     baseUrl: string;
     timeout: number;
-    // Private instance fields
 
     #authToken?: string;
     #retryCount = 0;
-    // Constructor
 
     constructor(baseUrl = '/api'){
         this.baseUrl = baseUrl;
         this.timeout = CompleteExample.defaultTimeout;
     }
-    // Public instance methods  
 
     async get(endpoint: string) {
         return this.#request('GET', endpoint);
@@ -47,13 +37,10 @@ class CompleteExample {
     post(endpoint: string, data: any) {
         return this.#request('POST', endpoint, data);
     }
-    // Members are intentionally mixed to test grouping and separation
-    // Private instance methods
 
     #privateMethod() {
         return 'private';
     }
-    // Another private instance method
 
     async #request(method: string, endpoint: string, data?: any) {
         this.#retryCount++;

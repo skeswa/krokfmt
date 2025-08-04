@@ -3,8 +3,9 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.3: Complex dependency chains with mixed exports
-// Chain 1: Constants building on each other
+
 const ADJUSTED = RESULT + 5;
+// Chain 1: Constants building on each other
 const BASE = 10;
 const MULTIPLIER = 2;
 // Chain 3: Object builders

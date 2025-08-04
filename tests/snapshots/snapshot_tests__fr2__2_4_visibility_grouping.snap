@@ -3,7 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.4: Basic visibility grouping - exports at top, non-exports at bottom, alphabetized within groups
-// Mixed order of exports and non-exports
+
 export interface ExternalInterface {
     name: string;
 }
@@ -39,6 +39,7 @@ type PrivateType = number | string;
 function anotherHelper() {
     return 'another';
 }
+// Mixed order of exports and non-exports
 function internalHelper() {
     return 'helper';
 }

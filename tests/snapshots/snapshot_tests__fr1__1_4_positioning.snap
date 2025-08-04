@@ -3,24 +3,25 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR1.4: All imports should be positioned at the top of the file
-// This variable is declared before imports - should be moved after
+
 import axios from 'axios';
 import React from 'react';
 import { useState } from 'react';
 
 import { Button } from '@ui/Button';
 
+// This variable is declared before imports - should be moved after
 const earlyVar = 'I should be after imports';
-// Final code
 
+// Final code
 export const App = ()=>{
     return <Button onClick={()=>console.log(earlyVar)}>Click</Button>;
 };
-// Another early declaration
 
+// Another early declaration
 function earlyFunction() {
     return 'Also should be after imports';
 }
-// More code mixed with imports
 
+// More code mixed with imports
 const middleVar = 'mixed';

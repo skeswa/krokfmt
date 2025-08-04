@@ -2,9 +2,9 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
-// FR2.3: Class-based dependency patterns
-// Base classes
 // Decorator pattern
+// FR2.3: Class-based dependency patterns
+
 class BaseDecorator {
     constructor(protected component: any){}
 }
@@ -12,6 +12,7 @@ class BaseDecorator {
 class Config {
     static readonly DEFAULT_TIMEOUT = 5000;
 }
+// Base classes
 class EventEmitter {
     emit(event: string) {}
 }

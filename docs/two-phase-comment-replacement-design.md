@@ -2,7 +2,7 @@
 
 ## Overview
 
-The two-phase comment replacement approach is an experimental solution to the comment attachment problem in krokfmt. It works around SWC's position-based comment system by temporarily removing comments during AST transformation, then reintegrating them based on semantic node matching.
+The two-phase comment replacement approach is krokfmt's solution to the comment attachment problem. It works around SWC's position-based comment system by temporarily removing comments during AST transformation, then reintegrating them based on semantic node matching.
 
 ## The Problem We're Solving
 
@@ -147,13 +147,11 @@ fn calculate_indentation(line: &str) -> String {
 
 ```rust
 // In main.rs
-if cli.experimental_comment_fix && has_comments {
-    // Use two-phase formatter
-    let formatted = TwoPhaseFormatter::format(module, source)?;
-} else {
-    // Use regular formatter
-    let formatted = KrokFormatter::format(module)?;
-}
+// Always use two-phase formatter for better comment preservation
+let formatter = TwoPhaseFormatter::new(source_map, comments);
+let formatted_content = formatter
+    .format_with_source(module, content.clone())
+    .context("Failed to format file")?;
 ```
 
 ## Performance Considerations

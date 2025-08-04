@@ -2,9 +2,9 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
-// FR2.1: Complex export detection patterns
-// Re-exports
 // Const assertions with exports
+// FR2.1: Complex export detection patterns
+
 const VALUES = [
     'a',
     'b',
@@ -19,7 +19,6 @@ export const external = 'external';
 // Export list at bottom
 const item1 = 'one';
 const item2 = 'two';
-// Namespace exports
 namespace InternalNS {
     export const value = 42;
 }
@@ -39,4 +38,5 @@ export { foo } from './foo';
 export { bar as baz } from './bar';
 export * from './utils';
 export * as helpers from './helpers';
+// Re-exports
 export { item1, item2 };

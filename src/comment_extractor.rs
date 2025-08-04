@@ -33,10 +33,16 @@ pub struct CommentExtractor<'a> {
     comments: &'a SingleThreadedComments,
     /// Extracted comments mapped by semantic hash
     extracted: HashMap<u64, Vec<ExtractedComment>>,
+    /// Standalone comments that should maintain their position
+    standalone_comments: Vec<StandaloneComment>,
     /// Comments that couldn't be associated with any node
     floating_comments: Vec<Comment>,
     /// Original source code for line analysis
     source: String,
+    /// Source lines for analyzing blank lines
+    source_lines: Vec<String>,
+    /// Current lexical context depth
+    context_depth: usize,
 }
 
 impl<'a> CommentExtractor<'a> {
@@ -44,17 +50,24 @@ impl<'a> CommentExtractor<'a> {
         Self {
             comments,
             extracted: HashMap::new(),
+            standalone_comments: Vec::new(),
             floating_comments: Vec::new(),
             source: String::new(),
+            source_lines: Vec::new(),
+            context_depth: 0,
         }
     }
 
     pub fn with_source(comments: &'a SingleThreadedComments, source: String) -> Self {
+        let source_lines = source.lines().map(|s| s.to_string()).collect();
         Self {
             comments,
             extracted: HashMap::new(),
+            standalone_comments: Vec::new(),
             floating_comments: Vec::new(),
             source,
+            source_lines,
+            context_depth: 0,
         }
     }
 
@@ -69,6 +82,7 @@ impl<'a> CommentExtractor<'a> {
 
         CommentExtractionResult {
             node_comments: self.extracted,
+            standalone_comments: self.standalone_comments,
             floating_comments: self.floating_comments,
         }
     }
@@ -116,7 +130,6 @@ impl<'a> CommentExtractor<'a> {
     }
 
     /// Get the line number for a given byte position
-    #[allow(dead_code)]
     fn get_line_number(&self, pos: BytePos) -> usize {
         let mut line = 0;
         let mut current_pos = 0;
@@ -132,6 +145,36 @@ impl<'a> CommentExtractor<'a> {
         }
 
         line
+    }
+
+    /// Check if a comment is standalone (has blank line separation from adjacent syntax)
+    fn is_standalone_comment(&self, _comment: &Comment, comment_line: usize) -> bool {
+        // Check if we have source lines to analyze
+        if self.source_lines.is_empty() {
+            return false;
+        }
+
+        // For a comment to be standalone, it needs blank lines on both sides
+        // (except at the beginning/end of the file)
+
+        let has_blank_before = if comment_line == 0 {
+            true // At the beginning of file, consider it as having blank before
+        } else {
+            let prev_line = comment_line - 1;
+            prev_line < self.source_lines.len() && self.source_lines[prev_line].trim().is_empty()
+        };
+
+        let has_blank_after = {
+            let next_line = comment_line + 1;
+            if next_line >= self.source_lines.len() {
+                true // At the end of file, consider it as having blank after
+            } else {
+                self.source_lines[next_line].trim().is_empty()
+            }
+        };
+
+        // Both conditions must be true for a standalone comment
+        has_blank_before && has_blank_after
     }
 
     /// Check if there's a line break between two positions
@@ -214,27 +257,80 @@ impl<'a> CommentExtractor<'a> {
 
 impl<'a> Visit for CommentExtractor<'a> {
     fn visit_module(&mut self, module: &Module) {
-        // Check for file-level comments before the first item
-        if let Some(first_item) = module.body.first() {
-            let _first_pos = match first_item {
-                ModuleItem::Stmt(stmt) => stmt.span().lo,
-                ModuleItem::ModuleDecl(decl) => decl.span().lo,
-            };
+        // Process all comments in the module to identify standalone ones
+        let mut processed_comments = std::collections::HashSet::new();
 
-            // Check if there are comments at the very beginning of the file
-            if let Some(comments) = self.comments.get_leading(BytePos(0)) {
-                for comment in comments {
-                    self.floating_comments.push(comment.clone());
+        // Visit all module items and extract their comments
+        for item in module.body.iter() {
+            let item_span = item.span();
+
+            // Check for leading comments
+            if let Some(leading_comments) = self.comments.get_leading(item_span.lo) {
+                for (index, comment) in leading_comments.iter().enumerate() {
+                    let comment_line = self.get_line_number(comment.span.lo);
+
+                    // Check if this is a standalone comment
+                    if self.is_standalone_comment(comment, comment_line) {
+                        self.standalone_comments.push(StandaloneComment {
+                            comment: comment.clone(),
+                            line: comment_line,
+                            context_depth: self.context_depth,
+                        });
+                        processed_comments.insert(comment.span.lo);
+                    } else if let Some((hash, _)) = SemanticHasher::hash_module_item(item) {
+                        // Regular attached comment
+                        self.extracted
+                            .entry(hash)
+                            .or_default()
+                            .push(ExtractedComment {
+                                semantic_hash: hash,
+                                comment_type: CommentType::Leading,
+                                comment: comment.clone(),
+                                index,
+                            });
+                        processed_comments.insert(comment.span.lo);
+                    }
                 }
             }
+
+            // Extract trailing comments normally
+            if let Some((hash, _)) = SemanticHasher::hash_module_item(item) {
+                if let Some(trailing_comments) = self.comments.get_trailing(item_span.hi) {
+                    for (index, comment) in trailing_comments.iter().enumerate() {
+                        self.extracted
+                            .entry(hash)
+                            .or_default()
+                            .push(ExtractedComment {
+                                semantic_hash: hash,
+                                comment_type: CommentType::Trailing,
+                                comment: comment.clone(),
+                                index,
+                            });
+                        processed_comments.insert(comment.span.lo);
+                    }
+                }
+            }
+
+            // Visit children
+            item.visit_with(self);
         }
 
-        // Visit all module items
-        for item in &module.body {
-            if let Some((hash, _)) = SemanticHasher::hash_module_item(item) {
-                self.extract_node_comments(item.span(), hash);
+        // Check for comments at the very beginning of the file
+        if let Some(comments) = self.comments.get_leading(BytePos(0)) {
+            for comment in comments {
+                if !processed_comments.contains(&comment.span.lo) {
+                    let comment_line = self.get_line_number(comment.span.lo);
+                    if self.is_standalone_comment(&comment, comment_line) || comment_line == 0 {
+                        self.standalone_comments.push(StandaloneComment {
+                            comment: comment.clone(),
+                            line: comment_line,
+                            context_depth: self.context_depth,
+                        });
+                    } else {
+                        self.floating_comments.push(comment.clone());
+                    }
+                }
             }
-            item.visit_with(self);
         }
     }
 
@@ -331,11 +427,24 @@ impl<'a> CommentExtractor<'a> {
     }
 }
 
+/// Represents a standalone comment with its position info
+#[derive(Debug, Clone)]
+pub struct StandaloneComment {
+    /// The actual comment
+    pub comment: Comment,
+    /// Line number in the original source (0-indexed)
+    pub line: usize,
+    /// Lexical context depth (0 = module level, 1+ = nested blocks)
+    pub context_depth: usize,
+}
+
 /// Result of comment extraction
 pub struct CommentExtractionResult {
     /// Comments associated with specific nodes (by semantic hash)
     pub node_comments: HashMap<u64, Vec<ExtractedComment>>,
-    /// Comments that couldn't be associated with any node
+    /// Standalone comments that should maintain their position
+    pub standalone_comments: Vec<StandaloneComment>,
+    /// Comments that couldn't be associated with any node (deprecated, kept for compatibility)
     pub floating_comments: Vec<Comment>,
 }
 

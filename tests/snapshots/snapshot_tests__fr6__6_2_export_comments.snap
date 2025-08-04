@@ -2,9 +2,9 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
-// FR6.2: Comments on exports should stay with their exports after reordering
-// Non-exported helper
 // Main public API
+// FR6.2: Comments on exports should stay with their exports after reordering
+
 export function publicApi() {
     return 'public';
 }
@@ -14,6 +14,7 @@ export const secondaryApi = ()=>{
 };
 // Another helper
 const helper2 = ()=>'helper2';
+// Non-exported helper
 function internalHelper() {
     return 'internal';
 }

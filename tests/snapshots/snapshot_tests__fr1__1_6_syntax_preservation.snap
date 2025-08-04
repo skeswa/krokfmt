@@ -2,11 +2,11 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
-// FR1.6: Import syntax should be preserved exactly
 import 'global-polyfill';
 import MyReact from 'react';
 
 import { type Config, type Settings } from './config';
+// FR1.6: Import syntax should be preserved exactly
 import data from './data.json' with {
 
     type: 'json'

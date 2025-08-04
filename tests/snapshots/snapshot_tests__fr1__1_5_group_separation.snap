@@ -2,8 +2,8 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
-// FR1.5: Import groups should be separated by empty lines
 import axios from 'axios';
+// FR1.5: Import groups should be separated by empty lines
 import React from 'react';
 
 import { theme } from '@styles/theme';

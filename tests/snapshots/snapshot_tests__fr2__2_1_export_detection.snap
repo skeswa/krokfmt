@@ -2,9 +2,9 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
-// FR2.1: Exported members should be detected and prioritized
-// Non-exported function
 // Non-exported class
+// FR2.1: Exported members should be detected and prioritized
+
 class PrivateClass {
     value = 1;
 }
@@ -31,6 +31,7 @@ interface PrivateInterface {
 }
 // Non-exported type
 type PrivateType = number | string;
+// Non-exported function
 function privateHelper() {
     return 'private';
 }

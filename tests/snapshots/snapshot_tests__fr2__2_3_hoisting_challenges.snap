@@ -3,7 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.3: Hoisting and temporal dead zone challenges
-// Function hoisting - exported function uses hoisted function
+
 class MyClass {
     value = 42;
 }
@@ -14,6 +14,7 @@ export const earlyUse = computeValue();
 export const exportedConst = hoistedVar;
 // Class hoisting (not hoisted, should fail if reordered incorrectly)
 export const instance = new MyClass();
+// Function hoisting - exported function uses hoisted function
 export function publicApi() {
     return helperFunction();
 }

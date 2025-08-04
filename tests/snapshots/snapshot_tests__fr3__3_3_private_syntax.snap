@@ -3,19 +3,17 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR3.3: Test private field syntax with # prefix
+
 class PrivateFieldsClass {
-    // Public static fields
     static staticBanana = 'static public banana';
     static staticCherry = 'static public cherry';
 
     static #staticApple = 100;
-    // Private static fields
     static #staticZebra = 'static private zebra';
 
     static staticAlphaMethod() {
         return this.staticCherry;
     }
-    // Public static methods
     static staticBetaMethod() {
         return this.staticBanana;
     }
@@ -23,11 +21,9 @@ class PrivateFieldsClass {
     static #staticAlphaMethod() {
         return this.#staticApple;
     }
-    // Private static methods
     static #staticZeroMethod() {
         return this.#staticZebra;
     }
-    // Public fields
 
     public cherry = 'public cherry';
     durian = 'durian';
@@ -37,8 +33,6 @@ class PrivateFieldsClass {
     #banana = {
         type: 'fruit'
     };
-    // Mix of private and public members to test proper categorization
-    // Private fields with initializers
     #zebra = 'private zebra';
 
     constructor(){
@@ -48,7 +42,6 @@ class PrivateFieldsClass {
     alphaMethod() {
         return this.durian;
     }
-    // Public methods
     betaMethod() {
         return this.#banana;
     }
@@ -56,7 +49,6 @@ class PrivateFieldsClass {
     #alphaMethod() {
         return this.#apple;
     }
-    // Private methods
     #zeroMethod() {
         return this.#zebra;
     }

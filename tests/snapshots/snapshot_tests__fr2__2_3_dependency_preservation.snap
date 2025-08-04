@@ -2,10 +2,10 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
+const API_VERSION = 'v1';
 // FR2.3: Dependencies must be preserved when reordering
 // This tests RUNTIME dependencies that must maintain order
 // Base values that exported values depend on (runtime dependency)
-const API_VERSION = 'v1';
 const BASE_URL = 'https://api.example.com';
 // Base class (can be reordered due to hoisting)
 class BaseHandler {

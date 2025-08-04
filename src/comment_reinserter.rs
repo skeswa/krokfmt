@@ -6,7 +6,9 @@ use swc_common::{
 use swc_ecma_ast::*;
 use swc_ecma_visit::{Visit, VisitWith};
 
-use crate::comment_extractor::{CommentExtractionResult, CommentType, ExtractedComment};
+use crate::comment_extractor::{
+    CommentExtractionResult, CommentType, ExtractedComment, StandaloneComment,
+};
 use crate::parser::TypeScriptParser;
 use crate::semantic_hash::SemanticHasher;
 
@@ -15,8 +17,15 @@ use crate::semantic_hash::SemanticHasher;
 struct InsertionPoint {
     line: usize,
     column: usize,
-    comment: ExtractedComment,
+    comment: CommentWithType,
     indentation: String,
+}
+
+/// Wrapper to handle both regular and standalone comments
+#[derive(Debug, Clone)]
+enum CommentWithType {
+    Regular(ExtractedComment),
+    Standalone(StandaloneComment),
 }
 
 /// Reinserts comments into generated code based on semantic hashes
@@ -67,7 +76,13 @@ impl CommentReinserter {
 
         // Parse the generated code
         let parser = TypeScriptParser::new();
-        let module = parser.parse(code, "generated.ts")?;
+        // Detect if the code contains JSX by looking for < and > characters
+        let filename = if code.contains("<") && code.contains(">") {
+            "generated.tsx"
+        } else {
+            "generated.ts"
+        };
+        let module = parser.parse(code, filename)?;
 
         // Create a visitor to collect node positions
         let mut position_collector = PositionCollector::new(code);
@@ -75,14 +90,6 @@ impl CommentReinserter {
 
         self.node_positions = position_collector.positions;
         Ok(())
-    }
-
-    /// Check if a line is empty or contains only whitespace
-    fn is_line_empty(&self, line_num: usize) -> bool {
-        self.source_lines
-            .get(line_num)
-            .map(|line| line.trim().is_empty())
-            .unwrap_or(false)
     }
 
     /// Calculate where each comment should be inserted
@@ -95,31 +102,21 @@ impl CommentReinserter {
                 for comment in comments {
                     let point = match comment.comment_type {
                         CommentType::Leading => {
-                            // For leading comments, check if the previous line is empty
-                            let mut target_line = node_pos.start_line.saturating_sub(1);
-
-                            // If the line before the node is NOT empty and there's a line before that,
-                            // check if we should place the comment before the non-empty line
-                            if target_line > 0
-                                && !self.is_line_empty(target_line)
-                                && self.is_line_empty(target_line - 1)
-                            {
-                                // There's an empty line two lines before the node
-                                // This might be a category separator
-                                target_line -= 1;
-                            }
+                            // For leading comments, insert at the same line as the node
+                            // This will push the node down when the comment is inserted
+                            let target_line = node_pos.start_line;
 
                             InsertionPoint {
                                 line: target_line,
                                 column: 0,
-                                comment: comment.clone(),
+                                comment: CommentWithType::Regular(comment.clone()),
                                 indentation: node_pos.indentation.clone(),
                             }
                         }
                         CommentType::Trailing => InsertionPoint {
                             line: node_pos.end_line,
                             column: node_pos.end_column,
-                            comment: comment.clone(),
+                            comment: CommentWithType::Regular(comment.clone()),
                             indentation: String::new(),
                         },
                     };
@@ -133,6 +130,17 @@ impl CommentReinserter {
                     comments.len()
                 ));
             }
+        }
+
+        // Add standalone comments
+        // These maintain their original line positions in the module
+        for standalone in &self.extracted_comments.standalone_comments {
+            insertion_points.push(InsertionPoint {
+                line: standalone.line,
+                column: 0,
+                comment: CommentWithType::Standalone(standalone.clone()),
+                indentation: String::new(), // Will be determined based on context
+            });
         }
 
         // If any positions are missing, return an error
@@ -152,9 +160,23 @@ impl CommentReinserter {
                 .cmp(&a.line)
                 .then_with(|| {
                     // If same line, sort by type (leading should be processed first when going reverse)
-                    match (a.comment.comment_type, b.comment.comment_type) {
-                        (CommentType::Leading, CommentType::Trailing) => std::cmp::Ordering::Less,
-                        (CommentType::Trailing, CommentType::Leading) => {
+                    match (&a.comment, &b.comment) {
+                        (CommentWithType::Regular(a_reg), CommentWithType::Regular(b_reg)) => {
+                            match (a_reg.comment_type, b_reg.comment_type) {
+                                (CommentType::Leading, CommentType::Trailing) => {
+                                    std::cmp::Ordering::Less
+                                }
+                                (CommentType::Trailing, CommentType::Leading) => {
+                                    std::cmp::Ordering::Greater
+                                }
+                                _ => b.column.cmp(&a.column),
+                            }
+                        }
+                        // Standalone comments come before regular comments on the same line
+                        (CommentWithType::Standalone(_), CommentWithType::Regular(_)) => {
+                            std::cmp::Ordering::Less
+                        }
+                        (CommentWithType::Regular(_), CommentWithType::Standalone(_)) => {
                             std::cmp::Ordering::Greater
                         }
                         _ => b.column.cmp(&a.column),
@@ -162,7 +184,12 @@ impl CommentReinserter {
                 })
                 .then_with(|| {
                     // For multiple comments of the same type on the same line, preserve order
-                    b.comment.index.cmp(&a.comment.index)
+                    match (&a.comment, &b.comment) {
+                        (CommentWithType::Regular(a_reg), CommentWithType::Regular(b_reg)) => {
+                            b_reg.index.cmp(&a_reg.index)
+                        }
+                        _ => std::cmp::Ordering::Equal,
+                    }
                 })
         });
 
@@ -178,22 +205,41 @@ impl CommentReinserter {
         let mut lines: Vec<String> = code.lines().map(|s| s.to_string()).collect();
 
         for point in insertion_points {
-            let comment_text = self.format_comment(&point.comment.comment, &point.indentation);
+            match &point.comment {
+                CommentWithType::Regular(extracted) => {
+                    let comment_text = self.format_comment(&extracted.comment, &point.indentation);
 
-            match point.comment.comment_type {
-                CommentType::Leading => {
-                    // Insert comment on its own line
-                    if point.line < lines.len() {
-                        lines.insert(point.line, comment_text);
-                    } else {
-                        lines.push(comment_text);
+                    match extracted.comment_type {
+                        CommentType::Leading => {
+                            // Insert comment on its own line
+                            if point.line < lines.len() {
+                                lines.insert(point.line, comment_text);
+                            } else {
+                                lines.push(comment_text);
+                            }
+                        }
+                        CommentType::Trailing => {
+                            // Append comment to the end of the line
+                            if point.line < lines.len() {
+                                lines[point.line].push(' ');
+                                lines[point.line].push_str(comment_text.trim());
+                            }
+                        }
                     }
                 }
-                CommentType::Trailing => {
-                    // Append comment to the end of the line
+                CommentWithType::Standalone(standalone) => {
+                    let comment_text = self.format_comment(&standalone.comment, &point.indentation);
+
+                    // Standalone comments get their own line
                     if point.line < lines.len() {
-                        lines[point.line].push(' ');
-                        lines[point.line].push_str(comment_text.trim());
+                        lines.insert(point.line, comment_text);
+                        // Add a blank line after standalone comments to maintain separation
+                        if point.line + 1 < lines.len() && !lines[point.line + 1].trim().is_empty()
+                        {
+                            lines.insert(point.line + 1, String::new());
+                        }
+                    } else {
+                        lines.push(comment_text);
                     }
                 }
             }
@@ -435,8 +481,8 @@ import { helper } from './helper';
 
         let expected = "// External imports
 import React from 'react';
-// Local imports
 
+// Local imports
 import { helper } from './helper';";
 
         let result = test_reinsertion(source);
@@ -484,6 +530,7 @@ import { helper } from './helper';";
         with_globals(|| {
             let reinserter = CommentReinserter::new(CommentExtractionResult {
                 node_comments: HashMap::new(),
+                standalone_comments: Vec::new(),
                 floating_comments: Vec::new(),
             });
 
@@ -503,6 +550,7 @@ import { helper } from './helper';";
         with_globals(|| {
             let reinserter = CommentReinserter::new(CommentExtractionResult {
                 node_comments: HashMap::new(),
+                standalone_comments: Vec::new(),
                 floating_comments: Vec::new(),
             });
 
@@ -522,6 +570,7 @@ import { helper } from './helper';";
         with_globals(|| {
             let reinserter = CommentReinserter::new(CommentExtractionResult {
                 node_comments: HashMap::new(),
+                standalone_comments: Vec::new(),
                 floating_comments: Vec::new(),
             });
 
@@ -557,6 +606,7 @@ import { helper } from './helper';";
 
             let reinserter = CommentReinserter::new(CommentExtractionResult {
                 node_comments,
+                standalone_comments: Vec::new(),
                 floating_comments: Vec::new(),
             });
 
@@ -568,6 +618,91 @@ import { helper } from './helper';";
                 .to_string()
                 .contains("No position found for node with hash 3039"));
         });
+    }
+
+    #[test]
+    fn debug_comment_placement() {
+        let source = r#"// FR1.1: Default imports should be parsed and preserved
+import React from 'react';
+import lodash from 'lodash';
+import axios from 'axios';
+
+const App = () => "Hello";"#;
+
+        println!("=== Original Source ===");
+        println!("{source}");
+
+        // Step 1: Parse the code
+        let parser = crate::parser::TypeScriptParser::new();
+        let module = parser.parse(source, "test.ts").unwrap();
+
+        println!("\n=== Step 1: Parse AST ===");
+        println!("Module items count: {}", module.body.len());
+        for (i, item) in module.body.iter().enumerate() {
+            if let Some((hash, name)) = crate::semantic_hash::SemanticHasher::hash_module_item(item)
+            {
+                println!("Item {i}: hash={hash:x}, name={name}");
+            }
+        }
+
+        // Step 2: Extract comments
+        println!("\n=== Step 2: Extract Comments ===");
+        let extractor = crate::comment_extractor::CommentExtractor::with_source(
+            &parser.comments,
+            source.to_string(),
+        );
+        let extracted_comments = extractor.extract(&module);
+
+        println!("Extracted comments by hash:");
+        for (hash, comments) in &extracted_comments.node_comments {
+            println!("Hash {hash:x}:");
+            for comment in comments {
+                println!("  {:?}: '{}'", comment.comment_type, comment.comment.text);
+            }
+        }
+
+        // Step 3: Format AST (this reorders imports)
+        println!("\n=== Step 3: Format AST ===");
+        let formatter = crate::formatter::KrokFormatter::new();
+        let formatted_module = formatter.format(module).unwrap();
+
+        println!(
+            "Formatted module items count: {}",
+            formatted_module.body.len()
+        );
+        for (i, item) in formatted_module.body.iter().enumerate() {
+            if let Some((hash, name)) = crate::semantic_hash::SemanticHasher::hash_module_item(item)
+            {
+                println!("Item {i}: hash={hash:x}, name={name}");
+            }
+        }
+
+        // Step 4: Generate code without comments
+        println!("\n=== Step 4: Generate Code Without Comments ===");
+        let generator = crate::codegen::CodeGenerator::new(parser.source_map.clone());
+        let code_without_comments = generator
+            .generate_without_comments(&formatted_module)
+            .unwrap();
+        println!("Generated code:");
+        for (i, line) in code_without_comments.lines().enumerate() {
+            println!("{}: {}", i + 1, line);
+        }
+
+        // Step 5: Reinsert comments
+        println!("\n=== Step 5: Reinsert Comments ===");
+        let mut reinserter = CommentReinserter::new(extracted_comments);
+
+        // Add debug output inside the reinserter
+        println!("About to analyze generated code...");
+
+        let final_code = reinserter
+            .reinsert_comments(&code_without_comments)
+            .unwrap();
+
+        println!("Final code:");
+        for (i, line) in final_code.lines().enumerate() {
+            println!("{}: {}", i + 1, line);
+        }
     }
 
     #[test]
@@ -606,6 +741,7 @@ import { helper } from './helper';";
 
             let mut reinserter = CommentReinserter::new(CommentExtractionResult {
                 node_comments,
+                standalone_comments: Vec::new(),
                 floating_comments: Vec::new(),
             });
 
@@ -634,10 +770,10 @@ import { helper } from './helper';";
 
             let insertion_points = reinserter.calculate_insertion_points().unwrap();
 
-            // Should be sorted in reverse order (line 4 before line 1)
+            // Should be sorted in reverse order (line 5 before line 2)
             assert_eq!(insertion_points.len(), 2);
-            assert_eq!(insertion_points[0].line, 4); // Line 5-1 for leading
-            assert_eq!(insertion_points[1].line, 1); // Line 2-1 for leading
+            assert_eq!(insertion_points[0].line, 5); // Line 5 for leading
+            assert_eq!(insertion_points[1].line, 2); // Line 2 for leading
         });
     }
 
@@ -646,6 +782,7 @@ import { helper } from './helper';";
         with_globals(|| {
             let reinserter = CommentReinserter::new(CommentExtractionResult {
                 node_comments: HashMap::new(),
+                standalone_comments: Vec::new(),
                 floating_comments: Vec::new(),
             });
 
@@ -655,7 +792,7 @@ import { helper } from './helper';";
                 InsertionPoint {
                     line: 0,
                     column: 0,
-                    comment: ExtractedComment {
+                    comment: CommentWithType::Regular(ExtractedComment {
                         semantic_hash: 1,
                         comment_type: CommentType::Leading,
                         comment: Comment {
@@ -664,13 +801,13 @@ import { helper } from './helper';";
                             text: " Function comment".into(),
                         },
                         index: 0,
-                    },
+                    }),
                     indentation: String::new(),
                 },
                 InsertionPoint {
                     line: 1,
                     column: 15,
-                    comment: ExtractedComment {
+                    comment: CommentWithType::Regular(ExtractedComment {
                         semantic_hash: 2,
                         comment_type: CommentType::Trailing,
                         comment: Comment {
@@ -679,7 +816,7 @@ import { helper } from './helper';";
                             text: " Return value".into(),
                         },
                         index: 0,
-                    },
+                    }),
                     indentation: String::new(),
                 },
             ];
@@ -750,8 +887,8 @@ export function main() {
         // the actual output differs from the input
         let expected = "// File header
 import React from 'react';
-// Main function
 
+// Main function
 export function main() {
     return 42;
 } // Footer comment";

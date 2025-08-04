@@ -2,12 +2,13 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
-// FR2.4: Visibility grouping with dependencies - dependencies must be hoisted
-// Internal config used by exported class
 // Internal base class
+// FR2.4: Visibility grouping with dependencies - dependencies must be hoisted
+
 class BaseService {
     protected name = 'base';
 }
+// Internal config used by exported class
 const DATABASE_CONFIG = {
     host: 'localhost',
     port: 5432

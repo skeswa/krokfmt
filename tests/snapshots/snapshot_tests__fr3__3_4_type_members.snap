@@ -2,9 +2,9 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
-// FR3.4: Type members should be sorted alphabetically
-// Union types should be sorted
 // Object literal unions
+// FR3.4: Type members should be sorted alphabetically
+
 type Action = {
     type: 'LOAD';
     payload: string;
@@ -25,4 +25,5 @@ type Mixed = boolean | string | {
 } | number[] | (() => void);
 // Complex union types
 type Primitive = bigint | boolean | null | number | string | symbol | undefined;
+// Union types should be sorted
 type Status = 'error' | 'loading' | 'pending' | 'success';

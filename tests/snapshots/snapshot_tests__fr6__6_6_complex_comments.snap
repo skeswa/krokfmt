@@ -2,39 +2,46 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
-// FR6.6: Complex comment scenarios with multiple types
-/**
+/*
+*
  * Main application configuration
  * 
  * This file contains all the configuration needed
  * for the application to run properly.
- */ // Import section
-import { z } from 'zod'; // Schema validation
+ 
+*/ // Schema validation
+// Import section
+// FR6.6: Complex comment scenarios with multiple types
+
+import { z } from 'zod';
 
 import type { Config } from './types'; // Type definitions
 
-/* Configuration schema */ const schema = z.object({
+/* Configuration schema */
+const schema = z.object({
     apiKey: z.string(),
-    // Required fields
     apiUrl: z.string(),
-    retries: z.number().optional() // Retry count
-    ,
-    // Optional settings
+    retries: z.number().optional(),
     timeout: z.number().optional()
 });
+
 // Default configuration
 export const defaultConfig = {
     apiKey: process.env.API_KEY || '',
+    // Required fields
     apiUrl: 'https://api.example.com',
-    retries: 3 // Three attempts
-    ,
+    retries: 3, // Retry count // Three attempts
+    // Optional settings
     timeout: 5000
 }; // End of default config
-/**
+
+/*
+*
  * Validates configuration
  * @param config - The config object to validate
  * @returns Validated configuration
- */ export function validateConfig(config: unknown): Config {
-    // Parse and validate
-    return schema.parse(config); // Throws on error
+ 
+*/
+export function validateConfig(config: unknown): Config {
+    return schema.parse(config);
 }

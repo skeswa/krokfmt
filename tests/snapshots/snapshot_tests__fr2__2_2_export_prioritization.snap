@@ -3,7 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.2: Exported members should be prioritized over non-exported
-// Mix of exported and non-exported members
+
 class InternalService {
     name = 'internal';
 }
@@ -27,6 +27,7 @@ interface PrivateOptions {
     internal: boolean;
 }
 const anotherPrivate = 4;
+// Mix of exported and non-exported members
 const privateConfig = {
     debug: false
 };

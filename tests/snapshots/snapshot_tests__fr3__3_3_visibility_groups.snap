@@ -3,19 +3,17 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR3.3: Test all 9 visibility groups in proper order
+
 class CompleteClass {
     static aStatic = 'a';
-    // Public static fields (should be 1st)
     static zStatic = 'z';
 
     static #aPrivateStaticField = 'a';
-    // Private static fields (should be 2nd)
     static #zPrivateStaticField = 'z';
 
     static aStaticMethod() {
         return 'a';
     }
-    // Public static methods (should be 3rd)
     static zStaticMethod() {
         return 'z';
     }
@@ -23,19 +21,15 @@ class CompleteClass {
     static #aPrivateStatic() {
         return 'a';
     }
-    // Private static methods (should be 4th)
     static #zPrivateStatic() {
         return 'z';
     }
 
     aField: string = 'a';
-    // Public instance fields (should be 5th)
     zField: string = 'z';
 
     #aPrivateField = 'a';
-    // Private instance fields (should be 6th)
     #zPrivateField = 'z';
-    // Constructor (should be 7th)
 
     constructor(){
         this.aField = 'a';
@@ -45,7 +39,6 @@ class CompleteClass {
     aMethod() {
         return this.aField;
     }
-    // Public instance methods (should be 8th)
     zMethod() {
         return this.zField;
     }
@@ -53,8 +46,6 @@ class CompleteClass {
     #aPrivateMethod() {
         return 'a';
     }
-    // All members intentionally out of order to test sorting
-    // Private instance methods (should be 9th)
     #zPrivateMethod() {
         return 'z';
     }

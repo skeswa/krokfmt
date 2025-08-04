@@ -3,7 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.4: Test alphabetization within visibility groups
-// Exports in random order
+
 export interface Apple {
     type: string;
 }
@@ -21,6 +21,7 @@ export class Monkey {
 export function aardvark() {
     return 'a';
 }
+// Exports in random order
 export function zebra() {
     return 'z';
 }

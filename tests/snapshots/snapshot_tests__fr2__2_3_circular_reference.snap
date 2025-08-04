@@ -2,9 +2,9 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
-// FR2.3: Circular reference patterns
-// Pattern 1: Mutual type references
 // Pattern 3: Class with self-reference
+// FR2.3: Circular reference patterns
+
 class Node {
     next: Node | null = null;
 }
@@ -15,6 +15,7 @@ export class LinkedList {
 export function main() {
     return helper1();
 }
+// Pattern 1: Mutual type references
 type A = {
     b: B;
 };

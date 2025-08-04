@@ -3,7 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.4: Complex visibility grouping with mixed declaration types
-// Internal Error class and utilities
+
 export type AppAction = {
     type: 'SET_USER';
     payload: string;
@@ -42,7 +42,6 @@ export function createPublicError(statusCode: number, message: string): PublicEr
     return new PublicError(statusCode, message);
 }
 export async function fetchPublic(endpoint: string): Promise<Response> {
-    // Public API
     return new Response();
 }
 export const initialAppState: AppState = {
@@ -58,6 +57,7 @@ export function isPublicError(error: unknown): error is PublicError {
 export const isString: Validator<string> = (value): value is string =>{
     return typeof value === 'string';
 };
+// Internal Error class and utilities
 class InternalError extends Error {
     constructor(public code: string){
         super(`Internal error: ${code}`);
@@ -72,7 +72,6 @@ interface PrivateState {
 }
 // Mixed async utilities
 async function fetchInternal(path: string): Promise<unknown> {
-    // Internal implementation
     return {};
 }
 function isInternalError(error: unknown): error is InternalError {

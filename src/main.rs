@@ -5,8 +5,7 @@ use rayon::prelude::*;
 use std::path::{Path, PathBuf};
 
 use krokfmt::{
-    codegen::CodeGenerator, file_handler::FileHandler, formatter::KrokFormatter,
-    parser::TypeScriptParser, two_phase_formatter::TwoPhaseFormatter,
+    file_handler::FileHandler, parser::TypeScriptParser, two_phase_formatter::TwoPhaseFormatter,
 };
 
 /// Command-line interface for krokfmt.
@@ -45,13 +44,6 @@ struct Cli {
     // formatters corrupt files due to parser bugs. Better safe than sorry.
     #[arg(long, help = "Skip creating backups of original files")]
     no_backup: bool,
-
-    // Experimental two-phase comment preservation approach
-    #[arg(
-        long,
-        help = "Use experimental two-phase formatting for better comment preservation"
-    )]
-    experimental_comment_fix: bool,
 }
 
 fn main() -> Result<()> {
@@ -141,24 +133,11 @@ fn process_file(file_handler: &FileHandler, path: &Path, cli: &Cli) -> Result<bo
         .parse(&content, path.to_str().unwrap_or("unknown.ts"))
         .context("Failed to parse file")?;
 
-    let formatted_content = if cli.experimental_comment_fix {
-        // Use two-phase formatting for better comment preservation
-        let formatter = TwoPhaseFormatter::new(source_map, comments);
-        formatter
-            .format_with_source(module, content.clone())
-            .context("Failed to format file with two-phase approach")?
-    } else {
-        // Use regular formatting
-        let formatter = KrokFormatter::new();
-        let formatted_module = formatter.format(module).context("Failed to format file")?;
-
-        // The generator needs both source_map and comments to maintain comment positioning
-        // relative to the reformatted code structure.
-        let generator = CodeGenerator::with_comments(source_map, comments);
-        generator
-            .generate(&formatted_module)
-            .context("Failed to generate code")?
-    };
+    // Use two-phase formatting for better comment preservation
+    let formatter = TwoPhaseFormatter::new(source_map, comments);
+    let formatted_content = formatter
+        .format_with_source(module, content.clone())
+        .context("Failed to format file")?;
 
     // Simple string comparison is sufficient here - we're not doing a semantic diff
     // because any change, even whitespace, is a formatting change.

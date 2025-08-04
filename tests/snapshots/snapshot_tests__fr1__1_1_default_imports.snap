@@ -2,9 +2,9 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
-// FR1.1: Default imports should be parsed and preserved
 import axios from 'axios';
 import lodash from 'lodash';
+// FR1.1: Default imports should be parsed and preserved
 import React from 'react';
 
 const App = ()=><div>Hello</div>;

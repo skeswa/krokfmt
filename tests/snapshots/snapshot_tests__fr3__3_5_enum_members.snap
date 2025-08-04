@@ -2,9 +2,9 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
-// FR3.5: Enum members should be sorted (string enums only)
-// String enum - should be sorted
 // Another string enum
+// FR3.5: Enum members should be sorted (string enums only)
+
 enum Color {
     Blue = 'blue',
     Green = 'green',
@@ -25,6 +25,7 @@ enum Priority {
     Medium = 2,
     Critical = 4
 }
+// String enum - should be sorted
 enum Status {
     Error = 'error',
     Loading = 'loading',

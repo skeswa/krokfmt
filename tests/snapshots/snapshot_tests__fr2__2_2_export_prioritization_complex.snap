@@ -2,9 +2,9 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
-// FR2.2: Complex export prioritization with dependencies
-// Deep dependency chain
 // Class inheritance with mixed visibility
+// FR2.2: Complex export prioritization with dependencies
+
 class BaseClass {
     protected value = 10;
 }
@@ -13,6 +13,7 @@ class ExtendedClass extends MiddleClass {
         return this.getValue() * 2;
     }
 }
+// Deep dependency chain
 const level1 = 'base';
 const level2 = level1 + '_extended';
 const level3 = level2 + '_final';

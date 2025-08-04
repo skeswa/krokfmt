@@ -2,7 +2,6 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
-// FR1.2: Imports should be categorized into External, Absolute, and Relative groups
 import axios from 'axios';
 import lodash from 'lodash';
 import React from 'react';
@@ -13,6 +12,7 @@ import { theme } from '~/theme/default';
 
 import { User } from '../types/user';
 import { local } from './local';
+// FR1.2: Imports should be categorized into External, Absolute, and Relative groups
 import { helper } from './utils/helper';
 
 export const App = ()=>{
