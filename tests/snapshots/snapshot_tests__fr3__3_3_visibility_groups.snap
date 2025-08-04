@@ -3,7 +3,6 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR3.3: Test all 9 visibility groups in proper order
-
 class CompleteClass {
     static aStatic = 'a';
     static zStatic = 'z';

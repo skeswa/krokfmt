@@ -2,9 +2,8 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
-// Object literal unions
 // FR3.4: Type members should be sorted alphabetically
-
+// Object literal unions
 type Action = {
     type: 'LOAD';
     payload: string;

@@ -3,7 +3,6 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.3: Hoisting and temporal dead zone challenges
-
 class MyClass {
     value = 42;
 }

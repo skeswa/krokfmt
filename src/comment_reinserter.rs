@@ -132,14 +132,14 @@ impl CommentReinserter {
             }
         }
 
-        // Add standalone comments
-        // These maintain their original line positions in the module
+        // Add standalone comments at the very beginning of the file
+        // These are comments that have blank lines around them and aren't attached to any code
         for standalone in &self.extracted_comments.standalone_comments {
             insertion_points.push(InsertionPoint {
-                line: standalone.line,
+                line: 0, // Always place at the beginning
                 column: 0,
                 comment: CommentWithType::Standalone(standalone.clone()),
-                indentation: String::new(), // Will be determined based on context
+                indentation: String::new(),
             });
         }
 
@@ -172,12 +172,13 @@ impl CommentReinserter {
                                 _ => b.column.cmp(&a.column),
                             }
                         }
-                        // Standalone comments come before regular comments on the same line
+                        // Standalone comments should be processed after regular comments
+                        // so they appear above them in the final output
                         (CommentWithType::Standalone(_), CommentWithType::Regular(_)) => {
-                            std::cmp::Ordering::Less
+                            std::cmp::Ordering::Greater
                         }
                         (CommentWithType::Regular(_), CommentWithType::Standalone(_)) => {
-                            std::cmp::Ordering::Greater
+                            std::cmp::Ordering::Less
                         }
                         _ => b.column.cmp(&a.column),
                     }
@@ -233,11 +234,8 @@ impl CommentReinserter {
                     // Standalone comments get their own line
                     if point.line < lines.len() {
                         lines.insert(point.line, comment_text);
-                        // Add a blank line after standalone comments to maintain separation
-                        if point.line + 1 < lines.len() && !lines[point.line + 1].trim().is_empty()
-                        {
-                            lines.insert(point.line + 1, String::new());
-                        }
+                        // Don't add blank lines after standalone comments when they're at the top
+                        // The natural spacing from the code will be sufficient
                     } else {
                         lines.push(comment_text);
                     }

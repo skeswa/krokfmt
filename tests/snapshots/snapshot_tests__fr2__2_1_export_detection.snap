@@ -2,9 +2,8 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
-// Non-exported class
 // FR2.1: Exported members should be detected and prioritized
-
+// Non-exported class
 class PrivateClass {
     value = 1;
 }

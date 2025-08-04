@@ -3,7 +3,6 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.4: Test alphabetization within visibility groups
-
 export interface Apple {
     type: string;
 }

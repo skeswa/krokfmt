@@ -3,7 +3,6 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.4: Complex visibility grouping with mixed declaration types
-
 export type AppAction = {
     type: 'SET_USER';
     payload: string;

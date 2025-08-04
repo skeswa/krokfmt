@@ -3,7 +3,6 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR3.3: Test private field syntax with # prefix
-
 class PrivateFieldsClass {
     static staticBanana = 'static public banana';
     static staticCherry = 'static public cherry';

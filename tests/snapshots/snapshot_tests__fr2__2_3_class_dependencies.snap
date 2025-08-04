@@ -2,9 +2,8 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
-// Decorator pattern
 // FR2.3: Class-based dependency patterns
-
+// Decorator pattern
 class BaseDecorator {
     constructor(protected component: any){}
 }

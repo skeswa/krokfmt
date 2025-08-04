@@ -3,7 +3,6 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.3: Computed property dependencies
-
 class DataService {
     [methodName]() {
         return 'data';

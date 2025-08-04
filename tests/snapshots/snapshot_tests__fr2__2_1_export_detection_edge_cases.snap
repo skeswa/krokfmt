@@ -3,7 +3,6 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.1: Complex export detection patterns
-
 export { bar as baz } from './bar';
 export { foo } from './foo';
 export * as helpers from './helpers';

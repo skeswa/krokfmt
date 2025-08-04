@@ -3,7 +3,6 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR6.4: Comments on object properties should stay with properties after sorting
-
 const config = {
     // Database config
     database: {

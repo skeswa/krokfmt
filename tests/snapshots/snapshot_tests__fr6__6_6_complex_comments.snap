@@ -2,6 +2,7 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
+// FR6.6: Complex comment scenarios with multiple types
 /*
 *
  * Main application configuration
@@ -11,8 +12,6 @@ expression: output
  
 */ // Schema validation
 // Import section
-// FR6.6: Complex comment scenarios with multiple types
-
 import { z } from 'zod';
 
 import type { Config } from './types'; // Type definitions

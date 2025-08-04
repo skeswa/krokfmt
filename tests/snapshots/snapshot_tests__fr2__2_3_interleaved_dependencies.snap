@@ -2,9 +2,8 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
-// Export depends on non-export that depends on export
 // FR2.3: Interleaved dependencies - exports and non-exports mixed
-
+// Export depends on non-export that depends on export
 export interface SuperAdmin extends AdminUser {
     superPowers: boolean;
 }

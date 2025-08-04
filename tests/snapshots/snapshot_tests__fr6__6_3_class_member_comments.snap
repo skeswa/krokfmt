@@ -2,13 +2,12 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
+// FR6.3: Comments on class members should stay with their members after reordering
 /*
 *
  * User service class
  
 */
-// FR6.3: Comments on class members should stay with their members after reordering
-
 export class UserService {
     static validateId(id: number) {
         return id > 0;

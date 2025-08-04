@@ -692,22 +692,45 @@ function c() {}
 
 #### FR6.7: Standalone Comment Preservation
 
-**Description**: The system shall preserve the position of standalone comments within their local context, particularly when those comments provide section headers or contextual information.
+**Description**: The system shall preserve standalone comments that serve as section headers or provide contextual information not directly attached to code.
 
-**Scope**:
+**Definition**: A comment is considered "standalone" when it has blank lines both before and after it (except at file boundaries).
 
-1. **Within Classes** - Standalone comments at the beginning of a class body remain at the top after member reordering
-2. **Within Functions** - Section comments maintain their position relative to the code blocks they describe
-3. **Module Level** - Due to visibility-based organization (FR2.4), top-level declarations may be reordered, which can affect section organization
+**Placement Strategy**:
+
+1. **Module Level** - Standalone comments are placed at the beginning of the formatted output, preserving their original order
+2. **Within Classes** - Standalone comments at the beginning of a class body remain at the top after member reordering
+3. **Within Functions** - Section comments maintain their position relative to the code blocks they describe
 
 **Rules**:
 
-- Comments separated from code by blank lines are considered standalone
-- Within classes/functions, standalone comments maintain their relative position
-- Comments directly preceding code (no blank line) are attached to that code and move with it
-- Class-level descriptive comments stay at the top of the class body
+- Comments separated from code by blank lines on both sides are considered standalone
+- Comments directly preceding code (no blank line after) are attached to that code and move with it
+- Comments directly following code (no blank line before) are trailing comments
+- At file start/end, a single blank line boundary is sufficient for standalone classification
+- Standalone comments are placed at the beginning of the file without additional blank lines
 
-**Note**: At the module level, the formatter prioritizes visibility-based organization (exported members first, non-exported second) which may reorder declarations and their associated comments. This is by design to maintain a consistent public API surface at the top of modules.
+**Implementation Note**: Due to code reordering for visibility-based organization (FR2.4), standalone comments cannot maintain their original line positions. They are placed at the beginning of the file to ensure they remain visible and maintain their role as section headers or contextual documentation.
+
+**Example**:
+
+```typescript
+// Before formatting
+import { api } from './api';
+
+// Section: Utilities
+// These functions provide common utilities
+
+function helper() { return 42; }
+
+// After formatting
+// Section: Utilities
+// These functions provide common utilities
+
+import { api } from './api';
+
+function helper() { return 42; }
+```
 
 ### FR7: Visual Separation
 

@@ -2,9 +2,8 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
-// Mixed visibility service
 // FR2: Comprehensive integration test combining all FR2 features
-
+// Mixed visibility service
 class BaseService {
     protected logger: Logger;
 

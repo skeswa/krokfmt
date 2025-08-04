@@ -3,7 +3,6 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.4: Basic visibility grouping - exports at top, non-exports at bottom, alphabetized within groups
-
 export interface ExternalInterface {
     name: string;
 }

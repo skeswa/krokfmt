@@ -268,7 +268,6 @@ impl<'a> Visit for CommentExtractor<'a> {
             if let Some(leading_comments) = self.comments.get_leading(item_span.lo) {
                 for (index, comment) in leading_comments.iter().enumerate() {
                     let comment_line = self.get_line_number(comment.span.lo);
-
                     // Check if this is a standalone comment
                     if self.is_standalone_comment(comment, comment_line) {
                         self.standalone_comments.push(StandaloneComment {

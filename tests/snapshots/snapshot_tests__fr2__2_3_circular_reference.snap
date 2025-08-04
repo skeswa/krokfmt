@@ -2,9 +2,8 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
-// Pattern 3: Class with self-reference
 // FR2.3: Circular reference patterns
-
+// Pattern 3: Class with self-reference
 class Node {
     next: Node | null = null;
 }
