@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use swc_common::{comments::SingleThreadedComments, sync::Lrc, FileName, SourceMap};
 use swc_ecma_ast::Module;
-use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
+use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax};
 
 /// Wrapper around SWC's TypeScript parser with our specific configuration.
 ///
@@ -28,13 +28,14 @@ impl TypeScriptParser {
     }
 
     pub fn parse(&self, source: &str, filename: &str) -> Result<Module> {
-        let fm = self
-            .source_map
-            .new_source_file(FileName::Custom(filename.to_string()), source.to_string());
+        let fm = self.source_map.new_source_file(
+            Lrc::new(FileName::Custom(filename.to_string())),
+            source.to_string(),
+        );
 
         // TSX detection is file extension based - we chose this over content sniffing
         // to avoid ambiguity and match common tooling behavior (webpack, tsc, etc).
-        let syntax = Syntax::Typescript(TsConfig {
+        let syntax = Syntax::Typescript(swc_ecma_parser::TsSyntax {
             tsx: filename.ends_with(".tsx"),
             decorators: true,      // Always enabled since Angular/NestJS are popular
             no_early_errors: true, // We want to format even partially invalid code

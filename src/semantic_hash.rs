@@ -328,10 +328,10 @@ impl SemanticHasher {
             ClassMember::PrivateMethod(method) => {
                 "private_method".hash(&mut hasher);
                 method.is_static.hash(&mut hasher);
-                method.key.id.sym.hash(&mut hasher);
+                method.key.name.hash(&mut hasher);
                 Self::hash_function_signature(&method.function, &mut hasher);
 
-                Some((hasher.finish(), format!("#{}", method.key.id.sym)))
+                Some((hasher.finish(), format!("#{}", method.key.name)))
             }
             ClassMember::ClassProp(prop) => {
                 "prop".hash(&mut hasher);
@@ -349,9 +349,9 @@ impl SemanticHasher {
             ClassMember::PrivateProp(prop) => {
                 "private_prop".hash(&mut hasher);
                 prop.is_static.hash(&mut hasher);
-                prop.key.id.sym.hash(&mut hasher);
+                prop.key.name.hash(&mut hasher);
 
-                Some((hasher.finish(), format!("#{}", prop.key.id.sym)))
+                Some((hasher.finish(), format!("#{}", prop.key.name)))
             }
             _ => None,
         }

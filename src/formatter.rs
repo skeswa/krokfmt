@@ -1116,7 +1116,7 @@ impl FormatterVisitor {
                 }
             }
             ClassMember::PrivateProp(prop) => {
-                let key = prop.key.id.sym.to_string();
+                let key = prop.key.name.to_string();
                 if prop.is_static {
                     (1, key) // Private static fields
                 } else {
@@ -1124,7 +1124,7 @@ impl FormatterVisitor {
                 }
             }
             ClassMember::PrivateMethod(method) => {
-                let key = method.key.id.sym.to_string();
+                let key = method.key.name.to_string();
                 if method.is_static {
                     (3, key) // Private static methods
                 } else {

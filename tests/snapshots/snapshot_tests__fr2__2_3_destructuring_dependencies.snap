@@ -38,18 +38,17 @@ const { user: { profile: { name } } } = nested;
 
 export const username = name;
 
+// Object with dependencies
+const baseConfig = {
+    host: 'localhost',
+    port: 3000
+};
 const extendedConfig = {
     ...baseConfig,
     ssl: true
 };
 
 export const { host, port } = extendedConfig;
-
-// Object with dependencies
-const baseConfig = {
-    host: 'localhost',
-    port: 3000
-};
 
 // Function parameter destructuring
 interface Options {

@@ -671,7 +671,7 @@ mod tests {
     use crate::codegen::CodeGenerator;
     use crate::comment_extractor::CommentExtractor;
     use crate::formatter::KrokFormatter;
-    use swc_common::{SyntaxContext, GLOBALS};
+    use swc_common::GLOBALS;
 
     /// Helper to run tests within SWC GLOBALS context
     fn with_globals<F, R>(f: F) -> R
@@ -762,11 +762,7 @@ import { helper } from './helper';";
         let collector = PositionCollector::new(source);
 
         // Test span conversion
-        let span = swc_common::Span::new(
-            swc_common::BytePos(0),
-            swc_common::BytePos(30),
-            SyntaxContext::empty(),
-        );
+        let span = swc_common::Span::new(swc_common::BytePos(0), swc_common::BytePos(30));
         let pos = collector.get_position_info(span).unwrap();
 
         assert_eq!(pos.start_line, 0);
@@ -781,11 +777,7 @@ import { helper } from './helper';";
         let collector = PositionCollector::new(source);
 
         // Test span for "return 42;" on line 2
-        let span = swc_common::Span::new(
-            swc_common::BytePos(21),
-            swc_common::BytePos(31),
-            SyntaxContext::empty(),
-        );
+        let span = swc_common::Span::new(swc_common::BytePos(21), swc_common::BytePos(31));
         let pos = collector.get_position_info(span).unwrap();
 
         assert_eq!(pos.start_line, 1); // Second line (0-indexed)
