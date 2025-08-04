@@ -3,37 +3,43 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.3: Complex dependency chains with mixed exports
-const ADJUSTED = RESULT + 5;
-// Chain 1: Constants building on each other
-const BASE = 10;
+export function calculate(x: number) {
+    return multiply(add(x, 5), 2);
+}
+
 // Chain 3: Object builders
 const defaults = {
     color: 'blue',
     size: 10
 };
-const extended = {
-    ...config,
-    name: 'test'
-};
-const MULTIPLIER = 2;
 const overrides = {
     size: 20
 };
-
-export function calculate(x: number) {
-    return multiply(add(x, 5), 2);
-}
 
 export const config = {
     ...defaults,
     ...overrides
 };
-export const FINAL = ADJUSTED * 2;
+
+const extended = {
+    ...config,
+    name: 'test'
+};
+
 export const finalConfig = {
     ...extended,
     id: 1
 };
+
+// Chain 1: Constants building on each other
+const BASE = 10;
+const MULTIPLIER = 2;
+
 export const RESULT = BASE * MULTIPLIER;
+
+const ADJUSTED = RESULT + 5;
+
+export const FINAL = ADJUSTED * 2;
 
 export function safeCalculate(x: number) {
     return validate(x) ? calculate(x) : 0;

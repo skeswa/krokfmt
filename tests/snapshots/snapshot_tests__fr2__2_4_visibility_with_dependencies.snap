@@ -8,18 +8,19 @@ class BaseService {
     protected name = 'base';
 }
 
-// Internal config used by exported class
-const DATABASE_CONFIG = {
-    host: 'localhost',
-    port: 5432
-};
-
 // Exported class extending internal base
 export class ApiService extends BaseService {
     getName() {
         return this.name;
     }
 }
+
+// Internal config used by exported class
+const DATABASE_CONFIG = {
+    host: 'localhost',
+    port: 5432
+};
+
 // Exported class that depends on internal config
 export class DatabaseConnection {
     private config = DATABASE_CONFIG;

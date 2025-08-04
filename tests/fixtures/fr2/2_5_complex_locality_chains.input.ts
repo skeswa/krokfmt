@@ -1,0 +1,65 @@
+// FR2.5: Complex dependency chains with export locality
+
+// Deep dependency chain
+const baseConfig = { port: 3000 };
+const extendedConfig = { ...baseConfig, host: 'localhost' };
+const finalConfig = { ...extendedConfig, secure: true };
+
+// Export using the final dependency in chain
+export class Server {
+    config = finalConfig;
+}
+
+// Intermediate dependency
+const middleware = () => {};
+
+// Export with multiple unrelated dependencies
+const validator = (x: any) => true;
+const transformer = (x: any) => x;
+const formatter = (x: any) => String(x);
+
+export function processData(input: any) {
+    if (!validator(input)) return null;
+    const transformed = transformer(input);
+    return formatter(transformed);
+}
+
+// Circular-like dependency pattern
+const stateA = { value: 1 };
+const stateB = { ref: stateA };
+
+export function getStateA() {
+    return stateA;
+}
+
+export function getStateB() {
+    return stateB;
+}
+
+// Export depending on a dependency that itself depends on another
+const innerHelper = () => "inner";
+const outerHelper = () => innerHelper() + " outer";
+
+export function complexHelper() {
+    return outerHelper();
+}
+
+// Mixed export statement with dependencies
+const constA = 1;
+const constB = 2;
+export { constA, constB };
+
+// Type dependencies
+type BaseType = { id: number };
+interface ExtendedInterface extends BaseType {
+    name: string;
+}
+
+export type PublicType = ExtendedInterface | null;
+
+// Independent non-exported members
+function privateFunction() {
+    return "private";
+}
+
+const privateConst = 100;

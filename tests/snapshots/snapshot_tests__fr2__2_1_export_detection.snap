@@ -3,18 +3,20 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.1: Exported members should be detected and prioritized
-// Non-exported class
-class PrivateClass {
-    value = 1;
-}
-
 // Named exports
 const a = 1;
 const b = 2;
 
+export { a, b };
+
 // Exported function
 export function publicApi() {
     return privateHelper() + ' api';
+}
+
+// Non-exported class
+class PrivateClass {
+    value = 1;
 }
 
 // Exported class
@@ -42,5 +44,3 @@ interface PrivateInterface {
 
 // Non-exported type
 type PrivateType = number | string;
-
-export { a, b };

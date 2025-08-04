@@ -576,7 +576,6 @@ impl KrokFormatter {
         // Step 3: Separate imports, re-exports, and other items
         let mut imports = Vec::new();
         let mut re_exports = Vec::new();
-        let mut other_exports = Vec::new();
         let mut other_items = Vec::new();
 
         for item in module.body.into_iter() {
@@ -590,12 +589,8 @@ impl KrokFormatter {
                 ModuleItem::ModuleDecl(ModuleDecl::ExportAll(_)) => {
                     re_exports.push(item);
                 }
-                ModuleItem::ModuleDecl(ModuleDecl::ExportNamed(_))
-                | ModuleItem::ModuleDecl(ModuleDecl::ExportDefaultExpr(_))
-                | ModuleItem::ModuleDecl(ModuleDecl::ExportDefaultDecl(_)) => {
-                    other_exports.push(item);
-                }
                 _ => {
+                    // All other items (including export statements) go through visibility organization
                     other_items.push(item);
                 }
             }
@@ -645,9 +640,6 @@ impl KrokFormatter {
         // Add organized items
         new_body.extend(organized_items);
 
-        // Add other exports at the end
-        new_body.extend(other_exports);
-
         module.body = new_body;
 
         // Apply other transformations
@@ -657,13 +649,14 @@ impl KrokFormatter {
         Ok(module)
     }
 
-    /// Organize declarations by visibility level with alphabetization.
+    /// Organize declarations by visibility level with alphabetization and locality.
     ///
-    /// This implements FR2.4: visibility-based grouping with alphabetization.
-    /// - Exported items appear first (public API)
+    /// This implements FR2.4 and FR2.5: visibility-based grouping with alphabetization
+    /// and dependency-export locality.
+    /// - Exported items appear first (public API) with their dependencies
+    /// - Dependencies are grouped with the exports that use them
     /// - Non-exported items appear last (internal implementation)
-    /// - Within each group, items are sorted alphabetically
-    /// - Dependencies can override visibility ordering when necessary
+    /// - Within each group, items are sorted appropriately
     fn organize_by_visibility(
         &self,
         items: Vec<ModuleItem>,
@@ -674,6 +667,7 @@ impl KrokFormatter {
         let mut ordered_items = Vec::new();
         let mut name_to_item: HashMap<String, ModuleItem> = HashMap::new();
         let mut other_items = Vec::new();
+        let mut export_statements = Vec::new();
 
         // Maintain original order while building the map
         for item in items {
@@ -681,6 +675,13 @@ impl KrokFormatter {
                 ordered_items.push(name.clone());
                 name_to_item.insert(name, item);
             } else {
+                // Check if this is an export statement
+                if let ModuleItem::ModuleDecl(ModuleDecl::ExportNamed(export)) = &item {
+                    if export.src.is_none() {
+                        export_statements.push(item);
+                        continue;
+                    }
+                }
                 other_items.push(item);
             }
         }
@@ -697,111 +698,136 @@ impl KrokFormatter {
             }
         }
 
-        // Sort each group alphabetically (case-insensitive)
+        // Sort exported names alphabetically (case-insensitive)
         exported_names.sort_by_key(|a| a.to_lowercase());
         non_exported_names.sort_by_key(|a| a.to_lowercase());
 
-        // Find dependencies that need to be hoisted
-        let mut hoisted_deps = HashSet::new();
         let mut result = Vec::new();
         let mut added = HashSet::new();
 
-        // First pass: identify non-exported dependencies of exported items
-        for exported_name in &exported_names {
-            Self::collect_non_exported_deps(
-                exported_name,
-                dependency_graph,
-                &non_exported_names,
-                &mut hoisted_deps,
-            );
-        }
+        // Create export groups based on shared dependencies
+        let mut export_groups: Vec<Vec<String>> = Vec::new();
+        let mut processed_exports = HashSet::new();
 
-        // Recursive helper to add items with their dependencies in correct order.
-        // This implements a modified depth-first traversal that ensures all
-        // dependencies of an item appear before the item itself.
-        fn add_with_dependencies(
-            name: &str,
-            name_to_item: &mut HashMap<String, ModuleItem>,
-            dependency_graph: &DependencyGraph,
-            result: &mut Vec<ModuleItem>,
-            added: &mut HashSet<String>,
-            ordered_items: &[String],
-        ) {
-            if added.contains(name) || !name_to_item.contains_key(name) {
-                return;
+        for export_name in &exported_names {
+            if processed_exports.contains(export_name) {
+                continue;
             }
 
-            // Mark as being processed to prevent infinite recursion
-            added.insert(name.to_string());
+            // Start a new group with this export
+            let mut group = vec![export_name.clone()];
+            processed_exports.insert(export_name.clone());
 
-            // First add dependencies
-            if let Some(deps) = dependency_graph.dependencies.get(name) {
-                let mut sorted_deps: Vec<_> = deps.iter().cloned().collect();
-                // Preserve relative order of dependencies as they appeared in source.
-                // This maintains developer intent when multiple valid orders exist.
-                sorted_deps.sort_by_key(|dep| {
-                    ordered_items
-                        .iter()
-                        .position(|n| n == dep)
-                        .unwrap_or(usize::MAX)
-                });
+            // Find other exports that share dependencies with this one
+            let mut export_deps = HashSet::new();
+            Self::collect_all_deps(export_name, dependency_graph, &mut export_deps);
 
-                for dep in sorted_deps {
-                    if !added.contains(&dep) {
-                        add_with_dependencies(
-                            &dep,
-                            name_to_item,
-                            dependency_graph,
-                            result,
-                            added,
-                            ordered_items,
-                        );
+            for other_export in &exported_names {
+                if processed_exports.contains(other_export) {
+                    continue;
+                }
+
+                let mut other_deps = HashSet::new();
+                Self::collect_all_deps(other_export, dependency_graph, &mut other_deps);
+
+                // If they share any dependencies, add to the group
+                if export_deps.intersection(&other_deps).count() > 0 {
+                    group.push(other_export.clone());
+                    processed_exports.insert(other_export.clone());
+                    // Add the new export's dependencies to the group's dependency set
+                    export_deps.extend(other_deps);
+                }
+            }
+
+            export_groups.push(group);
+        }
+
+        // Process each export group with its dependencies
+        for group in export_groups {
+            // Collect all dependencies for this group
+            let mut group_deps = HashSet::new();
+            for export_name in &group {
+                Self::collect_non_exported_deps(
+                    export_name,
+                    dependency_graph,
+                    &non_exported_names,
+                    &mut group_deps,
+                );
+            }
+
+            // Add dependencies first (in dependency order)
+            let mut deps_to_add: Vec<_> = group_deps.into_iter().collect();
+            deps_to_add.sort_by_key(|dep| {
+                ordered_items
+                    .iter()
+                    .position(|n| n == dep)
+                    .unwrap_or(usize::MAX)
+            });
+
+            for dep in deps_to_add {
+                if !added.contains(&dep) {
+                    Self::add_item_with_dependencies(
+                        &dep,
+                        &mut name_to_item,
+                        dependency_graph,
+                        &mut result,
+                        &mut added,
+                        &ordered_items,
+                    );
+                }
+            }
+
+            // Then add the exports in the group (alphabetically sorted within group)
+            let mut sorted_group = group.clone();
+            sorted_group.sort_by_key(|a| a.to_lowercase());
+
+            for export_name in sorted_group {
+                if !added.contains(&export_name) {
+                    if let Some(item) = name_to_item.remove(&export_name) {
+                        result.push(item);
+                        added.insert(export_name);
                     }
                 }
             }
 
-            // Then add the item itself
-            if let Some(item) = name_to_item.remove(name) {
-                result.push(item);
+            // Add any export statements that export members from this group
+            // Only add if ALL exported members have been added already
+            let group_set: HashSet<_> = group.iter().cloned().collect();
+            let mut i = 0;
+            while i < export_statements.len() {
+                let should_add = if let ModuleItem::ModuleDecl(ModuleDecl::ExportNamed(export)) =
+                    &export_statements[i]
+                {
+                    // Check if ALL specifiers are either in this group or already added
+                    export.specifiers.iter().all(|spec| {
+                        if let ExportSpecifier::Named(named) = spec {
+                            if let ModuleExportName::Ident(ident) = &named.orig {
+                                let name = ident.sym.to_string();
+                                // Should add if the name is in current group or already added
+                                group_set.contains(&name) || added.contains(&name)
+                            } else {
+                                true // Non-identifier exports don't block
+                            }
+                        } else {
+                            true // Non-named exports don't block
+                        }
+                    })
+                } else {
+                    false
+                };
+
+                if should_add {
+                    result.push(export_statements.remove(i));
+                } else {
+                    i += 1;
+                }
             }
         }
 
-        // Second pass: add hoisted dependencies first (maintaining their relative order)
-        let mut hoisted_sorted: Vec<_> = hoisted_deps.iter().cloned().collect();
-        hoisted_sorted.sort_by_key(|a| a.to_lowercase());
-
-        for name in hoisted_sorted {
-            if let Some(item) = name_to_item.remove(&name) {
-                result.push(item);
-                added.insert(name);
-            }
-        }
-
-        // Add a marker for visual separation if we have hoisted deps
-        let _needs_separation = !hoisted_deps.is_empty();
-
-        // Third pass: add exported items (already sorted alphabetically)
-        for name in &exported_names {
-            if !added.contains(name) {
-                add_with_dependencies(
-                    name,
-                    &mut name_to_item,
-                    dependency_graph,
-                    &mut result,
-                    &mut added,
-                    &ordered_items,
-                );
-            }
-        }
-
-        // Add another marker for visual separation between exports and non-exports
-        let _has_exports = !exported_names.is_empty();
-        let _has_non_exports = non_exported_names.iter().any(|n| !hoisted_deps.contains(n));
-
-        // Fourth pass: add non-exported items (already sorted alphabetically)
+        // Add non-exported items that weren't dependencies
         for name in &non_exported_names {
             if !added.contains(name) {
-                add_with_dependencies(
+                Self::add_item_with_dependencies(
                     name,
                     &mut name_to_item,
                     dependency_graph,
@@ -811,11 +837,123 @@ impl KrokFormatter {
                 );
             }
         }
+
+        // Add any remaining export statements
+        result.extend(export_statements);
 
         // Add remaining items (like expression statements)
         result.extend(other_items);
 
         Ok(result)
+    }
+
+    // Helper method to add an item with its dependencies
+    fn add_item_with_dependencies(
+        name: &str,
+        name_to_item: &mut HashMap<String, ModuleItem>,
+        dependency_graph: &DependencyGraph,
+        result: &mut Vec<ModuleItem>,
+        added: &mut HashSet<String>,
+        ordered_items: &[String],
+    ) {
+        Self::add_item_with_dependencies_recursive(
+            name,
+            name_to_item,
+            dependency_graph,
+            result,
+            added,
+            ordered_items,
+            &mut HashSet::new(),
+        );
+    }
+
+    fn add_item_with_dependencies_recursive(
+        name: &str,
+        name_to_item: &mut HashMap<String, ModuleItem>,
+        dependency_graph: &DependencyGraph,
+        result: &mut Vec<ModuleItem>,
+        added: &mut HashSet<String>,
+        ordered_items: &[String],
+        visiting: &mut HashSet<String>,
+    ) {
+        if added.contains(name) || !name_to_item.contains_key(name) || visiting.contains(name) {
+            return;
+        }
+
+        visiting.insert(name.to_string());
+
+        // First add dependencies
+        if let Some(deps) = dependency_graph.dependencies.get(name) {
+            let mut sorted_deps: Vec<_> = deps.iter().cloned().collect();
+            sorted_deps.sort_by_key(|dep| {
+                ordered_items
+                    .iter()
+                    .position(|n| n == dep)
+                    .unwrap_or(usize::MAX)
+            });
+
+            for dep in sorted_deps {
+                if !added.contains(&dep) {
+                    Self::add_item_with_dependencies_recursive(
+                        &dep,
+                        name_to_item,
+                        dependency_graph,
+                        result,
+                        added,
+                        ordered_items,
+                        visiting,
+                    );
+                }
+            }
+        }
+
+        visiting.remove(name);
+
+        // Then add the item itself
+        if let Some(item) = name_to_item.remove(name) {
+            result.push(item);
+            added.insert(name.to_string());
+        }
+    }
+
+    /// Collect all dependencies (both exported and non-exported) of a given item.
+    fn collect_all_deps(
+        item_name: &str,
+        dependency_graph: &DependencyGraph,
+        all_deps: &mut HashSet<String>,
+    ) {
+        Self::collect_all_deps_recursive(
+            item_name,
+            dependency_graph,
+            all_deps,
+            &mut HashSet::new(),
+        );
+    }
+
+    fn collect_all_deps_recursive(
+        item_name: &str,
+        dependency_graph: &DependencyGraph,
+        all_deps: &mut HashSet<String>,
+        visiting: &mut HashSet<String>,
+    ) {
+        if visiting.contains(item_name) {
+            // Cycle detected, stop recursion
+            return;
+        }
+
+        visiting.insert(item_name.to_string());
+
+        if let Some(deps) = dependency_graph.dependencies.get(item_name) {
+            for dep in deps {
+                if !all_deps.contains(dep) {
+                    all_deps.insert(dep.clone());
+                    // Recursively collect dependencies of this dependency
+                    Self::collect_all_deps_recursive(dep, dependency_graph, all_deps, visiting);
+                }
+            }
+        }
+
+        visiting.remove(item_name);
     }
 
     /// Collect all non-exported dependencies of a given item.
@@ -825,20 +963,46 @@ impl KrokFormatter {
         non_exported_names: &[String],
         hoisted_deps: &mut HashSet<String>,
     ) {
+        Self::collect_non_exported_deps_recursive(
+            item_name,
+            dependency_graph,
+            non_exported_names,
+            hoisted_deps,
+            &mut HashSet::new(),
+        );
+    }
+
+    fn collect_non_exported_deps_recursive(
+        item_name: &str,
+        dependency_graph: &DependencyGraph,
+        non_exported_names: &[String],
+        hoisted_deps: &mut HashSet<String>,
+        visiting: &mut HashSet<String>,
+    ) {
+        if visiting.contains(item_name) {
+            // Cycle detected, stop recursion
+            return;
+        }
+
+        visiting.insert(item_name.to_string());
+
         if let Some(deps) = dependency_graph.dependencies.get(item_name) {
             for dep in deps {
                 if non_exported_names.contains(dep) && !hoisted_deps.contains(dep) {
                     hoisted_deps.insert(dep.clone());
                     // Recursively collect dependencies of this dependency
-                    Self::collect_non_exported_deps(
+                    Self::collect_non_exported_deps_recursive(
                         dep,
                         dependency_graph,
                         non_exported_names,
                         hoisted_deps,
+                        visiting,
                     );
                 }
             }
         }
+
+        visiting.remove(item_name);
     }
 
     fn get_item_name(item: &ModuleItem) -> Option<String> {

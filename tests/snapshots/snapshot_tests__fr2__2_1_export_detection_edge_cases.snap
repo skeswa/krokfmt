@@ -8,13 +8,6 @@ export { foo } from './foo';
 export * as helpers from './helpers';
 export * from './utils';
 
-// Const assertions with exports
-const VALUES = [
-    'a',
-    'b',
-    'c'
-] as const;
-
 export interface ExportedInterface extends InternalInterface {
     y: number;
 }
@@ -26,6 +19,16 @@ export const external = 'external';
 // Export list at bottom
 const item1 = 'one';
 const item2 = 'two';
+
+// Re-exports
+export { item1, item2 };
+
+// Const assertions with exports
+const VALUES = [
+    'a',
+    'b',
+    'c'
+] as const;
 
 export type Value = typeof VALUES[number];
 
@@ -49,6 +52,3 @@ interface InternalInterface {
 type InternalType = string;
 
 const item3 = 'three';
-
-// Re-exports
-export { item1, item2 };

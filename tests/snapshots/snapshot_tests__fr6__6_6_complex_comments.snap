@@ -16,23 +16,23 @@ import { z } from 'zod';
 
 import type { Config } from './types'; // Type definitions
 
-/* Configuration schema */
-const schema = z.object({
-    apiKey: z.string(),
-    apiUrl: z.string(),
-    retries: z.number().optional(),
-    timeout: z.number().optional()
-});
-
 // Default configuration
 export const defaultConfig = {
     apiKey: process.env.API_KEY || '',
-    // Required fields
     apiUrl: 'https://api.example.com',
-    retries: 3, // Retry count // Three attempts
-    // Optional settings
+    retries: 3,
     timeout: 5000
 }; // End of default config
+
+/* Configuration schema */
+const schema = z.object({
+    apiKey: z.string(),
+    // Required fields
+    apiUrl: z.string(),
+    retries: z.number().optional(), // Retry count // Three attempts
+    // Optional settings
+    timeout: z.number().optional()
+});
 
 /*
 *

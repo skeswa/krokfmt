@@ -3,6 +3,12 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2: Comprehensive integration test combining all FR2 features
+// Exported config depending on base
+export interface AppConfig extends BaseConfig {
+    logLevel: LogLevel;
+    apiUrl: string;
+}
+
 // Mixed visibility service
 class BaseService {
     protected logger: Logger;
@@ -12,20 +18,9 @@ class BaseService {
     }
 }
 
-// Final integration
-const serviceInstance = createDataService();
-
-// Exported config depending on base
-export interface AppConfig extends BaseConfig {
-    logLevel: LogLevel;
-    apiUrl: string;
+export function createDataService(config: AppConfig = defaultConfig): DataService {
+    return new DataService(config);
 }
-
-export const defaultConfig: AppConfig = {
-    apiUrl: 'https://api.example.com',
-    debug: false,
-    logLevel: 'info'
-};
 
 export class DataService extends BaseService {
     async fetchData(id: string): Promise<unknown> {
@@ -39,8 +34,19 @@ export class DataService extends BaseService {
     }
 }
 
-export function createDataService(config: AppConfig = defaultConfig): DataService {
-    return new DataService(config);
+export function createLogger(level: LogLevel = 'info'): Logger {
+    return new Logger(level);
+}
+
+export const defaultConfig: AppConfig = {
+    apiUrl: 'https://api.example.com',
+    debug: false,
+    logLevel: 'info'
+};
+
+// Type guards and validators
+export function isAppConfig(value: unknown): value is AppConfig {
+    return (typeof value === 'object' && value !== null && 'debug' in value && 'logLevel' in value && 'apiUrl' in value);
 }
 
 // Exported logger with dependencies
@@ -54,13 +60,9 @@ export class Logger {
     }
 }
 
-export function createLogger(level: LogLevel = 'info'): Logger {
-    return new Logger(level);
-}
-// Type guards and validators
-export function isAppConfig(value: unknown): value is AppConfig {
-    return (typeof value === 'object' && value !== null && 'debug' in value && 'logLevel' in value && 'apiUrl' in value);
-}
+// Final integration
+const serviceInstance = createDataService();
+
 export async function performDataOperation(id: string) {
     return serviceInstance.fetchData(id);
 }

@@ -3,12 +3,12 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.3: Circular reference patterns
+export type Combined = A & B;
+
 // Pattern 3: Class with self-reference
 class Node {
     next: Node | null = null;
 }
-
-export type Combined = A & B;
 
 export class LinkedList {
     head = new Node();

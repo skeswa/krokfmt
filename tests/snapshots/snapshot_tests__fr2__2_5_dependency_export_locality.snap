@@ -1,0 +1,55 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+// FR2.5: Dependencies should be grouped with their dependent exports for locality
+const configB = {
+    value: 42
+};
+// Shared dependency
+const sharedLogger = {
+    log: (msg: string)=>console.log(msg)
+};
+
+// Multiple exports using shared dependency
+export function featureX() {
+    sharedLogger.log("featureX");
+    return helperA();
+}
+export function featureY() {
+    sharedLogger.log("featureY");
+    return configB.value;
+}
+// Export that uses helperA and configB
+export function serviceA() {
+    return helperA() + configB.value;
+}
+
+// Dependencies scattered throughout the file
+const helperA = ()=>"a";
+
+// Export statement depending on non-exported members
+export { helperA, configB };
+
+// Independent export with no dependencies
+export function independentService() {
+    return "no dependencies";
+}
+
+const utilityC = (x: number)=>x * 2;
+// Another dependency
+const dataD = [
+    1,
+    2,
+    3
+];
+
+// Export that uses utilityC and dataD
+export function serviceB() {
+    return dataD.map(utilityC);
+}
+
+// Non-exported helper that no export depends on
+function unusedHelper() {
+    return "not used by exports";
+}

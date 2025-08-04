@@ -201,6 +201,15 @@ const myConstant = 42;
 - Class inheritance chains are maintained
 - Circular dependencies are handled gracefully
 
+**Locality Rules**:
+
+When dependencies are hoisted to support exported members, they should maintain locality with their dependents:
+
+- Hoisted dependencies should be placed as close as possible to the exports that depend on them
+- Dependencies should be grouped immediately before their first dependent export
+- Multiple exports depending on the same set of dependencies should be grouped together
+- The visual flow should make it clear which dependencies support which exports
+
 **Forward Reference Exceptions**:
 
 TypeScript allows forward references for certain constructs. The formatter must recognize these cases and not require dependencies to be declared first:
@@ -345,6 +354,64 @@ function helperE() {
   return "e";
 }
 ```
+
+#### FR2.5: Dependency-Export Locality
+
+**Description**: The system shall group dependencies with their dependent exports to maintain visual association and code readability.
+
+**Grouping Strategy**:
+
+1. **Analyze Export Dependencies**: Identify which non-exported members are dependencies of exported members
+2. **Create Dependency Groups**: Group exports that share common dependencies
+3. **Maintain Locality**: Place dependencies immediately before the exports that use them
+
+**Ordering Rules**:
+
+1. **Between Groups**: Groups are ordered by the alphabetically-first export in each group
+2. **Within Groups**: 
+   - Dependencies come first (in dependency order)
+   - Exports come after their dependencies (alphabetically sorted)
+3. **Independent Exports**: Exports with no dependencies can be grouped together after dependency groups
+
+**Example**:
+
+```typescript
+// Before
+const helperA = () => "a";
+const helperB = () => "b";
+const sharedConfig = { url: "/api" };
+export function serviceA() {
+  return helperA() + sharedConfig.url;
+}
+export function serviceB() {
+  return helperB() + sharedConfig.url;
+}
+export function independentC() {
+  return "c";
+}
+export { helperA, helperB };
+
+// After
+// Group 1: Dependencies for serviceA, serviceB, and the export statement
+const helperA = () => "a";
+const helperB = () => "b";
+const sharedConfig = { url: "/api" };
+
+export function serviceA() {
+  return helperA() + sharedConfig.url;
+}
+export function serviceB() {
+  return helperB() + sharedConfig.url;
+}
+export { helperA, helperB };
+
+// Group 2: Independent exports
+export function independentC() {
+  return "c";
+}
+```
+
+**Visual Separation**: Empty lines separate dependency groups for clarity
 
 ### FR3: Alphabetical Sorting
 

@@ -32,15 +32,11 @@ export interface AppState {
     loading: boolean;
 }
 
-// Exported Error class and utilities  
-export class PublicError extends Error {
-    constructor(public statusCode: number, message: string){
-        super(message);
-    }
-}
-
 export function createPublicError(statusCode: number, message: string): PublicError {
     return new PublicError(statusCode, message);
+}
+export function isPublicError(error: unknown): error is PublicError {
+    return error instanceof PublicError;
 }
 export async function fetchPublic(endpoint: string): Promise<Response> {
     return new Response();
@@ -53,14 +49,16 @@ export const initialAppState: AppState = {
 export const isNumber: Validator<number> = (value): value is number =>{
     return typeof value === 'number';
 };
-
-export function isPublicError(error: unknown): error is PublicError {
-    return error instanceof PublicError;
-}
-
 export const isString: Validator<string> = (value): value is string =>{
     return typeof value === 'string';
 };
+
+// Exported Error class and utilities  
+export class PublicError extends Error {
+    constructor(public statusCode: number, message: string){
+        super(message);
+    }
+}
 
 // Exported validation utilities
 export type Validator<T> = (value: unknown) => value is T;

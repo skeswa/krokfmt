@@ -3,14 +3,28 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.3: Class-based dependency patterns
-// Decorator pattern
-class BaseDecorator {
-    constructor(protected component: any){}
-}
 // Static dependencies
 class Config {
     static readonly DEFAULT_TIMEOUT = 5000;
 }
+
+export class ApiClient {
+    timeout = Config.DEFAULT_TIMEOUT;
+}
+
+// Decorator pattern
+class BaseDecorator {
+    constructor(protected component: any){}
+}
+
+export class LoggingDecorator extends BaseDecorator {
+    execute() {
+        console.log('before');
+        this.component.execute();
+        console.log('after');
+    }
+}
+
 // Base classes
 class EventEmitter {
     emit(event: string) {}
@@ -19,16 +33,6 @@ class Logger {
     log(message: string) {}
 }
 
-export class ApiClient {
-    timeout = Config.DEFAULT_TIMEOUT;
-}
-export class LoggingDecorator extends BaseDecorator {
-    execute() {
-        console.log('before');
-        this.component.execute();
-        console.log('after');
-    }
-}
 // Export with multiple inheritance simulation
 export class Service {
     private emitter = new EventEmitter();

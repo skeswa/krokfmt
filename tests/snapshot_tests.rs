@@ -218,6 +218,16 @@ fn test_fr2_comprehensive_integration() {
     test_fixture("fr2/2_comprehensive_integration");
 }
 
+#[test]
+fn test_fr2_5_dependency_export_locality() {
+    test_fixture("fr2/2_5_dependency_export_locality");
+}
+
+#[test]
+fn test_fr2_5_complex_locality_chains() {
+    test_fixture("fr2/2_5_complex_locality_chains");
+}
+
 // FR3: Alphabetical Sorting Tests
 
 #[test]
