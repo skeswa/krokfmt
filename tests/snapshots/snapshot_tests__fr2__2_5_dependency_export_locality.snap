@@ -36,13 +36,13 @@ export function independentService() {
     return "no dependencies";
 }
 
-const utilityC = (x: number)=>x * 2;
 // Another dependency
 const dataD = [
     1,
     2,
     3
 ];
+const utilityC = (x: number)=>x * 2;
 
 // Export that uses utilityC and dataD
 export function serviceB() {

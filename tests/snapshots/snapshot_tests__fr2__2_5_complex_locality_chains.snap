@@ -32,10 +32,10 @@ export function getStateB() {
     return stateB;
 }
 
+const formatter = (x: any)=>String(x);
+const transformer = (x: any)=>x;
 // Export with multiple unrelated dependencies
 const validator = (x: any)=>true;
-const transformer = (x: any)=>x;
-const formatter = (x: any)=>String(x);
 
 export function processData(input: any) {
     if (!validator(input)) return null;

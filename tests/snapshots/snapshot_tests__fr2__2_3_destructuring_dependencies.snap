@@ -25,7 +25,6 @@ const [first, second] = values;
 
 export const sum = first + second;
 
-const { user: { profile: { name } } } = nested;
 // Nested destructuring
 const nested = {
     user: {
@@ -34,6 +33,7 @@ const nested = {
         }
     }
 };
+const { user: { profile: { name } } } = nested;
 
 export const username = name;
 

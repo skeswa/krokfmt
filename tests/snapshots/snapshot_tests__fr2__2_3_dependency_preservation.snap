@@ -2,11 +2,11 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
+const API_VERSION = 'v1';
 // FR2.3: Dependencies must be preserved when reordering
 // This tests RUNTIME dependencies that must maintain order
 // Base values that exported values depend on (runtime dependency)
 const BASE_URL = 'https://api.example.com';
-const API_VERSION = 'v1';
 
 // Exported value that depends on non-exported values
 export const API_ENDPOINT = `${BASE_URL}/${API_VERSION}`;

@@ -755,14 +755,9 @@ impl KrokFormatter {
                 );
             }
 
-            // Add dependencies first (in dependency order)
+            // Add dependencies first (alphabetically sorted for same-level dependencies)
             let mut deps_to_add: Vec<_> = group_deps.into_iter().collect();
-            deps_to_add.sort_by_key(|dep| {
-                ordered_items
-                    .iter()
-                    .position(|n| n == dep)
-                    .unwrap_or(usize::MAX)
-            });
+            deps_to_add.sort_by_key(|dep| dep.to_lowercase());
 
             for dep in deps_to_add {
                 if !added.contains(&dep) {
@@ -772,7 +767,6 @@ impl KrokFormatter {
                         dependency_graph,
                         &mut result,
                         &mut added,
-                        &ordered_items,
                     );
                 }
             }
@@ -833,7 +827,6 @@ impl KrokFormatter {
                     dependency_graph,
                     &mut result,
                     &mut added,
-                    &ordered_items,
                 );
             }
         }
@@ -854,7 +847,6 @@ impl KrokFormatter {
         dependency_graph: &DependencyGraph,
         result: &mut Vec<ModuleItem>,
         added: &mut HashSet<String>,
-        ordered_items: &[String],
     ) {
         Self::add_item_with_dependencies_recursive(
             name,
@@ -862,7 +854,6 @@ impl KrokFormatter {
             dependency_graph,
             result,
             added,
-            ordered_items,
             &mut HashSet::new(),
         );
     }
@@ -873,7 +864,6 @@ impl KrokFormatter {
         dependency_graph: &DependencyGraph,
         result: &mut Vec<ModuleItem>,
         added: &mut HashSet<String>,
-        ordered_items: &[String],
         visiting: &mut HashSet<String>,
     ) {
         if added.contains(name) || !name_to_item.contains_key(name) || visiting.contains(name) {
@@ -885,12 +875,7 @@ impl KrokFormatter {
         // First add dependencies
         if let Some(deps) = dependency_graph.dependencies.get(name) {
             let mut sorted_deps: Vec<_> = deps.iter().cloned().collect();
-            sorted_deps.sort_by_key(|dep| {
-                ordered_items
-                    .iter()
-                    .position(|n| n == dep)
-                    .unwrap_or(usize::MAX)
-            });
+            sorted_deps.sort_by_key(|dep| dep.to_lowercase());
 
             for dep in sorted_deps {
                 if !added.contains(&dep) {
@@ -900,7 +885,6 @@ impl KrokFormatter {
                         dependency_graph,
                         result,
                         added,
-                        ordered_items,
                         visiting,
                     );
                 }
