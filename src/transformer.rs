@@ -89,6 +89,88 @@ pub fn sort_imports(mut imports: Vec<ImportInfo>) -> Vec<ImportInfo> {
     imports
 }
 
+/// Re-export information for organization.
+///
+/// Re-exports follow the same categorization and sorting rules as imports,
+/// creating a consistent structure throughout the module header.
+#[derive(Debug, Clone)]
+pub struct ReExportInfo {
+    pub category: ImportCategory,
+    pub path: String,
+    pub export_decl: ModuleDecl,
+}
+
+#[derive(Default)]
+pub struct ReExportAnalyzer {
+    re_exports: Vec<ReExportInfo>,
+}
+
+impl ReExportAnalyzer {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn analyze(mut self, module: &Module) -> Vec<ReExportInfo> {
+        module.visit_with(&mut self);
+        self.re_exports
+    }
+
+    /// Categorize re-export paths using the same logic as imports
+    pub fn categorize_re_export(path: &str) -> ImportCategory {
+        ImportAnalyzer::categorize_import(path)
+    }
+}
+
+impl Visit for ReExportAnalyzer {
+    fn visit_module_decl(&mut self, decl: &ModuleDecl) {
+        match decl {
+            // Handle named re-exports: export { foo } from './module'
+            ModuleDecl::ExportNamed(export) if export.src.is_some() => {
+                let path = export.src.as_ref().unwrap().value.to_string();
+                let category = Self::categorize_re_export(&path);
+
+                self.re_exports.push(ReExportInfo {
+                    category,
+                    path,
+                    export_decl: decl.clone(),
+                });
+            }
+            // Handle namespace re-exports: export * from './module'
+            ModuleDecl::ExportAll(export) => {
+                let path = export.src.value.to_string();
+                let category = Self::categorize_re_export(&path);
+
+                self.re_exports.push(ReExportInfo {
+                    category,
+                    path,
+                    export_decl: decl.clone(),
+                });
+            }
+            _ => {}
+        }
+
+        decl.visit_children_with(self);
+    }
+}
+
+/// Sort re-exports following the same External → Absolute → Relative hierarchy as imports.
+pub fn sort_re_exports(mut re_exports: Vec<ReExportInfo>) -> Vec<ReExportInfo> {
+    re_exports.sort_by(|a, b| {
+        let category_order = |cat: &ImportCategory| match cat {
+            ImportCategory::External => 0,
+            ImportCategory::Absolute => 1,
+            ImportCategory::Relative => 2,
+        };
+
+        match category_order(&a.category).cmp(&category_order(&b.category)) {
+            std::cmp::Ordering::Equal => a.path.cmp(&b.path),
+            other => other,
+        }
+    });
+
+    re_exports
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -207,5 +289,67 @@ import { m } from '@utils/m';
         assert_eq!(sorted[3].path, "@utils/a");
         assert_eq!(sorted[4].path, "@utils/m");
         assert_eq!(sorted[5].path, "@utils/z");
+    }
+
+    fn parse_and_analyze_re_exports(source: &str) -> Vec<ReExportInfo> {
+        let parser = TypeScriptParser::new();
+        let module = parser.parse(source, "test.ts").unwrap();
+        ReExportAnalyzer::new().analyze(&module)
+    }
+
+    #[test]
+    fn test_re_export_analysis() {
+        let source = r#"
+export { Fragment } from 'react';
+export { Button as MyButton } from '@components/Button';
+export * from './utils';
+export * as helpers from '../helpers';
+export { foo, bar } from 'external-lib';
+"#;
+
+        let re_exports = parse_and_analyze_re_exports(source);
+        assert_eq!(re_exports.len(), 5);
+
+        assert_eq!(re_exports[0].category, ImportCategory::External);
+        assert_eq!(re_exports[0].path, "react");
+
+        assert_eq!(re_exports[1].category, ImportCategory::Absolute);
+        assert_eq!(re_exports[1].path, "@components/Button");
+
+        assert_eq!(re_exports[2].category, ImportCategory::Relative);
+        assert_eq!(re_exports[2].path, "./utils");
+
+        assert_eq!(re_exports[3].category, ImportCategory::Relative);
+        assert_eq!(re_exports[3].path, "../helpers");
+
+        assert_eq!(re_exports[4].category, ImportCategory::External);
+        assert_eq!(re_exports[4].path, "external-lib");
+    }
+
+    #[test]
+    fn test_sort_re_exports() {
+        let source = r#"
+export { helper } from './helper';
+export * from 'react-dom';
+export { Button } from '@ui/Button';
+export * as api from '../api';
+export { axios } from 'axios';
+"#;
+
+        let re_exports = parse_and_analyze_re_exports(source);
+        let sorted = sort_re_exports(re_exports);
+
+        assert_eq!(sorted.len(), 5);
+
+        // External re-exports should come first
+        assert_eq!(sorted[0].path, "axios");
+        assert_eq!(sorted[1].path, "react-dom");
+
+        // Then absolute re-exports
+        assert_eq!(sorted[2].path, "@ui/Button");
+
+        // Finally relative re-exports
+        assert_eq!(sorted[3].path, "../api");
+        assert_eq!(sorted[4].path, "./helper");
     }
 }

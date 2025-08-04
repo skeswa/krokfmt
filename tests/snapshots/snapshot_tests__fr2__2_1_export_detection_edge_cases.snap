@@ -2,20 +2,29 @@
 source: tests/snapshot_tests.rs
 expression: output
 ---
-// Const assertions with exports
 // FR2.1: Complex export detection patterns
 
+export { bar as baz } from './bar';
+export { foo } from './foo';
+export * as helpers from './helpers';
+export * from './utils';
+
+// Const assertions with exports
 const VALUES = [
     'a',
     'b',
     'c'
 ] as const;
+
 export interface ExportedInterface extends InternalInterface {
     y: number;
 }
+
 export type ExportedType = InternalType;
 export type Value = typeof VALUES[number];
+
 export const external = 'external';
+
 // Export list at bottom
 const item1 = 'one';
 const item2 = 'two';
@@ -25,18 +34,17 @@ namespace InternalNS {
 export namespace ExportedNS {
     export const value = InternalNS.value;
 }
+
 // Interface exports
 interface InternalInterface {
     x: number;
 }
+
 // Type exports
 type InternalType = string;
+
 // Mixed export patterns
 const internal = 'internal';
 const item3 = 'three';
-export { foo } from './foo';
-export { bar as baz } from './bar';
-export * from './utils';
-export * as helpers from './helpers';
 // Re-exports
 export { item1, item2 };

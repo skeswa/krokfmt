@@ -1,0 +1,24 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+// FR1.7: Re-export sorting within categories
+
+export { alpha } from 'alpha-lib';
+export { beta } from 'beta-lib';
+export { zeta } from 'zeta-lib';
+
+export { AComponent } from '@ui/AComponent';
+export { MComponent } from '@ui/MComponent';
+export { ZComponent } from '@ui/ZComponent';
+
+export * from '../utils';
+export { a } from './a';
+export * as core from './core';
+export * from './helpers';
+export { m } from './m';
+// Re-exports should be sorted alphabetically within each category
+export { z } from './z';
+
+// Other content
+const x = 42;

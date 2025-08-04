@@ -104,6 +104,64 @@ import g from "../../g";
 - Keeps side-effect import behavior
 - Retains import assertions
 
+#### FR1.7: Re-export Organization
+
+**Description**: The system shall organize re-export statements immediately after imports, following the same categorization and sorting rules.
+
+**Re-export Types**:
+
+- Named re-exports: `export { foo } from './module'`
+- Renamed re-exports: `export { foo as bar } from './module'`
+- Namespace re-exports: `export * from './module'`
+- Aliased namespace re-exports: `export * as utils from './utils'`
+
+**Categorization**: Re-exports follow the same categorization as imports:
+
+1. **External** - From node_modules (no path prefix)
+2. **Absolute** - Paths starting with `@` or `~`
+3. **Relative** - Paths starting with `./` or `../`
+
+**Sorting Rules**:
+
+- Alphabetical sorting by source path within each category
+- Case-sensitive ordering
+- Special characters follow ASCII ordering
+
+**Positioning**:
+
+- All re-exports appear after imports but before other module content
+- Empty line between last import group and first re-export group
+- Empty line between last re-export group and other module content
+
+**Example**:
+
+```typescript
+// External imports
+import React from "react";
+import lodash from "lodash";
+
+// Absolute imports
+import { Button } from "@components/Button";
+
+// Relative imports
+import { helper } from "./utils";
+
+// External re-exports
+export { Fragment } from "react";
+export * from "react-dom";
+
+// Absolute re-exports
+export { IconButton } from "@components/IconButton";
+export * as theme from "@theme/default";
+
+// Relative re-exports
+export { utilityA, utilityB } from "./utilities";
+export * from "./common";
+
+// Other module content starts here
+const myConstant = 42;
+```
+
 ### FR2: Member Visibility Ordering
 
 #### FR2.1: Export Detection

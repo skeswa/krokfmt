@@ -3,7 +3,7 @@ use swc_common::{comments::SingleThreadedComments, sync::Lrc, SourceMap};
 use swc_ecma_ast::*;
 use swc_ecma_codegen::{text_writer::JsWriter, Config, Emitter};
 
-use crate::transformer::{ImportAnalyzer, ImportCategory};
+use crate::transformer::{ImportAnalyzer, ImportCategory, ReExportAnalyzer};
 
 #[derive(Debug, Clone, PartialEq)]
 enum DeclarationType {
@@ -101,16 +101,20 @@ impl CodeGenerator {
     /// empty lines. We parse the generated code to identify boundaries and inject
     /// newlines at transitions to create visual separation between:
     /// - Different import categories (external, absolute, relative)
-    /// - Imports and the rest of the code
+    /// - Imports and re-exports
+    /// - Different re-export categories (external, absolute, relative)
+    /// - Re-exports and the rest of the code
     /// - Different visibility groups (exported vs non-exported)
     pub fn add_visual_spacing(&self, code: String, _module: &Module) -> String {
         let lines: Vec<&str> = code.lines().collect();
         let mut result = Vec::new();
         let mut last_import_category: Option<ImportCategory> = None;
+        let mut last_re_export_category: Option<ImportCategory> = None;
         let mut last_was_import = false;
-        let mut first_non_import_found = false;
+        let mut last_was_re_export = false;
+        let mut first_non_import_re_export_found = false;
         let mut last_was_exported: Option<bool> = None;
-        let mut in_imports_section = true;
+        let mut in_imports_re_exports_section = true;
         let mut brace_depth: i32 = 0;
         let mut last_declaration_type: Option<DeclarationType> = None;
         let mut in_class = false;
@@ -133,8 +137,10 @@ impl CodeGenerator {
                 }
             }
 
-            // Check if this line is an import statement
+            // Check if this line is an import or re-export statement
             let is_import = trimmed.starts_with("import ");
+            let is_re_export = (trimmed.starts_with("export {") || trimmed.starts_with("export *"))
+                && trimmed.contains(" from ");
 
             if is_import {
                 // Extract the import path to determine category
@@ -209,19 +215,70 @@ impl CodeGenerator {
                 }
 
                 last_was_import = true;
-            } else {
-                // First non-import after imports needs separation for visual clarity.
-                // We skip if the line is already empty to avoid double spacing.
-                if last_was_import && !first_non_import_found && !line.trim().is_empty() {
+                last_was_re_export = false;
+            } else if is_re_export {
+                // Add separation between imports and re-exports
+                if last_was_import && !line.trim().is_empty() {
                     result.push("");
-                    first_non_import_found = true;
-                    in_imports_section = false;
+                }
+
+                // Extract the re-export path to determine category
+                if let Some(from_pos) = line.find(" from ") {
+                    let after_from = &line[from_pos + 6..];
+                    if let Some(quote_start) = after_from.find(['\'', '"']) {
+                        let quote_char = after_from.chars().nth(quote_start).unwrap();
+                        if let Some(quote_end) = after_from[quote_start + 1..].find(quote_char) {
+                            let path = &after_from[quote_start + 1..quote_start + 1 + quote_end];
+                            let category = ReExportAnalyzer::categorize_re_export(path);
+
+                            // Add empty line between different re-export categories
+                            if let Some(last_cat) = &last_re_export_category {
+                                if std::mem::discriminant(last_cat)
+                                    != std::mem::discriminant(&category)
+                                {
+                                    // Check if the previous line is a comment
+                                    // If so, add the empty line before the comment
+                                    if !result.is_empty() {
+                                        let last_idx = result.len() - 1;
+                                        let last_line: &str = result[last_idx];
+                                        if last_line.trim().starts_with("//")
+                                            || last_line.trim().starts_with("/*")
+                                        {
+                                            // Insert empty line before the comment
+                                            result.insert(last_idx, "");
+                                        } else {
+                                            result.push("");
+                                        }
+                                    } else {
+                                        result.push("");
+                                    }
+                                }
+                            }
+
+                            last_re_export_category = Some(category);
+                        }
+                    }
+                }
+
+                last_was_import = false;
+                last_was_re_export = true;
+            } else {
+                // First non-import/re-export after imports/re-exports needs separation for visual clarity.
+                // We skip if the line is already empty to avoid double spacing.
+                if (last_was_import || last_was_re_export)
+                    && !first_non_import_re_export_found
+                    && !line.trim().is_empty()
+                {
+                    result.push("");
+                    first_non_import_re_export_found = true;
+                    in_imports_re_exports_section = false;
                 }
                 last_was_import = false;
+                last_was_re_export = false;
 
                 // Check for visibility transitions in non-import declarations
                 // Only consider top-level declarations (brace_depth == 0)
-                if !in_imports_section
+                if !in_imports_re_exports_section
                     && !trimmed.is_empty()
                     && !trimmed.starts_with("//")
                     && brace_depth == 0

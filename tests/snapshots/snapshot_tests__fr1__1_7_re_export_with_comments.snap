@@ -1,0 +1,33 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+// FR1.7: Re-exports with comments
+
+import axios from 'axios';
+// External imports
+import React from 'react';
+
+export { Fragment, StrictMode } from 'react';
+export { Button, TextField } from 'ui-library';
+
+export * as icons from '@assets/icons';
+export { theme } from '@styles/theme';
+
+export * from './common';
+// Specific named exports
+// Absolute path re-exports
+// Re-export React utilities
+// UI re-exports from our component library
+export { formatDate, parseDate } from './date-utils';
+
+// Regular module content
+export interface Config {
+    apiUrl: string;
+    timeout: number;
+}
+
+const defaultConfig: Config = {
+    apiUrl: '/api',
+    timeout: 5000
+};

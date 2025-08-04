@@ -1,0 +1,37 @@
+---
+source: tests/snapshot_tests.rs
+expression: output
+---
+// FR1.7: Re-export organization and categorization
+
+import { debounce } from 'lodash';
+// Mixed imports and re-exports that need to be separated and organized
+import { useState } from 'react';
+
+import { Button } from '@components/Button';
+import { config } from '~/config';
+
+import { api } from '../api';
+import { helper } from './utils';
+
+export { Fragment } from 'react';
+export * from 'react-dom';
+
+export { IconButton } from '@components/IconButton';
+export * as theme from '@theme/default';
+
+export * from './common';
+export { utilityA, utilityB } from './utilities';
+
+// Regular exports and declarations
+export const APP_NAME = 'MyApp';
+
+export function processData(data: unknown) {
+    return data;
+}
+
+const internalConstant = 42;
+
+function internalHelper() {
+    return 'helper';
+}

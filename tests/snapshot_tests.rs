@@ -95,6 +95,21 @@ fn test_fr1_6_syntax_preservation() {
     test_fixture("fr1/1_6_syntax_preservation");
 }
 
+#[test]
+fn test_fr1_7_re_export_organization() {
+    test_fixture("fr1/1_7_re_export_organization");
+}
+
+#[test]
+fn test_fr1_7_re_export_sorting() {
+    test_fixture("fr1/1_7_re_export_sorting");
+}
+
+#[test]
+fn test_fr1_7_re_export_with_comments() {
+    test_fixture("fr1/1_7_re_export_with_comments");
+}
+
 // FR2: Member Visibility Ordering Tests
 
 #[test]

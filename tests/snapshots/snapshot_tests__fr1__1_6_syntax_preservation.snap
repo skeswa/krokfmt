@@ -16,6 +16,7 @@ import styles from './styles.css' with {
     type: 'css'
 };
 import type { User } from './types';
+
+export { foo, bar } from './module';
 export { default as MyExport } from './my-export';
 export * from './re-exports';
-export { foo, bar } from './module';

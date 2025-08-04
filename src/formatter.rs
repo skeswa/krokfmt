@@ -3,7 +3,9 @@ use std::collections::{HashMap, HashSet};
 use swc_ecma_ast::*;
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith, VisitWith};
 
-use crate::transformer::{sort_imports, ImportAnalyzer, ImportCategory};
+use crate::transformer::{
+    sort_imports, sort_re_exports, ImportAnalyzer, ImportCategory, ReExportAnalyzer,
+};
 
 /// The main formatter that orchestrates the entire formatting process.
 ///
@@ -557,9 +559,12 @@ impl KrokFormatter {
         // 2. Reorganize based on our opinionated rules
         // 3. Apply fine-grained formatting (sorting object keys, etc.)
 
-        // Step 1: Extract and categorize imports
+        // Step 1: Extract and categorize imports and re-exports
         let import_infos = ImportAnalyzer::new().analyze(&module);
         let sorted_imports = sort_imports(import_infos);
+
+        let re_export_infos = ReExportAnalyzer::new().analyze(&module);
+        let sorted_re_exports = sort_re_exports(re_export_infos);
 
         // Step 2: Analyze exports and dependencies
         let mut export_analyzer = ExportAnalyzer::new();
@@ -568,23 +573,33 @@ impl KrokFormatter {
         let mut dependency_analyzer = DependencyAnalyzer::new();
         let dependency_graph = dependency_analyzer.analyze(&module);
 
-        // Step 3: Separate imports and exports from other items
-        let (import_export_items, other_items): (Vec<_>, Vec<_>) =
-            module.body.into_iter().partition(|item| {
-                matches!(
-                    item,
-                    ModuleItem::ModuleDecl(ModuleDecl::Import(_))
-                        | ModuleItem::ModuleDecl(ModuleDecl::ExportNamed(_))
-                        | ModuleItem::ModuleDecl(ModuleDecl::ExportAll(_))
-                        | ModuleItem::ModuleDecl(ModuleDecl::ExportDefaultExpr(_))
-                        | ModuleItem::ModuleDecl(ModuleDecl::ExportDefaultDecl(_))
-                )
-            });
+        // Step 3: Separate imports, re-exports, and other items
+        let mut imports = Vec::new();
+        let mut re_exports = Vec::new();
+        let mut other_exports = Vec::new();
+        let mut other_items = Vec::new();
 
-        // Further separate imports from exports
-        let (_imports, exports): (Vec<_>, Vec<_>) = import_export_items
-            .into_iter()
-            .partition(|item| matches!(item, ModuleItem::ModuleDecl(ModuleDecl::Import(_))));
+        for item in module.body.into_iter() {
+            match &item {
+                ModuleItem::ModuleDecl(ModuleDecl::Import(_)) => {
+                    imports.push(item);
+                }
+                ModuleItem::ModuleDecl(ModuleDecl::ExportNamed(export)) if export.src.is_some() => {
+                    re_exports.push(item);
+                }
+                ModuleItem::ModuleDecl(ModuleDecl::ExportAll(_)) => {
+                    re_exports.push(item);
+                }
+                ModuleItem::ModuleDecl(ModuleDecl::ExportNamed(_))
+                | ModuleItem::ModuleDecl(ModuleDecl::ExportDefaultExpr(_))
+                | ModuleItem::ModuleDecl(ModuleDecl::ExportDefaultDecl(_)) => {
+                    other_exports.push(item);
+                }
+                _ => {
+                    other_items.push(item);
+                }
+            }
+        }
 
         // Step 4: Organize by visibility with alphabetization
         let organized_items =
@@ -613,11 +628,25 @@ impl KrokFormatter {
             last_category = Some(import_info.category);
         }
 
+        // Add re-exports grouped by category (similar to imports)
+        let mut last_re_export_category: Option<ImportCategory> = None;
+        for re_export_info in sorted_re_exports {
+            if let Some(last_cat) = &last_re_export_category {
+                if std::mem::discriminant(last_cat)
+                    != std::mem::discriminant(&re_export_info.category)
+                {
+                    // We'll handle empty lines in the codegen phase
+                }
+            }
+            new_body.push(ModuleItem::from(re_export_info.export_decl));
+            last_re_export_category = Some(re_export_info.category);
+        }
+
         // Add organized items
         new_body.extend(organized_items);
 
-        // Add exports at the end
-        new_body.extend(exports);
+        // Add other exports at the end
+        new_body.extend(other_exports);
 
         module.body = new_body;
 
