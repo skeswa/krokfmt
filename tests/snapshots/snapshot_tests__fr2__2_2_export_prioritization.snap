@@ -3,6 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.2: Exported members should be prioritized over non-exported
+
 // Multiple exports should all be prioritized
 export const constant1 = 1;
 export const constant2 = 3;

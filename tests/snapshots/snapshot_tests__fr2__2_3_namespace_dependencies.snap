@@ -3,6 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.3: Namespace and module dependencies
+
 // Const assertions
 const MODES = [
     'dev',

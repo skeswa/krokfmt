@@ -3,6 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR1.7: Re-export sorting within categories
+
 export { alpha } from 'alpha-lib';
 export { beta } from 'beta-lib';
 export { zeta } from 'zeta-lib';

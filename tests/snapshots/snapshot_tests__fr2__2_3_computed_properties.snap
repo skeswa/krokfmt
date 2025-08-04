@@ -3,6 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.3: Computed property dependencies
+
 // Base values for computed properties
 const PREFIX = 'api';
 const VERSION = 'v1';

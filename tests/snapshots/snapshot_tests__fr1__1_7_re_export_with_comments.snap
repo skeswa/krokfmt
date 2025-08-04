@@ -3,6 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR1.7: Re-exports with comments
+
 import axios from 'axios';
 // External imports
 import React from 'react';

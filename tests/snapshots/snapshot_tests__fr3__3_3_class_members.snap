@@ -3,6 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR3.3: Class members should be sorted within visibility groups
+
 class MyClass {
     static bar = 'bar';
     static foo = 'foo';

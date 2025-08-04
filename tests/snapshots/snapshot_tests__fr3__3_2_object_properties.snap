@@ -3,6 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR3.2: Object literal properties should be sorted alphabetically
+
 // Computed properties
 const computed = {
     [dynamicKey]: 2,

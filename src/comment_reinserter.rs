@@ -234,10 +234,12 @@ impl CommentReinserter {
                     // Standalone comments get their own line
                     if point.line < lines.len() {
                         lines.insert(point.line, comment_text);
-                        // Don't add blank lines after standalone comments when they're at the top
-                        // The natural spacing from the code will be sufficient
+                        // Add a blank line after standalone comments to maintain visual separation
+                        // This ensures standalone comments remain visually distinct from the code below
+                        lines.insert(point.line + 1, String::new());
                     } else {
                         lines.push(comment_text);
+                        lines.push(String::new());
                     }
                 }
             }

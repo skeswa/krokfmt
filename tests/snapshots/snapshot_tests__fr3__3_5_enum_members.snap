@@ -3,6 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR3.5: Enum members should be sorted (string enums only)
+
 // Another string enum
 enum Color {
     Blue = 'blue',

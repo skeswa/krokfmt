@@ -3,6 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR6.1: Comments on imports should stay with their imports after sorting
+
 import axios from 'axios'; // HTTP client
 // External dependencies // UI library
 import React from 'react';

@@ -3,6 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR6.2: Comments on exports should stay with their exports after reordering
+
 // Main public API
 export function publicApi() {
     return 'public';

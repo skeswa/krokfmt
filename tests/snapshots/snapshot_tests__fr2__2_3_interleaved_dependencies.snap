@@ -3,6 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.3: Interleaved dependencies - exports and non-exports mixed
+
 export function checkAdmin(user: User): boolean {
     const admin = user as AdminUser;
     return validateAdmin(admin);

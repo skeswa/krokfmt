@@ -3,6 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2: Comprehensive integration test combining all FR2 features
+
 // Exported config depending on base
 export interface AppConfig extends BaseConfig {
     logLevel: LogLevel;

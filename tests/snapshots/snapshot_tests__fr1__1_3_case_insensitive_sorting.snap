@@ -3,6 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR1.3: Test case-insensitive alphabetical sorting of imports
+
 import axios from 'axios';
 import express from 'express';
 import lodash from 'lodash';

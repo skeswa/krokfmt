@@ -3,6 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR1.4: All imports should be positioned at the top of the file
+
 import axios from 'axios';
 import React from 'react';
 import { useState } from 'react';

@@ -3,6 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR3.3: Test TypeScript visibility keywords (private, protected, public)
+
 class TypeScriptVisibility {
     protected static staticProtected = 'static protected';
     public static staticPublic = 'static public';

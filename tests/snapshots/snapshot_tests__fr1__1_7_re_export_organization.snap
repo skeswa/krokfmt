@@ -3,6 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR1.7: Re-export organization and categorization
+
 import { debounce } from 'lodash';
 // Mixed imports and re-exports that need to be separated and organized
 import { useState } from 'react';

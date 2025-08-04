@@ -3,6 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR6.6: Complex comment scenarios with multiple types
+
 /*
 *
  * Main application configuration

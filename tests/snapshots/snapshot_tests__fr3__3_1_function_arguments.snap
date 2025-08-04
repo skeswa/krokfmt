@@ -3,6 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR3.1: Function arguments should be sorted when destructured
+
 // Positional parameters should NOT be sorted
 function add(b: number, a: number) {
     return a + b;

@@ -3,6 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.1: Exported members should be detected and prioritized
+
 // Named exports
 const a = 1;
 const b = 2;

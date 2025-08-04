@@ -3,6 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.3: Destructuring and spread dependencies
+
 const defaultOptions: Options = {
     retries: 3,
     timeout: 5000

@@ -3,6 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.3: Complex dependency chains with mixed exports
+
 export function calculate(x: number) {
     return multiply(add(x, 5), 2);
 }

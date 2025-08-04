@@ -3,6 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR3.2: Test case-insensitive object property sorting
+
 const config = {
     Apple: 'fruit',
     banana: 'yellow',

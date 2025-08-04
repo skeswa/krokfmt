@@ -3,6 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR3.3: Test complex class with mixed visibility patterns
+
 class MixedVisibilityClass {
     static API_KEY = 'abc123';
     static VERSION = '1.0.0';

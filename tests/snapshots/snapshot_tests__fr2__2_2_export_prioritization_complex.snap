@@ -3,6 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.2: Complex export prioritization with dependencies
+
 // Class inheritance with mixed visibility
 class BaseClass {
     protected value = 10;

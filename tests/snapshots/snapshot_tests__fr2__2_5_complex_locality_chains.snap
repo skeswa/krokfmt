@@ -3,6 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.5: Complex dependency chains with export locality
+
 // Export depending on a dependency that itself depends on another
 const innerHelper = ()=>"inner";
 const outerHelper = ()=>innerHelper() + " outer";

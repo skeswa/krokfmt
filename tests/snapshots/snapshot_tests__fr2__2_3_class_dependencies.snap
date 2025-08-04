@@ -3,6 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.3: Class-based dependency patterns
+
 // Static dependencies
 class Config {
     static readonly DEFAULT_TIMEOUT = 5000;

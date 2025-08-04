@@ -3,6 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.5: Dependencies should be grouped with their dependent exports for locality
+
 const configB = {
     value: 42
 };

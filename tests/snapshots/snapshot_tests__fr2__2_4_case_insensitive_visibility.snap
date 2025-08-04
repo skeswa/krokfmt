@@ -3,6 +3,7 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR2.4: Test case-insensitive alphabetization within visibility groups
+
 export class ApiHandler {
     handle() {}
 }
