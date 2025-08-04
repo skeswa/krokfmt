@@ -14,6 +14,7 @@ enum DeclarationType {
     Const,
     Enum,
     Namespace,
+    Export,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -337,6 +338,9 @@ impl CodeGenerator {
                         Some(DeclarationType::Enum)
                     } else if declaration_part.starts_with("namespace ") {
                         Some(DeclarationType::Namespace)
+                    } else if is_exported && declaration_part.starts_with("{") {
+                        // Named export statement like: export { item1, item2 };
+                        Some(DeclarationType::Export)
                     } else {
                         None
                     };

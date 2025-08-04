@@ -48,5 +48,6 @@ type InternalType = string;
 // Mixed export patterns
 const internal = 'internal';
 const item3 = 'three';
+
 // Re-exports
 export { item1, item2 };

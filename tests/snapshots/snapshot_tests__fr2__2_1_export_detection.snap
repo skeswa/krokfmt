@@ -43,4 +43,5 @@ type PrivateType = number | string;
 function privateHelper() {
     return 'private';
 }
+
 export { a, b };
