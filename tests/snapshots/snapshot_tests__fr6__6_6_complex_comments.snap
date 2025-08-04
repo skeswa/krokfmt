@@ -4,13 +4,11 @@ expression: output
 ---
 // FR6.6: Complex comment scenarios with multiple types
 
-/*
-*
+/**
  * Main application configuration
  * 
  * This file contains all the configuration needed
  * for the application to run properly.
- 
 */ // Schema validation
 // Import section
 import { z } from 'zod';
@@ -35,12 +33,10 @@ const schema = z.object({
     timeout: z.number().optional()
 });
 
-/*
-*
+/**
  * Validates configuration
  * @param config - The config object to validate
  * @returns Validated configuration
- 
 */
 export function validateConfig(config: unknown): Config {
     return schema.parse(config);

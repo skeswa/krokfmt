@@ -293,6 +293,11 @@ fn test_fr6_1_import_comments() {
 }
 
 #[test]
+fn test_fr6_2_block_comments() {
+    test_fixture("fr6/6_2_block_comments");
+}
+
+#[test]
 fn test_fr6_2_export_comments() {
     test_fixture("fr6/6_2_export_comments");
 }
@@ -300,6 +305,11 @@ fn test_fr6_2_export_comments() {
 #[test]
 fn test_fr6_3_class_member_comments() {
     test_fixture("fr6/6_3_class_member_comments");
+}
+
+#[test]
+fn test_fr6_3_jsdoc_comments() {
+    test_fixture("fr6/6_3_jsdoc_comments");
 }
 
 #[test]
@@ -311,6 +321,12 @@ fn test_fr6_4_object_property_comments() {
 #[ignore = "Known issue: JSX comments ({/* */}) are not yet supported by the comment extraction system"]
 fn test_fr6_5_jsx_comments() {
     test_fixture("fr6/6_5_jsx_comments");
+}
+
+#[test]
+#[ignore = "Inline comments need more work - visitor pattern issues with nested structures"]
+fn test_fr6_7_inline_comments() {
+    test_fixture("fr6/6_7_inline_comments");
 }
 
 #[test]

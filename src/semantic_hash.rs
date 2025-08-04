@@ -184,6 +184,14 @@ impl SemanticHasher {
         hasher.finish()
     }
 
+    /// Generate hash for a single variable declarator
+    pub fn hash_var_declarator(name: &str) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        "var_declarator".hash(&mut hasher);
+        name.hash(&mut hasher);
+        hasher.finish()
+    }
+
     fn hash_interface(interface: &TsInterfaceDecl) -> u64 {
         let mut hasher = DefaultHasher::new();
         "interface".hash(&mut hasher);

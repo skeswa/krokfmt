@@ -4,10 +4,8 @@ expression: output
 ---
 // FR6.3: Comments on class members should stay with their members after reordering
 
-/*
-*
+/**
  * User service class
- 
 */
 export class UserService {
     static validateId(id: number) {

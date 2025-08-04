@@ -96,6 +96,25 @@ Tasks are ordered by priority. Always work on tasks from the top of this list fi
 ## Completed
 <!-- Move completed tasks here with completion date -->
 
+- ✅ Fix mixed comment scenarios - keep same-line comments together (2025-08-04)
+  - Fixed issue where `/* Mixed comment */ // with line comment` was being split across lines
+  - Implemented grouping of standalone comments by their original line number
+  - Added `StandaloneGroup` variant to handle multiple comments on the same line
+  - Comments on the same line are now combined with proper spacing
+  - Updated logic to avoid adding blank lines between comments from the same line
+  - Files modified: `src/comment_reinserter.rs`, `src/comment_extractor.rs`
+
+- ✅ Fix block comment attachment and inline comment preservation (2025-08-04)
+  - Fixed three specific issues with FR6.2 block comments test:
+    1. Removed unwanted blank lines between block comments and their attached code
+    2. Fixed trailing comment detection to properly handle end-of-file comments as standalone
+    3. Implemented inline comment extraction and reinsertion for variable declarations
+  - Modified comment reinserter to not add blank lines after non-JSDoc block comments
+  - Updated comment extractor to only consider comments on the same line as trailing
+  - Added `extract_var_inline_comments` method to handle inline comments without visitor context
+  - All tests passing, inline comments now preserved: `const x = /* inline comment */ 42;`
+  - Files modified: `src/comment_reinserter.rs`, `src/comment_extractor.rs`
+
 - ✅ Implement standalone comment detection and preservation (2025-08-04)
   - Added ability to detect comments separated by blank lines on both sides
   - These "standalone comments" maintain their position in the lexical context

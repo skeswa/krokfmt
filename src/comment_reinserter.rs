@@ -7,7 +7,8 @@ use swc_ecma_ast::*;
 use swc_ecma_visit::{Visit, VisitWith};
 
 use crate::comment_extractor::{
-    CommentExtractionResult, CommentType, ExtractedComment, StandaloneComment,
+    CommentExtractionResult, CommentType, ExtractedComment, InlineCommentContext, InlinePosition,
+    StandaloneComment,
 };
 use crate::parser::TypeScriptParser;
 use crate::semantic_hash::SemanticHasher;
@@ -25,7 +26,7 @@ struct InsertionPoint {
 #[derive(Debug, Clone)]
 enum CommentWithType {
     Regular(ExtractedComment),
-    Standalone(StandaloneComment),
+    StandaloneGroup(Vec<StandaloneComment>),
 }
 
 /// Reinserts comments into generated code based on semantic hashes
@@ -102,15 +103,29 @@ impl CommentReinserter {
                 for comment in comments {
                     let point = match comment.comment_type {
                         CommentType::Leading => {
-                            // For leading comments, insert at the same line as the node
-                            // This will push the node down when the comment is inserted
-                            let target_line = node_pos.start_line;
+                            // For leading comments, we need to determine if the comment
+                            // should be on its own line or inline with the node
 
-                            InsertionPoint {
-                                line: target_line,
-                                column: 0,
-                                comment: CommentWithType::Regular(comment.clone()),
-                                indentation: node_pos.indentation.clone(),
+                            // Block comments should always be on their own line
+                            // Line comments follow the original formatting
+                            let should_be_on_own_line = comment.comment.kind == CommentKind::Block;
+
+                            if should_be_on_own_line {
+                                // Insert before the node's line (will push the node down)
+                                InsertionPoint {
+                                    line: node_pos.start_line,
+                                    column: 0,
+                                    comment: CommentWithType::Regular(comment.clone()),
+                                    indentation: node_pos.indentation.clone(),
+                                }
+                            } else {
+                                // For line comments, keep them on the line before
+                                InsertionPoint {
+                                    line: node_pos.start_line,
+                                    column: 0,
+                                    comment: CommentWithType::Regular(comment.clone()),
+                                    indentation: node_pos.indentation.clone(),
+                                }
                             }
                         }
                         CommentType::Trailing => InsertionPoint {
@@ -118,6 +133,12 @@ impl CommentReinserter {
                             column: node_pos.end_column,
                             comment: CommentWithType::Regular(comment.clone()),
                             indentation: String::new(),
+                        },
+                        CommentType::Inline => InsertionPoint {
+                            line: node_pos.start_line,
+                            column: 0,
+                            comment: CommentWithType::Regular(comment.clone()),
+                            indentation: node_pos.indentation.clone(),
                         },
                     };
                     insertion_points.push(point);
@@ -132,13 +153,30 @@ impl CommentReinserter {
             }
         }
 
-        // Add standalone comments at the very beginning of the file
-        // These are comments that have blank lines around them and aren't attached to any code
+        // Group standalone comments by their original line number
+        let mut standalone_by_line: std::collections::HashMap<usize, Vec<&StandaloneComment>> = 
+            std::collections::HashMap::new();
+        
         for standalone in &self.extracted_comments.standalone_comments {
+            standalone_by_line.entry(standalone.line).or_default().push(standalone);
+        }
+
+        // Add standalone comments, combining those that were on the same line
+        for (original_line, mut comments) in standalone_by_line {
+            // Sort comments by their position within the line (using span.lo)
+            comments.sort_by_key(|c| c.comment.span.lo);
+            
+            // Determine target line
+            let target_line = if original_line == 0 {
+                0
+            } else {
+                usize::MAX // Place at the end
+            };
+
             insertion_points.push(InsertionPoint {
-                line: 0, // Always place at the beginning
+                line: target_line,
                 column: 0,
-                comment: CommentWithType::Standalone(standalone.clone()),
+                comment: CommentWithType::StandaloneGroup(comments.into_iter().cloned().collect()),
                 indentation: String::new(),
             });
         }
@@ -174,10 +212,10 @@ impl CommentReinserter {
                         }
                         // Standalone comments should be processed after regular comments
                         // so they appear above them in the final output
-                        (CommentWithType::Standalone(_), CommentWithType::Regular(_)) => {
+                        (CommentWithType::StandaloneGroup(_), CommentWithType::Regular(_)) => {
                             std::cmp::Ordering::Greater
                         }
-                        (CommentWithType::Regular(_), CommentWithType::Standalone(_)) => {
+                        (CommentWithType::Regular(_), CommentWithType::StandaloneGroup(_)) => {
                             std::cmp::Ordering::Less
                         }
                         _ => b.column.cmp(&a.column),
@@ -205,7 +243,7 @@ impl CommentReinserter {
     ) -> String {
         let mut lines: Vec<String> = code.lines().map(|s| s.to_string()).collect();
 
-        for point in insertion_points {
+        for (_idx, point) in insertion_points.iter().enumerate() {
             match &point.comment {
                 CommentWithType::Regular(extracted) => {
                     let comment_text = self.format_comment(&extracted.comment, &point.indentation);
@@ -213,6 +251,8 @@ impl CommentReinserter {
                     match extracted.comment_type {
                         CommentType::Leading => {
                             // Insert comment on its own line
+                            // Note: Blank lines are only added for standalone comments,
+                            // not for leading comments attached to code
                             if point.line < lines.len() {
                                 lines.insert(point.line, comment_text);
                             } else {
@@ -226,20 +266,107 @@ impl CommentReinserter {
                                 lines[point.line].push_str(comment_text.trim());
                             }
                         }
+                        CommentType::Inline => {
+                            // Handle inline comments based on their context
+                            if let Some(context) = &extracted.inline_context {
+                                match context {
+                                    InlineCommentContext::Expression { position, .. } => {
+                                        // For expression inline comments, we need to find the right position
+                                        // This is challenging because we need to locate the exact position
+                                        // within the generated line where the comment should go
+
+                                        // For now, append to the end of the line as a fallback
+                                        // A more sophisticated implementation would parse the line
+                                        // to find the exact insertion point
+                                        if point.line < lines.len() {
+                                            let comment_text =
+                                                self.format_comment(&extracted.comment, "");
+
+                                            // Find where to insert the comment in the line
+                                            // For variable declarations, it should go after the '='
+                                            let line = &mut lines[point.line];
+                                            if let InlinePosition::BeforeValue = position {
+                                                // Look for the assignment operator
+                                                if let Some(eq_pos) = line.find('=') {
+                                                    // Insert after the '=' with spaces
+                                                    let insert_pos = eq_pos + 1;
+                                                    let before = &line[..insert_pos];
+                                                    let after = &line[insert_pos..];
+                                                    *line = format!(
+                                                        "{} {} {}",
+                                                        before,
+                                                        comment_text,
+                                                        after.trim_start()
+                                                    );
+                                                }
+                                            }
+                                        }
+                                    }
+                                    InlineCommentContext::Parameter {
+                                        param_index: _,
+                                        param_name,
+                                        ..
+                                    } => {
+                                        // For parameter comments, find the parameter in the function signature
+                                        if point.line < lines.len() {
+                                            let comment_text =
+                                                self.format_comment(&extracted.comment, "");
+                                            let line = &mut lines[point.line];
+
+                                            // Try to find the parameter name in the line
+                                            if let Some(param_pos) = line.find(param_name) {
+                                                // Insert the comment before the parameter
+                                                let insert_pos = param_pos;
+                                                let before = &line[..insert_pos];
+                                                let after = &line[insert_pos..];
+                                                *line = format!("{before}{comment_text} {after}");
+                                            }
+                                        }
+                                    }
+                                    _ => {
+                                        // Other inline contexts not yet implemented
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
-                CommentWithType::Standalone(standalone) => {
-                    let comment_text = self.format_comment(&standalone.comment, &point.indentation);
-
-                    // Standalone comments get their own line
-                    if point.line < lines.len() {
-                        lines.insert(point.line, comment_text);
-                        // Add a blank line after standalone comments to maintain visual separation
-                        // This ensures standalone comments remain visually distinct from the code below
-                        lines.insert(point.line + 1, String::new());
+                CommentWithType::StandaloneGroup(ref group) => {
+                    if group.len() == 1 {
+                        // Single standalone comment - handle as before
+                        let comment_text = self.format_comment(&group[0].comment, &point.indentation);
+                        
+                        if point.line < lines.len() {
+                            lines.insert(point.line, comment_text);
+                            // Add blank line after standalone comments at the beginning of file
+                            if group[0].line == 0 {
+                                lines.insert(point.line + 1, String::new());
+                            }
+                        } else {
+                            lines.push(comment_text);
+                            // Don't add blank line at the very end of file
+                        }
                     } else {
-                        lines.push(comment_text);
-                        lines.push(String::new());
+                        // Multiple comments on the same line - combine them
+                        let mut combined_text = String::new();
+                        let mut first = true;
+                        
+                        for standalone in group {
+                            let comment_text = self.format_comment(&standalone.comment, if first { &point.indentation } else { "" });
+                            if !first {
+                                combined_text.push(' '); // Add space between comments
+                            }
+                            combined_text.push_str(&comment_text);
+                            first = false;
+                        }
+                        
+                        if point.line < lines.len() {
+                            lines.insert(point.line, combined_text);
+                            // Don't add blank lines after combined comments
+                        } else {
+                            lines.push(combined_text);
+                            // Don't add blank line at the very end of file
+                        }
                     }
                 }
             }
@@ -258,11 +385,49 @@ impl CommentReinserter {
                 if lines.len() == 1 {
                     format!("{}/*{}*/", indentation, comment.text)
                 } else {
+                    // For multi-line comments, preserve the original formatting
                     let mut result = format!("{indentation}/*");
-                    for line in lines {
-                        result.push_str(&format!("\n{indentation}{line}"));
+
+                    // Detect JSDoc pattern: first line is just "*"
+                    let is_jsdoc = lines.len() >= 2 && lines[0].trim() == "*";
+
+                    if is_jsdoc {
+                        result = format!("{indentation}/**");
                     }
-                    result.push_str(&format!("\n{indentation}*/"));
+
+                    let mut found_content = false;
+                    for (i, line) in lines.iter().enumerate() {
+                        // Skip the standalone "*" line in JSDoc (first line)
+                        if is_jsdoc && i == 0 && line.trim() == "*" {
+                            continue;
+                        }
+
+                        // Skip initial empty lines
+                        if !found_content && line.trim().is_empty() {
+                            continue;
+                        }
+                        found_content = true;
+
+                        result.push('\n');
+                        result.push_str(indentation);
+                        result.push_str(line);
+                    }
+
+                    // Remove any trailing empty lines from the result
+                    while result.ends_with(&format!("\n{indentation} "))
+                        || result.ends_with(&format!("\n{indentation}"))
+                    {
+                        let to_remove = if result.ends_with(&format!("\n{indentation} ")) {
+                            indentation.len() + 2 // +2 for newline and space
+                        } else {
+                            indentation.len() + 1 // +1 for newline
+                        };
+                        result.truncate(result.len() - to_remove);
+                    }
+
+                    result.push('\n');
+                    result.push_str(indentation);
+                    result.push_str("*/");
                     result
                 }
             }
@@ -581,7 +746,7 @@ import { helper } from './helper';";
             };
 
             let formatted = reinserter.format_comment(&comment, "  ");
-            assert_eq!(formatted, "  /*\n  \n   * Multi\n   * Line\n   \n  */");
+            assert_eq!(formatted, "  /*\n   * Multi\n   * Line\n  */");
         });
     }
 
@@ -601,6 +766,7 @@ import { helper } from './helper';";
                         text: " Missing position".into(),
                     },
                     index: 0,
+                    inline_context: None,
                 }],
             );
 
@@ -722,6 +888,7 @@ const App = () => "Hello";"#;
                         text: " First".into(),
                     },
                     index: 0,
+                    inline_context: None,
                 }],
             );
 
@@ -736,6 +903,7 @@ const App = () => "Hello";"#;
                         text: " Second".into(),
                     },
                     index: 0,
+                    inline_context: None,
                 }],
             );
 
@@ -801,6 +969,7 @@ const App = () => "Hello";"#;
                             text: " Function comment".into(),
                         },
                         index: 0,
+                        inline_context: None,
                     }),
                     indentation: String::new(),
                 },
@@ -816,6 +985,7 @@ const App = () => "Hello";"#;
                             text: " Return value".into(),
                         },
                         index: 0,
+                        inline_context: None,
                     }),
                     indentation: String::new(),
                 },

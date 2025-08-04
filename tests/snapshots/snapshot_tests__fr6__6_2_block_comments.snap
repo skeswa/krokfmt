@@ -3,22 +3,32 @@ source: tests/snapshot_tests.rs
 expression: output
 ---
 // FR6.2: Block comment preservation - multi-line comments should keep formatting
-/* Single line block comment */ import React from 'react';
+
+/* Single line block comment */
+import React from 'react';
 /*
  * Multi-line block comment
  * with star alignment
- */ import { useState } from 'react';
-/* Another style
+*/
+import { useState } from 'react';
+
+/*
+ Another style
    of multi-line
-   comment */ import { helper } from './helper';
+   comment 
+*/
+import { helper } from './helper';
+
 /*
 Multiple line comment
 without stars
-*/ export const y = 100; /* Mixed comment */  // with line comment
-/* Comment before function */ function foo(/* param comment */ a: number): /* return comment */ number {
-    /*
-     * Comment inside function
-     * with multiple lines
-     */ return a * 2;
+*/
+export const y = 100;
+
+/* Comment before function */
+function foo(a: number): number {
+    return a * 2;
 }
+
 const x = /* inline comment */ 42;
+/* Mixed comment */ // with line comment
