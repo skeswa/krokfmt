@@ -62,7 +62,8 @@ impl CodeGenerator {
         {
             let writer = JsWriter::new(self.source_map.clone(), "\n", &mut buf, None);
 
-            let config = Config::default();
+            let mut config = Config::default();
+            config.minify = false;
 
             let mut emitter = Emitter {
                 cfg: config,

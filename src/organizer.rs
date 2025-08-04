@@ -7,15 +7,15 @@ use crate::transformer::{
     sort_imports, sort_re_exports, ImportAnalyzer, ImportCategory, ReExportAnalyzer,
 };
 
-/// The main formatter that orchestrates the entire formatting process.
+/// The main organizer that orchestrates the code organization process.
 ///
-/// This formatter takes an opinionated approach to code organization:
+/// This organizer takes an opinionated approach to code structure:
 /// 1. Imports are sorted and grouped by category
 /// 2. Exported members are prioritized over internal ones
 /// 3. Dependencies between declarations are preserved
 /// 4. Various AST elements (objects, JSX props, etc.) are alphabetically sorted
 #[derive(Default)]
-pub struct KrokFormatter {}
+pub struct KrokOrganizer {}
 
 /// Analyzes exports in a module to determine which members are exported.
 ///
@@ -548,16 +548,16 @@ impl DependencyGraph {
     }
 }
 
-impl KrokFormatter {
+impl KrokOrganizer {
     pub fn new() -> Self {
         Self::default()
     }
 
-    pub fn format(&self, mut module: Module) -> Result<Module> {
-        // The formatting pipeline follows a specific order to ensure correctness:
+    pub fn organize(&self, mut module: Module) -> Result<Module> {
+        // The organizing pipeline follows a specific order to ensure correctness:
         // 1. Analyze the existing structure (imports, exports, dependencies)
         // 2. Reorganize based on our opinionated rules
-        // 3. Apply fine-grained formatting (sorting object keys, etc.)
+        // 3. Apply fine-grained organizing (sorting object keys, etc.)
 
         // Step 1: Extract and categorize imports and re-exports
         let import_infos = ImportAnalyzer::new().analyze(&module);
@@ -643,8 +643,8 @@ impl KrokFormatter {
         module.body = new_body;
 
         // Apply other transformations
-        let mut formatter = FormatterVisitor::new();
-        module.visit_mut_with(&mut formatter);
+        let mut organizer = OrganizerVisitor::new();
+        module.visit_mut_with(&mut organizer);
 
         Ok(module)
     }
@@ -1000,14 +1000,14 @@ impl KrokFormatter {
     }
 }
 
-/// Visitor that applies fine-grained formatting rules to AST nodes.
+/// Visitor that applies fine-grained organizing rules to AST nodes.
 ///
-/// This handles the detailed formatting work: sorting object properties,
+/// This handles the detailed organizing work: sorting object properties,
 /// organizing class members, ordering JSX attributes, etc. Each sorting
 /// operation follows specific rules designed for maximum readability.
-struct FormatterVisitor;
+struct OrganizerVisitor;
 
-impl FormatterVisitor {
+impl OrganizerVisitor {
     fn new() -> Self {
         Self
     }
@@ -1277,7 +1277,7 @@ impl FormatterVisitor {
     }
 }
 
-impl VisitMut for FormatterVisitor {
+impl VisitMut for OrganizerVisitor {
     fn visit_mut_object_lit(&mut self, obj: &mut ObjectLit) {
         self.sort_object_props(&mut obj.props);
         obj.visit_mut_children_with(self);
@@ -1340,7 +1340,7 @@ mod tests {
     use super::*;
     use crate::parser::TypeScriptParser;
 
-    fn format_source(source: &str) -> Result<Module> {
+    fn organize_source(source: &str) -> Result<Module> {
         let parser = TypeScriptParser::new();
         // Detect JSX and use .tsx extension if needed
         let filename = if source.contains("<") && (source.contains("/>") || source.contains("</")) {
@@ -1349,11 +1349,11 @@ mod tests {
             "test.ts"
         };
         let module = parser.parse(source, filename)?;
-        KrokFormatter::new().format(module)
+        KrokOrganizer::new().organize(module)
     }
 
     #[test]
-    fn test_format_imports_grouped_and_sorted() {
+    fn test_organize_imports_grouped_and_sorted() {
         let source = r#"
 import { z } from './utils';
 import React from 'react';
@@ -1362,10 +1362,10 @@ import axios from 'axios';
 import { helper } from '../helper';
 "#;
 
-        let formatted = format_source(source).unwrap();
+        let organized = organize_source(source).unwrap();
 
         // Verify imports are in correct order
-        let imports: Vec<_> = formatted
+        let imports: Vec<_> = organized
             .body
             .iter()
             .filter_map(|item| match item {
@@ -1383,7 +1383,7 @@ import { helper } from '../helper';
     }
 
     #[test]
-    fn test_format_object_properties_sorted() {
+    fn test_organize_object_properties_sorted() {
         let source = r#"
 const obj = {
     zebra: 1,
@@ -1393,10 +1393,10 @@ const obj = {
 };
 "#;
 
-        let formatted = format_source(source).unwrap();
+        let organized = organize_source(source).unwrap();
 
         // Find the object literal
-        let obj_lit = formatted
+        let obj_lit = organized
             .body
             .iter()
             .find_map(|item| match item {
@@ -1417,7 +1417,7 @@ const obj = {
             .props
             .iter()
             .filter_map(|prop| match prop {
-                PropOrSpread::Prop(prop) => match &**prop {
+                PropOrSpread::Prop(prop) => match prop.as_ref() {
                     Prop::KeyValue(kv) => match &kv.key {
                         PropName::Ident(ident) => Some(ident.sym.to_string()),
                         _ => None,
@@ -1440,21 +1440,21 @@ const y = 2;
 import { useState } from 'react';
 "#;
 
-        let formatted = format_source(source).unwrap();
+        let organized = organize_source(source).unwrap();
 
         // First two items should be imports
         assert!(matches!(
-            &formatted.body[0],
+            &organized.body[0],
             ModuleItem::ModuleDecl(ModuleDecl::Import(_))
         ));
         assert!(matches!(
-            &formatted.body[1],
+            &organized.body[1],
             ModuleItem::ModuleDecl(ModuleDecl::Import(_))
         ));
 
         // Rest should be statements
-        assert!(matches!(&formatted.body[2], ModuleItem::Stmt(_)));
-        assert!(matches!(&formatted.body[3], ModuleItem::Stmt(_)));
+        assert!(matches!(&organized.body[2], ModuleItem::Stmt(_)));
+        assert!(matches!(&organized.body[3], ModuleItem::Stmt(_)));
     }
 
     #[test]
@@ -1465,10 +1465,10 @@ function process({ zebra, apple, banana }: Options) {
 }
 "#;
 
-        let formatted = format_source(source).unwrap();
+        let organized = organize_source(source).unwrap();
 
         // Find the function declaration
-        let func_decl = formatted
+        let func_decl = organized
             .body
             .iter()
             .find_map(|item| match item {
@@ -1510,10 +1510,10 @@ const process = ({ zebra, apple, banana }: Options) => {
 };
 "#;
 
-        let formatted = format_source(source).unwrap();
+        let organized = organize_source(source).unwrap();
 
         // Find the arrow function
-        let arrow_func = formatted
+        let arrow_func = organized
             .body
             .iter()
             .find_map(|item| match item {
@@ -1562,10 +1562,10 @@ function process(id: number, { zebra, apple, banana }: Options, callback: Functi
 }
 "#;
 
-        let formatted = format_source(source).unwrap();
+        let organized = organize_source(source).unwrap();
 
         // Find the function declaration
-        let func_decl = formatted
+        let func_decl = organized
             .body
             .iter()
             .find_map(|item| match item {
@@ -1607,10 +1607,10 @@ function process({ config: { zebra, apple, banana }, data }: NestedOptions) {
 }
 "#;
 
-        let formatted = format_source(source).unwrap();
+        let organized = organize_source(source).unwrap();
 
         // Find the function declaration
-        let func_decl = formatted
+        let func_decl = organized
             .body
             .iter()
             .find_map(|item| match item {
@@ -1680,10 +1680,10 @@ class User {
 }
 "#;
 
-        let formatted = format_source(source).unwrap();
+        let organized = organize_source(source).unwrap();
 
         // Find the class declaration
-        let class_decl = formatted
+        let class_decl = organized
             .body
             .iter()
             .find_map(|item| match item {
@@ -1743,10 +1743,10 @@ class Config {
 }
 "#;
 
-        let formatted = format_source(source).unwrap();
+        let organized = organize_source(source).unwrap();
 
         // Find the class
-        let class_decl = formatted
+        let class_decl = organized
             .body
             .iter()
             .find_map(|item| match item {
@@ -1799,13 +1799,13 @@ type Status = 'error' | 'success' | 'pending' | 'idle';
 type Size = 'xl' | 'sm' | 'lg' | 'md' | 'xs';
 "#;
 
-        let formatted = format_source(source).unwrap();
+        let organized = organize_source(source).unwrap();
 
         // Find the type aliases by name
         let mut status_union = None;
         let mut size_union = None;
 
-        for item in &formatted.body {
+        for item in &organized.body {
             if let ModuleItem::Stmt(Stmt::Decl(Decl::TsTypeAlias(ts_type))) = item {
                 if let TsType::TsUnionOrIntersectionType(TsUnionOrIntersectionType::TsUnionType(
                     union,
@@ -1849,10 +1849,10 @@ type Size = 'xl' | 'sm' | 'lg' | 'md' | 'xs';
 type Combined = Writable & Timestamped & Identifiable & Versioned;
 "#;
 
-        let formatted = format_source(source).unwrap();
+        let organized = organize_source(source).unwrap();
 
         // Find the type alias with intersection
-        let ts_type = formatted
+        let ts_type = organized
             .body
             .iter()
             .find_map(|item| match item {
@@ -1906,10 +1906,10 @@ enum Color {
 }
 "#;
 
-        let formatted = format_source(source).unwrap();
+        let organized = organize_source(source).unwrap();
 
         // Find the enums
-        let enums: Vec<_> = formatted
+        let enums: Vec<_> = organized
             .body
             .iter()
             .filter_map(|item| match item {
@@ -1962,10 +1962,10 @@ enum HttpStatus {
 }
 "#;
 
-        let formatted = format_source(source).unwrap();
+        let organized = organize_source(source).unwrap();
 
         // Find the enums
-        let enums: Vec<_> = formatted
+        let enums: Vec<_> = organized
             .body
             .iter()
             .filter_map(|item| match item {
@@ -2012,10 +2012,10 @@ enum Mixed {
 }
 "#;
 
-        let formatted = format_source(source).unwrap();
+        let organized = organize_source(source).unwrap();
 
         // Find the enum
-        let ts_enum = formatted
+        let ts_enum = organized
             .body
             .iter()
             .find_map(|item| match item {
@@ -2051,10 +2051,10 @@ const Component = () => {
 };
 "#;
 
-        let formatted = format_source(source).unwrap();
+        let organized = organize_source(source).unwrap();
 
         // Find the JSX element
-        let jsx_element = find_jsx_element(&formatted);
+        let jsx_element = find_jsx_element(&organized);
 
         // Get prop names in order
         let prop_names: Vec<String> = jsx_element
@@ -2103,10 +2103,10 @@ const Button = () => (
 );
 "#;
 
-        let formatted = format_source(source).unwrap();
+        let organized = organize_source(source).unwrap();
 
         // Find the JSX element
-        let jsx_element = find_jsx_element(&formatted);
+        let jsx_element = find_jsx_element(&organized);
 
         // Get prop names in order
         let prop_names: Vec<String> = jsx_element
@@ -2155,10 +2155,10 @@ const Card = (props) => (
 );
 "#;
 
-        let formatted = format_source(source).unwrap();
+        let organized = organize_source(source).unwrap();
 
         // Find the JSX element
-        let jsx_element = find_jsx_element(&formatted);
+        let jsx_element = find_jsx_element(&organized);
 
         // Check attribute order - key/ref first, regular props sorted, spreads at end
         let attrs: Vec<String> = jsx_element
@@ -2353,11 +2353,11 @@ const privateConst = 10;
 export const publicConst = privateConst + 5;
 "#;
 
-        let formatted = format_source(source).unwrap();
+        let organized = organize_source(source).unwrap();
 
         // Find all function and variable declarations
         let mut declarations = Vec::new();
-        for item in &formatted.body {
+        for item in &organized.body {
             match item {
                 ModuleItem::Stmt(Stmt::Decl(Decl::Fn(fn_decl))) => {
                     declarations.push(fn_decl.ident.sym.to_string());
@@ -2415,12 +2415,12 @@ export function main() {
 }
 "#;
 
-        let formatted = format_source(source).unwrap();
+        let organized = organize_source(source).unwrap();
 
         // Helper should stay before publicFunc because publicFunc depends on it
         // util should stay before main because main depends on it
         let mut declarations = Vec::new();
-        for item in &formatted.body {
+        for item in &organized.body {
             match item {
                 ModuleItem::Stmt(Stmt::Decl(decl)) => match decl {
                     Decl::Fn(fn_decl) => {
@@ -2489,11 +2489,11 @@ type PrivateType = string | number;
 export type PublicType = PrivateType | boolean;
 "#;
 
-        let formatted = format_source(source).unwrap();
+        let organized = organize_source(source).unwrap();
 
         // Collect all declaration names
         let mut declarations = Vec::new();
-        for item in &formatted.body {
+        for item in &organized.body {
             match item {
                 ModuleItem::Stmt(Stmt::Decl(decl)) => match decl {
                     Decl::Class(class_decl) => {

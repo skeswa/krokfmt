@@ -670,7 +670,7 @@ mod tests {
     use super::*;
     use crate::codegen::CodeGenerator;
     use crate::comment_extractor::CommentExtractor;
-    use crate::formatter::KrokFormatter;
+    use crate::organizer::KrokOrganizer;
     use swc_common::GLOBALS;
 
     /// Helper to run tests within SWC GLOBALS context
@@ -693,13 +693,13 @@ mod tests {
         let extracted = extractor.extract(&module);
 
         // Format without comments
-        let formatter = KrokFormatter::new();
-        let formatted = formatter.format(module).unwrap();
+        let organizer = KrokOrganizer::new();
+        let organized = organizer.organize(module).unwrap();
 
         // Generate code without comments (using empty comments container)
         let empty_comments = swc_common::comments::SingleThreadedComments::default();
         let generator = CodeGenerator::with_comments(source_map, empty_comments);
-        let generated = generator.generate(&formatted).unwrap();
+        let generated = generator.generate(&organized).unwrap();
 
         // Reinsert comments
         let mut reinserter = CommentReinserter::new(extracted);
@@ -919,14 +919,14 @@ const App = () => "Hello";"#;
 
         // Step 3: Format AST (this reorders imports)
         println!("\n=== Step 3: Format AST ===");
-        let formatter = crate::formatter::KrokFormatter::new();
-        let formatted_module = formatter.format(module).unwrap();
+        let organizer = KrokOrganizer::new();
+        let organized_module = organizer.organize(module).unwrap();
 
         println!(
             "Formatted module items count: {}",
-            formatted_module.body.len()
+            organized_module.body.len()
         );
-        for (i, item) in formatted_module.body.iter().enumerate() {
+        for (i, item) in organized_module.body.iter().enumerate() {
             if let Some((hash, name)) = crate::semantic_hash::SemanticHasher::hash_module_item(item)
             {
                 println!("Item {i}: hash={hash:x}, name={name}");
@@ -938,7 +938,7 @@ const App = () => "Hello";"#;
         let empty_comments = swc_common::comments::SingleThreadedComments::default();
         let generator =
             crate::codegen::CodeGenerator::with_comments(parser.source_map.clone(), empty_comments);
-        let code_without_comments = generator.generate(&formatted_module).unwrap();
+        let code_without_comments = generator.generate(&organized_module).unwrap();
         println!("Generated code:");
         for (i, line) in code_without_comments.lines().enumerate() {
             println!("{}: {}", i + 1, line);

@@ -1,6 +1,6 @@
-use krokfmt::{codegen::CodeGenerator, formatter::KrokFormatter, parser::TypeScriptParser};
+use krokfmt::{codegen::CodeGenerator, organizer::KrokOrganizer, parser::TypeScriptParser};
 
-fn format_code(input: &str) -> String {
+fn organize_code(input: &str) -> String {
     let parser = TypeScriptParser::new();
     let source_map = parser.source_map.clone();
     let comments = parser.comments.clone();
@@ -11,10 +11,10 @@ fn format_code(input: &str) -> String {
         "test.ts"
     };
     let module = parser.parse(input, filename).unwrap();
-    let formatter = KrokFormatter::new();
-    let formatted_module = formatter.format(module).unwrap();
+    let organizer = KrokOrganizer::new();
+    let organized_module = organizer.organize(module).unwrap();
     let generator = CodeGenerator::with_comments(source_map, comments);
-    generator.generate(&formatted_module).unwrap()
+    generator.generate(&organized_module).unwrap()
 }
 
 #[test]
@@ -34,7 +34,7 @@ const App = () => {
 };
 "#;
 
-    let result = format_code(input);
+    let result = organize_code(input);
 
     // Verify imports are in correct order
     let lines: Vec<&str> = result.lines().collect();
@@ -72,7 +72,7 @@ const config = {
 };
 "#;
 
-    let result = format_code(input);
+    let result = organize_code(input);
     assert!(result.contains(r#"apple: 42"#));
     assert!(result.contains(r#"banana: "yellow""#));
     assert!(result.contains(r#"cat: null"#));
@@ -97,7 +97,7 @@ import 'reflect-metadata';
 import React from 'react';
 "#;
 
-    let result = format_code(input);
+    let result = organize_code(input);
     assert!(result.contains("import './polyfills'"));
     assert!(result.contains("import 'reflect-metadata'"));
     assert!(result.contains("import React from 'react'"));
@@ -111,7 +111,7 @@ import { api } from './api';
 import type { Config } from '@types/config';
 "#;
 
-    let result = format_code(input);
+    let result = organize_code(input);
     assert!(result.contains("import type { Config } from '@types/config'"));
     assert!(result.contains("import type { User } from './types'"));
     assert!(result.contains("import { api } from './api'"));
@@ -164,7 +164,7 @@ export const UserProfile: React.FC = () => {
 };
 "#;
 
-    let result = format_code(input);
+    let result = organize_code(input);
 
     // Verify imports are properly organized
     assert!(result.contains("import axios from 'axios'"));
@@ -204,7 +204,7 @@ const nested = {
 };
 "#;
 
-    let result = format_code(input);
+    let result = organize_code(input);
 
     // Outer object sorted
     let a_pos = result.find("a:").unwrap();
@@ -229,7 +229,7 @@ const obj = {
 };
 "#;
 
-    let result = format_code(input);
+    let result = organize_code(input);
     assert!(result.contains("...defaults"));
     assert!(result.contains("...overrides"));
     assert!(result.contains("apple: 2"));

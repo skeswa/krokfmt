@@ -12,6 +12,31 @@ keywords = ["typescript", "formatter", "code-formatter", "tsx", "jsx"]
 categories = ["development-tools", "command-line-utilities"]
 
 [dependencies]
+# NOTE: we have to resort to some tomfoolery to get biome deps working. This is
+# due mostly to the unwillingness of the maintainers to ensure their crates are
+# stable.
+#
+# I yanked these version pins from https://github.com/brioche-dev/brioche/pull/184.
+biome_console = "=0.5.7"
+biome_deserialize = "=0.5.7"
+biome_deserialize_macros = "=0.5.7"
+biome_diagnostics = "=0.5.7"
+biome_diagnostics_categories = "=0.5.7"
+biome_diagnostics_macros = "=0.5.7"
+biome_formatter = "=0.5.7"
+biome_js_factory = "=0.5.7"
+biome_js_formatter = "=0.5.7"
+biome_js_parser = "=0.5.7"
+biome_js_syntax = "=0.5.7"
+biome_json_factory = "=0.5.7"
+biome_json_parser = "=0.5.7"
+biome_json_syntax = "=0.5.7"
+biome_markup = "=0.5.7"
+biome_parser = "=0.5.7"
+biome_rowan = "=0.5.7"
+biome_text_edit = "=0.5.7"
+biome_text_size = "=0.5.7"
+biome_unicode_table = "=0.5.7"
 clap = { version = "4.5", features = ["derive"] }
 swc_atoms = "^7.0.0"
 swc_common = { version = "^14.0.0", features = ["tty-emitter"] }

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-krokfmt is a highly opinionated, zero-configuration TypeScript code formatter written in Rust. It uses the SWC parser ecosystem and enforces strict formatting rules with no configuration options.
+krokfmt is a highly opinionated, zero-configuration TypeScript code organizer and formatter written in Rust. It uses the SWC parser ecosystem for code organization and Biome for final formatting, enforcing strict rules with no configuration options.
 
 ## IMPORTANT: Task-Based Workflow
 
@@ -84,25 +84,30 @@ If any of these commands fail:
 
 ## Architecture Overview
 
-The formatter follows a pipeline architecture:
+The formatter follows a two-phase pipeline architecture:
 
+### Phase 1: Code Organization (krokfmt logic)
 1. **File Discovery** (`file_handler.rs`): Finds TypeScript files based on CLI args
 2. **Parsing** (`parser.rs`): Uses SWC to parse TypeScript into AST with comments
 3. **Comment Classification** (`comment_classifier.rs`): Identifies inline vs non-inline comments
 4. **Selective Comment Handling** (`selective_comment_handler.rs`): Separates inline from non-inline comments
 5. **Analysis** (`transformer.rs`): Analyzes imports and categorizes them
-6. **Transformation** (`formatter.rs`): Applies formatting rules to AST (with inline comments preserved)
-7. **Code Generation** (`codegen.rs`): Converts AST back to formatted code
+6. **Organization** (`organizer.rs`): Applies organizing rules to AST (with inline comments preserved)
+7. **Code Generation** (`codegen.rs`): Converts AST back to organized code
 8. **Comment Reinsertion** (`comment_reinserter.rs`): Reinserts non-inline comments at correct positions
+
+### Phase 2: Code Formatting (Biome)
+9. **Final Formatting** (`biome_formatter.rs`): Applies consistent code style using Biome
 
 ### Key Design Decisions
 
+- **Separation of Concerns**: Organization logic (krokfmt) is separate from formatting (Biome)
 - **Parallel Processing**: Uses Rayon for concurrent file processing
-- **Zero Configuration**: No config files or options - formatting rules are hardcoded
-- **AST-based**: Manipulates the AST directly rather than string manipulation
+- **Zero Configuration**: No config files or options - rules are hardcoded
+- **AST-based Organization**: Manipulates the AST directly for organizing code structure
 - **Import Categories**: External (node_modules), Absolute (@/~), Relative (./)
 - **Selective Comment Preservation**: Inline comments stay in AST, others are extracted/reinserted
-- **Two-Phase Formatting**: When source is available, uses selective preservation for better results
+- **Two-Phase Processing**: Organization first, then formatting for maximum flexibility
 
 ## Code Comment Style Guidelines
 
@@ -153,9 +158,11 @@ main.rs → file_handler.rs → (parallel) → parser.rs → comment_formatter.r
                                               ↓
                                     comment_classifier.rs
                                               ↓
-                                    transformer.rs → formatter.rs → codegen.rs
+                                    transformer.rs → organizer.rs → codegen.rs
                                               ↓
                                     comment_reinserter.rs
+                                              ↓
+                                    biome_formatter.rs (final formatting)
 ```
 
 ### Critical Implementation Details
@@ -165,7 +172,7 @@ main.rs → file_handler.rs → (parallel) → parser.rs → comment_formatter.r
    - Absolute: Starts with @ or ~ (e.g., '@utils/helper')
    - Relative: Starts with ./ or ../ (e.g., './components')
 
-2. **AST Visitor Pattern** (formatter.rs): Uses SWC's VisitMut trait for in-place AST modifications
+2. **AST Visitor Pattern** (organizer.rs): Uses SWC's VisitMut trait for in-place AST modifications
 
 3. **Import Group Spacing** (codegen.rs): Custom emitter adds empty lines between import categories
 
@@ -177,7 +184,9 @@ main.rs → file_handler.rs → (parallel) → parser.rs → comment_formatter.r
    - Trailing: End of line
    - Standalone: Separated by blank lines
 
-6. **Comment Formatting** (comment_formatter.rs): Main entry point for selective comment preservation
+6. **Comment Organization** (comment_formatter.rs): Main entry point for selective comment preservation
+
+7. **Final Formatting** (biome_formatter.rs): Applies Biome's formatting rules for consistent code style
 
 ## Testing Strategy
 

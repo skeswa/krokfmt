@@ -5,7 +5,8 @@ use rayon::prelude::*;
 use std::path::{Path, PathBuf};
 
 use krokfmt::{
-    comment_formatter::CommentFormatter, file_handler::FileHandler, parser::TypeScriptParser,
+    biome_formatter::BiomeFormatter, comment_formatter::CommentFormatter,
+    file_handler::FileHandler, parser::TypeScriptParser,
 };
 
 /// Command-line interface for krokfmt.
@@ -117,7 +118,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-/// Process a single TypeScript file through the parse-format-generate pipeline.
+/// Process a single TypeScript file through the parse-organize-format pipeline.
 ///
 /// Returns true if the file was changed, false if it was already formatted.
 /// This boolean is crucial for check mode to determine exit codes.
@@ -133,11 +134,17 @@ fn process_file(file_handler: &FileHandler, path: &Path, cli: &Cli) -> Result<bo
         .parse(&content, path.to_str().unwrap_or("unknown.ts"))
         .context("Failed to parse file")?;
 
-    // Use selective comment preservation for formatting
+    // Use selective comment preservation for organizing
     let formatter = CommentFormatter::new(source_map, comments);
-    let formatted_content = formatter
+    let organized_content = formatter
         .format(module, &content)
-        .context("Failed to format file")?;
+        .context("Failed to organize file")?;
+
+    // Apply Biome formatting as the final step
+    let biome_formatter = BiomeFormatter::new();
+    let formatted_content = biome_formatter
+        .format(&organized_content, path)
+        .context("Failed to format with Biome")?;
 
     // Simple string comparison is sufficient here - we're not doing a semantic diff
     // because any change, even whitespace, is a formatting change.

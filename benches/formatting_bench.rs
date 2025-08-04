@@ -1,7 +1,7 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use krokfmt::{codegen::CodeGenerator, formatter::KrokFormatter, parser::TypeScriptParser};
+use krokfmt::{codegen::CodeGenerator, organizer::KrokOrganizer, parser::TypeScriptParser};
 
-fn format_code(input: &str) -> String {
+fn organize_code(input: &str) -> String {
     let parser = TypeScriptParser::new();
     let source_map = parser.source_map.clone();
     let comments = parser.comments.clone();
@@ -11,10 +11,10 @@ fn format_code(input: &str) -> String {
         "bench.ts"
     };
     let module = parser.parse(input, filename).unwrap();
-    let formatter = KrokFormatter::new();
-    let formatted_module = formatter.format(module).unwrap();
+    let organizer = KrokOrganizer::new();
+    let organized_module = organizer.organize(module).unwrap();
     let generator = CodeGenerator::with_comments(source_map, comments);
-    generator.generate(&formatted_module).unwrap()
+    generator.generate(&organized_module).unwrap()
 }
 
 fn bench_small_file(c: &mut Criterion) {
@@ -37,7 +37,7 @@ export class AppComponent {
 "#;
 
     c.bench_function("format_small_file", |b| {
-        b.iter(|| format_code(black_box(input)))
+        b.iter(|| organize_code(black_box(input)))
     });
 }
 
@@ -161,7 +161,7 @@ export const Dashboard: React.FC = () => {
 "#;
 
     c.bench_function("format_medium_file", |b| {
-        b.iter(|| format_code(black_box(input)))
+        b.iter(|| organize_code(black_box(input)))
     });
 }
 
@@ -202,7 +202,7 @@ export class Component{i} {{
     let input = format!("{imports}\n{classes}");
 
     c.bench_function("format_large_file", |b| {
-        b.iter(|| format_code(black_box(&input)))
+        b.iter(|| organize_code(black_box(&input)))
     });
 }
 
@@ -248,7 +248,7 @@ export default App;
 "#;
 
     c.bench_function("format_import_heavy_file", |b| {
-        b.iter(|| format_code(black_box(input)))
+        b.iter(|| organize_code(black_box(input)))
     });
 }
 

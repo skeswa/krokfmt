@@ -3,15 +3,23 @@ updates:
   - package-ecosystem: "cargo"
     directory: "/"
     schedule:
-      interval: "monthly"
-    open-pull-requests-limit: 10
+      interval: "weekly"
+      day: "friday"
+      time: "17:00"
+      timezone: "America/Los_Angeles"
+    # As for now, disable the update of biome dependencies
+    # See: https://github.com/biomejs/biome/issues/5151
+    ignore:
+      - dependency-name: "biome_*"
     reviewers:
       - "skeswa"
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "monthly"
-    open-pull-requests-limit: 10
+      interval: "weekly"
+      day: "friday"
+      time: "17:00"
+      timezone: "America/Los_Angeles"
     reviewers:
       - "skeswa"

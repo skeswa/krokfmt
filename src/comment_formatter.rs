@@ -5,7 +5,7 @@ use swc_ecma_ast::Module;
 use crate::{
     codegen::CodeGenerator, comment_classifier::CommentClassification,
     comment_extractor::CommentExtractor, comment_reinserter::CommentReinserter,
-    formatter::KrokFormatter, selective_comment_handler::SelectiveCommentHandler,
+    organizer::KrokOrganizer, selective_comment_handler::SelectiveCommentHandler,
 };
 
 /// Main comment-aware formatter for krokfmt
@@ -72,13 +72,13 @@ impl CommentFormatter {
             .standalone_comments
             .retain(|c| !inline_positions.contains(&c.comment.span.lo));
 
-        // Phase 3: Format the AST using the regular formatter
-        let formatter = KrokFormatter::new();
-        let formatted_module = formatter.format(module)?;
+        // Phase 3: Organize the AST using the organizer
+        let organizer = KrokOrganizer::new();
+        let organized_module = organizer.organize(module)?;
 
         // Phase 4: Generate code WITH inline comments (they're preserved)
         let generator = CodeGenerator::with_comments(self.source_map.clone(), inline_only_comments);
-        let code_with_inline_comments = generator.generate(&formatted_module)?;
+        let code_with_inline_comments = generator.generate(&organized_module)?;
 
         // Phase 5: Reinsert only non-inline comments at the correct positions
         let mut reinserter = CommentReinserter::new(extracted_comments);

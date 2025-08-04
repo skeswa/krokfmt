@@ -14,7 +14,7 @@
 
 ## Executive Summary
 
-krokfmt is a highly opinionated, zero-configuration TypeScript code formatter designed to enforce consistent code organization principles. Built in Rust for maximum performance, it leverages the SWC (Speedy Web Compiler) ecosystem for TypeScript parsing and code generation.
+krokfmt is a highly opinionated, zero-configuration TypeScript code organizer and formatter designed to enforce consistent code organization principles. Built in Rust for maximum performance, it leverages the SWC (Speedy Web Compiler) ecosystem for TypeScript parsing and code generation, with Biome for final code formatting.
 
 ### Key Design Principles
 - **Zero Configuration**: No options or configuration files - one true way to format
@@ -39,8 +39,9 @@ graph TB
         
         subgraph FP[Format Pipeline]
             P[Parser<br/>SWC] --> A[Analyzer]
-            A --> T[Transformer]
-            T --> CG[Code Generator<br/>SWC]
+            A --> O[Organizer]
+            O --> CG[Code Generator<br/>SWC]
+            CG --> BF[Biome Formatter]
         end
         
         PPE --> FP
@@ -61,8 +62,9 @@ graph TB
     
     subgraph FP[Format Pipeline]
         P[Parser<br/>parser.rs] --> A[Analyzer<br/>transformer.rs]
-        A --> F[Formatter<br/>formatter.rs]
-        F --> CG[Code Generator<br/>codegen.rs]
+        A --> O[Organizer<br/>organizer.rs]
+        O --> CG[Code Generator<br/>codegen.rs]
+        CG --> BF[Biome Formatter<br/>biome_formatter.rs]
     end
     
     CG --> |formatted code| FH2[File Handler<br/>Write]
@@ -103,21 +105,29 @@ Analyzes AST to extract formatting information:
 - Member visibility analysis
 - Sortable element identification
 
-### 5. Transformer Module (`formatter.rs`)
-Applies formatting rules to the AST:
+### 5. Organizer Module (`organizer.rs`)
+Applies organization rules to the AST:
 - Import reorganization
 - Property sorting
 - Member reordering
 - AST mutation with semantic preservation
 
 ### 6. Code Generator (`codegen.rs`)
-Converts formatted AST back to source code:
+Converts organized AST back to source code:
 - Custom emitter for import grouping
 - Selective comment preservation (inline comments remain in AST)
 - Whitespace management
 - Source map generation (future)
 
-### 7. Comment System (`comment_classifier.rs`, `selective_comment_handler.rs`)
+### 7. Biome Formatter (`biome_formatter.rs`)
+Applies final formatting polish:
+- Consistent indentation and spacing
+- Quote style normalization
+- Semicolon handling
+- Line width management
+- Preserves the organized structure while applying style rules
+
+### 8. Comment System (`comment_classifier.rs`, `selective_comment_handler.rs`)
 Innovative selective comment preservation:
 - Classifies comments as inline/leading/trailing/standalone
 - Keeps inline comments in AST during transformation
@@ -131,26 +141,30 @@ graph BT
     main[main.rs] --> lib[lib.rs]
     lib --> parser[parser.rs]
     lib --> transformer[transformer.rs]
-    lib --> formatter[formatter.rs]
+    lib --> organizer[organizer.rs]
     lib --> codegen[codegen.rs]
+    lib --> biome_formatter[biome_formatter.rs]
     lib --> file_handler[file_handler.rs]
     
-    formatter --> transformer
-    formatter --> parser
+    organizer --> transformer
+    organizer --> parser
     codegen --> transformer
+    biome_formatter --> biome[biome_formatter crate]
     main --> file_handler
     main --> parser
-    main --> formatter
+    main --> organizer
     main --> codegen
+    main --> biome_formatter
     lib --> comment_classifier[comment_classifier.rs]
     lib --> selective_comment_handler[selective_comment_handler.rs]
-    lib --> two_phase_formatter[two_phase_formatter.rs]
+    lib --> comment_formatter[comment_formatter.rs]
     
     parser --> swc[swc_ecma_parser]
     codegen --> swc2[swc_ecma_codegen]
     transformer --> swc3[swc_ecma_ast]
-    two_phase_formatter --> comment_classifier
-    two_phase_formatter --> selective_comment_handler
+    comment_formatter --> comment_classifier
+    comment_formatter --> selective_comment_handler
+    comment_formatter --> organizer
 ```
 
 ## Data Flow
@@ -160,10 +174,12 @@ flowchart TB
     IF[Input File<br/>*.ts] --> P[Parser]
     P --> AST1[AST]
     AST1 --> A[Analyzer]
-    A --> T[Transformer]
-    T --> AST2[Transformed<br/>AST]
+    A --> O[Organizer]
+    O --> AST2[Organized<br/>AST]
     AST2 --> CG[Codegen]
-    CG --> OF[Output File<br/>*.ts]
+    CG --> OC[Organized<br/>Code]
+    OC --> BF[Biome<br/>Formatter]
+    BF --> OF[Output File<br/>*.ts]
     
     style IF fill:#f9f,stroke:#333,stroke-width:2px
     style OF fill:#9f9,stroke:#333,stroke-width:2px
@@ -192,7 +208,9 @@ sequenceDiagram
     T->>AST: Mutate AST
     Note over T,AST: - Reorder imports<br/>- Sort properties<br/>- Arrange members
     AST->>CG: Generate Code
-    CG->>O: Formatted Source
+    CG->>BF: Organized Code
+    BF->>O: Formatted Source
+    Note over BF,O: Apply Biome formatting
 ```
 
 ## Detailed Component Design
@@ -273,9 +291,9 @@ flowchart LR
 ### AST Transformation Pipeline
 
 ```rust
-pub struct FormatterVisitor;
+pub struct OrganizerVisitor;
 
-impl VisitMut for FormatterVisitor {
+impl VisitMut for OrganizerVisitor {
     fn visit_mut_object_lit(&mut self, obj: &mut ObjectLit) {
         self.sort_object_props(&mut obj.props);
         obj.visit_mut_children_with(self);
@@ -318,8 +336,12 @@ classDiagram
         Relative
     }
     
-    class KrokFormatter {
-        +format(module): Result~Module~
+    class KrokOrganizer {
+        +organize(module): Result~Module~
+    }
+    
+    class BiomeFormatter {
+        +format(code, path): Result~String~
     }
     
     class CodeGenerator {
@@ -329,8 +351,9 @@ classDiagram
     
     ImportInfo --> ImportCategory
     TypeScriptParser --> Module
-    KrokFormatter --> Module
+    KrokOrganizer --> Module
     CodeGenerator --> Module
+    BiomeFormatter --> String
 ```
 
 ## Formatting Rules Engine
@@ -359,18 +382,21 @@ flowchart TD
     S2[2. Categorize and sort imports]
     S3[3. Apply structural transformations]
     S4[4. Apply ordering rules recursively]
-    S5[5. Generate code with spacing rules]
+    S5[5. Generate organized code]
+    S6[6. Apply Biome formatting]
     
     S1 --> S2
     S2 --> S3
     S3 --> S4
     S4 --> S5
+    S5 --> S6
     
     style S1 fill:#e1f5fe,stroke:#01579b,stroke-width:2px
     style S2 fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
     style S3 fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
     style S4 fill:#fff3e0,stroke:#e65100,stroke-width:2px
     style S5 fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+    style S6 fill:#e3f2fd,stroke:#0d47a1,stroke-width:2px
 ```
 
 ### Conflict Resolution
@@ -393,8 +419,8 @@ graph TD
     IC --> AST[Keep in AST]
     NIC --> EX[Extract for Reinsertion]
     
-    AST --> FMT[Format with Inline Comments]
-    FMT --> GEN[Generate Code]
+    AST --> ORG[Organize with Inline Comments]
+    ORG --> GEN[Generate Code]
     
     EX --> RI[Reinsert Non-Inline]
     GEN --> RI
@@ -480,8 +506,9 @@ graph TD
     
     subgraph "Per Worker"
         F1[Read File] --> F2[Parse]
-        F2 --> F3[Format]
-        F3 --> F4[Write]
+        F2 --> F3[Organize]
+        F3 --> F4[Format with Biome]
+        F4 --> F5[Write]
     end
 ```
 

@@ -1,9 +1,9 @@
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
-use krokfmt::{codegen::CodeGenerator, formatter::KrokFormatter, parser::TypeScriptParser};
+use krokfmt::{codegen::CodeGenerator, organizer::KrokOrganizer, parser::TypeScriptParser};
 use std::fs;
 use std::path::Path;
 
-fn format_code(input: &str) -> String {
+fn organize_code(input: &str) -> String {
     let parser = TypeScriptParser::new();
     let source_map = parser.source_map.clone();
     let comments = parser.comments.clone();
@@ -13,10 +13,10 @@ fn format_code(input: &str) -> String {
         "test.ts"
     };
     let module = parser.parse(input, filename).unwrap();
-    let formatter = KrokFormatter::new();
-    let formatted_module = formatter.format(module).unwrap();
+    let organizer = KrokOrganizer::new();
+    let organized_module = organizer.organize(module).unwrap();
     let generator = CodeGenerator::with_comments(source_map, comments);
-    generator.generate(&formatted_module).unwrap()
+    generator.generate(&organized_module).unwrap()
 }
 
 fn load_fixture(fixture_path: &str) -> String {
@@ -41,7 +41,7 @@ fn bench_real_fixtures(c: &mut Criterion) {
 
         group.throughput(Throughput::Bytes(size));
         group.bench_with_input(BenchmarkId::new("format", name), &input, |b, input| {
-            b.iter(|| format_code(black_box(input)))
+            b.iter(|| organize_code(black_box(input)))
         });
     }
 
@@ -64,10 +64,10 @@ fn bench_formatting_only(c: &mut Criterion) {
     let parser = TypeScriptParser::new();
     let module = parser.parse(&input, "test.ts").unwrap();
 
-    c.bench_function("format_only", |b| {
+    c.bench_function("organize_only", |b| {
         b.iter(|| {
-            let formatter = KrokFormatter::new();
-            formatter.format(black_box(module.clone())).unwrap()
+            let organizer = KrokOrganizer::new();
+            organizer.organize(black_box(module.clone())).unwrap()
         })
     });
 }
@@ -77,12 +77,12 @@ fn bench_codegen_only(c: &mut Criterion) {
     let parser = TypeScriptParser::new();
     let source_map = parser.source_map.clone();
     let module = parser.parse(&input, "test.ts").unwrap();
-    let formatted_module = KrokFormatter::new().format(module).unwrap();
+    let organized_module = KrokOrganizer::new().organize(module).unwrap();
 
     c.bench_function("codegen_only", |b| {
         b.iter(|| {
             let generator = CodeGenerator::new(source_map.clone());
-            generator.generate(black_box(&formatted_module)).unwrap()
+            generator.generate(black_box(&organized_module)).unwrap()
         })
     });
 }

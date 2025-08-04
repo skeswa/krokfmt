@@ -9,6 +9,50 @@
 
 ## Functional Requirements
 
+### FR0: Two-Phase Processing Architecture
+
+#### FR0.1: Code Organization Phase
+
+**Description**: The system shall first organize code structure according to krokfmt rules.
+
+**Organization Includes**:
+- Import/export categorization and sorting (FR1)
+- Member visibility ordering (FR2)
+- Alphabetical sorting of various elements (FR3)
+- Comment preservation and association
+- Dependency analysis and preservation
+
+**Output**: Semantically equivalent code with improved organization
+
+#### FR0.2: Code Formatting Phase
+
+**Description**: The system shall apply consistent code formatting using Biome after organization.
+
+**Formatting Includes**:
+- Indentation normalization (spaces/tabs)
+- Quote style consistency (single/double)
+- Semicolon handling (always/as-needed)
+- Line width management
+- Whitespace normalization
+- Bracket and parenthesis spacing
+
+**Configuration**: Biome formatting is configurable but defaults to:
+- 2-space indentation
+- Double quotes
+- Semicolons always
+- 80-character line width
+- Multiline attribute positioning
+
+#### FR0.3: Phase Independence
+
+**Description**: The organization and formatting phases shall be independent, allowing either to be updated without affecting the other.
+
+**Benefits**:
+- Organization logic remains testable in isolation
+- Formatting engine can be swapped or updated
+- Clear separation of concerns
+- Easier maintenance and debugging
+
 ### FR1: Import/Export Organization
 
 #### FR1.1: Import Statement Parsing
@@ -1249,12 +1293,33 @@ Error: Failed to parse file
 - Recovery strategies
 - Logging
 
+#### NFR5.5: Testing Strategy
+
+**Description**: The system shall test organization and formatting phases independently.
+
+**Organization Tests**:
+- Test code organization rules without formatting
+- Use snapshot tests for organization output
+- Verify semantic preservation
+- Test comment positioning
+
+**Formatting Tests**:
+- Test Biome integration separately
+- Verify formatting configuration
+- Test error handling in formatting phase
+
+**Integration Tests**:
+- Test complete pipeline (organize + format)
+- Verify phase interaction
+- Test error propagation between phases
+
 ## Acceptance Criteria
 
 ### Release Criteria
 
 1. **Functionality**
 
+   - All FR0.\* (two-phase processing) requirements implemented
    - All FR1.\* requirements implemented
    - FR3.2 (object sorting) implemented
    - FR4.\* (CLI) fully functional
@@ -1285,3 +1350,4 @@ A requirement is considered complete when:
 3. Documentation updated
 4. Integration tests added
 5. No regression in existing features
+6. Both organization and formatting phases tested independently (for FR0 requirements)
