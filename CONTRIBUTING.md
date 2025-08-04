@@ -79,19 +79,30 @@ cargo test --release
 
 ```
 src/
-├── main.rs           # CLI entry point
-├── lib.rs            # Library entry point
-├── parser.rs         # TypeScript parsing
-├── formatter.rs      # Core formatting logic
-├── transformer.rs    # Import analysis
-├── codegen.rs        # Code generation
-└── file_handler.rs   # File operations
+├── main.rs                         # CLI entry point
+├── lib.rs                          # Library entry point
+├── parser.rs                       # TypeScript parsing with comment support
+├── formatter.rs                    # Core formatting logic
+├── transformer.rs                  # Import analysis
+├── codegen.rs                      # Code generation with selective comments
+├── file_handler.rs                 # File operations
+├── two_phase_formatter.rs          # Two-phase formatting orchestrator
+├── selective_two_phase_formatter.rs # Selective comment preservation
+├── comment_classifier.rs           # Classifies comments as inline/non-inline
+├── selective_comment_handler.rs    # Separates inline from non-inline comments
+├── comment_extractor.rs            # Extracts non-inline comments
+├── comment_reinserter.rs           # Reinjects non-inline comments
+└── semantic_hash.rs                # Stable node identification
 
 tests/
-└── integration_tests.rs  # End-to-end tests
+├── integration_tests.rs  # End-to-end tests
+├── snapshot_tests.rs     # Comprehensive requirement tests
+└── fixtures/            # Test input files organized by requirement
 
 docs/
-└── requirements.md   # Detailed requirements
+├── requirements.md      # Detailed requirements
+├── design.md           # System architecture and design
+└── comment-attachment.md # Comment preservation journey
 ```
 
 ## Adding New Features
@@ -101,6 +112,15 @@ docs/
 3. Follow the existing patterns in the codebase
 4. Update documentation as needed
 5. Add comprehensive tests
+
+### Working with Comments
+
+When implementing features that involve comments, understand the selective preservation system:
+
+1. **Inline Comments**: These remain in the AST and require no special handling
+2. **Non-inline Comments**: These are extracted and must be properly reinserted
+3. **Comment Classification**: Use `CommentClassifier` to determine comment types
+4. **Testing**: Always include test cases with various comment types
 
 ## Git Workflow
 

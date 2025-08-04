@@ -6,39 +6,39 @@ expression: output
 
 // Array with inline comments (not yet supported)
 const arr = [
-    1,
-    2,
-    3
+    /* first */ 1,
+    /* second */ 2,
+    /* third */ 3
 ];
 // Variable declarations with inline comments
 const x = /* inline comment */ 42;
 let y = /* another inline */ "hello";
 // Arrow functions with inline comments
-const arrow = (x: number, y: number)=>x + y;
+const arrow = (/* param1 */ x: number, /* param2 */ y: number)=>x + y;
 // Complex expressions with inline comments (not yet supported)
-const complex = (10 + 20) * 30;
+const complex = (/* a */ 10 + /* b */ 20) * /* c */ 30;
 
 // Method with inline comments
 class Example {
-    method(value: string): void {
+    method(/* param */ value: string): /* return type */ void {
         console.log(value);
     }
 }
 
 // Function parameters with inline comments
-function foo(a: number, b: string) {
+function foo(/* first param */ a: number, /* second param */ b: string) {
     return a + b.length;
 }
 
 // Object with inline comments (not yet supported)
 const obj = {
-    key1: "hello",
-    key2: 42
+    key1: /* value1 */ "hello",
+    key2: /* value2 */ 42
 };
 
 // Type annotations with inline comments
-function typed(param: string): number {
+function typed(param: /* inline type */ string): /* return inline */ number {
     return param.length;
 }
 
-var z = /* number */ 100 + 50;
+var z = /* number */ 100 + /* expression */ 50;

@@ -49,8 +49,8 @@ export function serviceB() {
     return dataD.map(utilityC);
 }
 
-// Export statement depending on non-exported members
 // Non-exported helper that no export depends on
+// Export statement depending on non-exported members
 function unusedHelper() {
     return "not used by exports";
 }

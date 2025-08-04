@@ -113,9 +113,16 @@ Applies formatting rules to the AST:
 ### 6. Code Generator (`codegen.rs`)
 Converts formatted AST back to source code:
 - Custom emitter for import grouping
-- Comment preservation
+- Selective comment preservation (inline comments remain in AST)
 - Whitespace management
 - Source map generation (future)
+
+### 7. Comment System (`comment_classifier.rs`, `selective_comment_handler.rs`)
+Innovative selective comment preservation:
+- Classifies comments as inline/leading/trailing/standalone
+- Keeps inline comments in AST during transformation
+- Extracts only non-inline comments for reinsertion
+- Ensures perfect inline comment positioning
 
 ### Module Dependency Graph
 
@@ -135,10 +142,15 @@ graph BT
     main --> parser
     main --> formatter
     main --> codegen
+    lib --> comment_classifier[comment_classifier.rs]
+    lib --> selective_comment_handler[selective_comment_handler.rs]
+    lib --> two_phase_formatter[two_phase_formatter.rs]
     
     parser --> swc[swc_ecma_parser]
     codegen --> swc2[swc_ecma_codegen]
     transformer --> swc3[swc_ecma_ast]
+    two_phase_formatter --> comment_classifier
+    two_phase_formatter --> selective_comment_handler
 ```
 
 ## Data Flow
@@ -365,9 +377,33 @@ flowchart TD
 
 When rules conflict, precedence is:
 1. Semantic preservation (never break code)
-2. Structural rules
-3. Ordering rules
-4. Spacing rules
+2. Inline comment preservation (never move inline comments)
+3. Structural rules
+4. Ordering rules
+5. Spacing rules
+
+### Comment Preservation Architecture
+
+```mermaid
+graph TD
+    SC[Source Code] --> CL[Comment Classifier]
+    CL --> IC[Inline Comments]
+    CL --> NIC[Non-Inline Comments]
+    
+    IC --> AST[Keep in AST]
+    NIC --> EX[Extract for Reinsertion]
+    
+    AST --> FMT[Format with Inline Comments]
+    FMT --> GEN[Generate Code]
+    
+    EX --> RI[Reinsert Non-Inline]
+    GEN --> RI
+    RI --> OUT[Final Output]
+    
+    style IC fill:#9f9,stroke:#333,stroke-width:2px
+    style AST fill:#9f9,stroke:#333,stroke-width:2px
+    style NIC fill:#f99,stroke:#333,stroke-width:2px
+```
 
 ### Import Grouping Visualization
 

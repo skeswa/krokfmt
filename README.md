@@ -281,26 +281,37 @@ JSX props follow a specific order for consistency:
 
 ### 4. Comment Preservation
 
-All comments are preserved in their correct positions:
+krokfmt uses an innovative selective comment preservation system:
 
-- **Line comments** (`//`) maintain their position relative to code
-- **Block comments** (`/* */`) preserve internal formatting
-- **JSDoc comments** (`/** */`) move with their associated declarations
-- **Special comments** (TypeScript directives, ESLint rules) stay in place
+- **Inline comments** remain naturally in the AST during formatting:
+  - Function parameters: `function foo(/* param */ x: number)`
+  - Expressions: `const result = /* start */ 10 + /* end */ 20`
+  - Arrays: `[/* first */ 1, /* second */ 2]`
+  - Objects: `{ key: /* value */ "hello" }`
+  - Type annotations: `let x: /* nullable */ string | null`
+
+- **Non-inline comments** are extracted and reinserted after formatting:
+  - Leading comments (`//` above declarations)
+  - Trailing comments (`//` at end of lines)
+  - Standalone comments (separated by blank lines)
+  - JSDoc comments (`/** */`)
 
 ```typescript
-// This comment stays with the import
+// This leading comment moves with the import
 import React from "react";
 
 /**
  * This JSDoc moves with the function
  * @param name - The name to greet
  */
-export function greet(name: string) {
+export function greet(/* inline param comment */ name: string) {
   // This comment is preserved inside
-  return `Hello, ${name}!`; // This stays at line end
+  const greeting = /* inline */ `Hello, ${name}!`; // This trailing comment stays
+  return greeting;
 }
 ```
+
+This approach ensures that comments requiring precise positioning (inline comments) are never misplaced, while other comments are intelligently moved with their associated code during reorganization.
 
 ### 5. Whitespace and Formatting
 

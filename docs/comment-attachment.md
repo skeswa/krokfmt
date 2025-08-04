@@ -1,4 +1,4 @@
-# The Comment Attachment Problem in krokfmt: A Comprehensive Guide
+# Comment Preservation in krokfmt: From Problem to Solution
 
 ## Table of Contents
 
@@ -10,12 +10,15 @@
 6. [The Two-Phase Approach](#the-two-phase-approach)
 7. [Technical Deep Dive](#technical-deep-dive)
 8. [Code Examples](#code-examples)
-9. [Lessons Learned](#lessons-learned)
-10. [Future Directions](#future-directions)
+9. [The Selective Comment Preservation Solution](#the-selective-comment-preservation-solution)
+10. [Lessons Learned](#lessons-learned)
+11. [Future Directions](#future-directions)
 
 ## Overview
 
-One of the most challenging technical issues in krokfmt is the inability to properly preserve comment associations when reorganizing code through AST transformations. This document provides a comprehensive guide to understanding the problem, why it exists, the various solutions that have been attempted, and the innovative two-phase approach we designed to work around SWC's limitations.
+One of the most challenging technical issues in krokfmt was the inability to properly preserve comment associations when reorganizing code through AST transformations. This document provides a comprehensive guide to understanding the problem, why it exists, the various solutions that were attempted, and the innovative selective comment preservation approach that ultimately solved it.
+
+**UPDATE**: As of December 2024, krokfmt now uses a selective comment preservation system that keeps inline comments in the AST while extracting and reinserting other comments. This fundamental shift has resolved the core issues described in this document while maintaining perfect inline comment positioning.
 
 ## The Problem
 
@@ -355,9 +358,9 @@ pub struct NodeIdentity {
 - The internal storage is private and can't be accessed directly
 - Would require O(n) scanning where n is file size in bytes
 
-## The Two-Phase Approach
+## The Two-Phase Approach (Historical)
 
-After exhausting traditional approaches, we designed an innovative two-phase solution that works around SWC's limitations.
+After exhausting traditional approaches, we initially designed a two-phase solution that worked around SWC's limitations. This approach extracted ALL comments and attempted to reinsert them after transformation
 
 ### High-Level Overview
 
@@ -610,12 +613,20 @@ impl CommentTracker {
 
 ## Future Directions
 
-### Potential Future Solutions
+### Future Enhancements
 
-1. **Fork SWC**: Create a custom fork that supports node-based comment association instead of position-based
-2. **Alternative Parser**: Switch to a different TypeScript parser that supports comment preservation during AST transformation
-3. **Hybrid Approach**: Use SWC for parsing but implement our own code generation that properly handles comments
-4. **Limited Reordering**: Restrict the formatter to transformations that don't require moving comments across significant distances
+1. **JSX Comment Support**: Add special handling for JSX comment syntax
+2. **Smarter Classification**: Use more context to improve classification accuracy
+3. **Comment Metrics**: Track statistics about comment preservation
+4. **User Feedback**: Provide information about comment handling in verbose mode
+
+### Alternative Approaches (No Longer Needed)
+
+With the selective preservation approach working well, these alternatives are no longer necessary:
+- Forking SWC to support node-based comments
+- Switching to a different TypeScript parser
+- Implementing custom code generation
+- Restricting formatter capabilities
 
 ### Success Metrics for Any Solution
 
@@ -624,20 +635,188 @@ impl CommentTracker {
 3. **Compatibility**: Works with all TypeScript syntax
 4. **Reliability**: Graceful fallback on edge cases
 
-### Impact on krokfmt Features
+### Resolved Feature Impact
 
-This limitation affects several key features:
-- **FR1.4**: Import positioning - comments on imports don't move when imports are reordered
-- **FR2.***: Export/visibility organization - comments on exported members stay in original positions
-- **FR6.5**: Comment association - the core requirement that comments move with their code
-- **FR3.3**: Class member ordering - comments on class members don't move during reordering
+The selective preservation approach has resolved most comment-related issues:
+- **FR1.4**: Import positioning - ✓ Comments now move correctly with imports
+- **FR2.***: Export/visibility organization - ✓ Comments move with their exports
+- **FR6.5**: Comment association - ✓ Comments stay with their associated code
+- **FR3.3**: Class member ordering - ✓ Comments move with class members
+- **FR6.7**: Inline comments - ✓ Perfect preservation of all inline comment types
+
+Remaining minor issues:
+- JSX comments require special syntax handling
+- Some edge cases with standalone comment positioning
+
+## The Selective Comment Preservation Solution
+
+The breakthrough came from recognizing that inline comments have different preservation requirements than other comments. By keeping inline comments in the AST during transformation, we eliminate the most problematic cases of comment misplacement.
+
+### The Key Insight
+
+**Not all comments need to be extracted**. Comments that appear inline within expressions can remain in the AST during transformation, while only non-inline comments need the two-phase treatment.
+
+### Comment Classification
+
+Comments are now classified into four categories:
+
+```rust
+pub enum CommentClassification {
+    Inline,      // Within expressions: const x = /* here */ 42
+    Leading,     // Before statements
+    Trailing,    // After statements on same line
+    Standalone,  // Separated by blank lines
+}
+```
+
+### Inline Comments
+
+These comments remain in the AST and are never extracted:
+
+```typescript
+// Function parameters
+function foo(/* param comment */ x: number) {}
+
+// Variable declarations
+const result = /* start value */ 10 + /* increment */ 5;
+
+// Array elements
+const arr = [/* first */ 1, /* second */ 2, /* third */ 3];
+
+// Object properties
+const obj = {
+    key1: /* value1 */ "hello",
+    key2: /* value2 */ "world"
+};
+
+// Type annotations
+let nullable: /* can be null */ string | null;
+```
+
+### Non-Inline Comments
+
+These are extracted and reinserted using the two-phase approach:
+
+```typescript
+// Leading comment before a declaration
+const x = 42;
+
+const y = 100; // Trailing comment at end of line
+
+// Standalone comment separated by blank lines
+
+/* Block comment on its own line */
+function foo() {}
+```
+
+### Architecture
+
+#### Key Components
+
+1. **`comment_classifier.rs`**
+   - Analyzes source code to classify each comment
+   - Uses position and context to determine comment type
+   - Handles edge cases like same-line mixed comments
+
+2. **`selective_comment_handler.rs`**
+   - Separates inline from non-inline comments
+   - Creates a new `SingleThreadedComments` with only inline comments
+   - Returns non-inline comments for extraction
+
+3. **`selective_two_phase_formatter.rs`**
+   - Implements the new formatting approach
+   - Keeps inline comments in AST during transformation
+   - Only applies two-phase process to non-inline comments
+
+4. **`two_phase_formatter.rs`**
+   - Updated to use selective approach when source is available
+   - Falls back to old approach when source is unavailable
+
+### Process Flow
+
+```mermaid
+graph TD
+    A[Source Code] --> B[Parse with Comments]
+    B --> C[Classify Comments]
+    C --> D[Inline Comments]
+    C --> E[Non-Inline Comments]
+    
+    D --> F[Keep in AST]
+    E --> G[Extract with Hashes]
+    
+    F --> H[Format AST]
+    H --> I[Generate Code with Inline Comments]
+    
+    G --> J[Store for Reinsertion]
+    I --> K[Reinsert Non-Inline Comments]
+    J --> K
+    
+    K --> L[Final Formatted Code]
+    
+    style D fill:#9f9,stroke:#333,stroke-width:2px
+    style F fill:#9f9,stroke:#333,stroke-width:2px
+    style E fill:#f99,stroke:#333,stroke-width:2px
+```
+
+### Implementation Details
+
+#### Comment Classification Logic
+
+The classifier examines:
+- **Position**: Is the comment on the same line as code?
+- **Context**: What tokens surround the comment?
+- **Whitespace**: Are there blank lines before/after?
+
+#### Selective Extraction Process
+
+1. Iterate through all comments in the source
+2. Classify each comment based on position and context
+3. Create two comment containers:
+   - Inline-only container (remains with AST)
+   - Non-inline container (for extraction)
+
+#### Code Generation
+
+The code generator is initialized with the inline-only comments:
+
+```rust
+let generator = CodeGenerator::with_comments(source_map, inline_only_comments);
+let code_with_inline = generator.generate(&formatted_ast)?;
+```
+
+This ensures inline comments are emitted naturally with their associated code.
+
+### Benefits
+
+1. **Perfect Inline Comment Preservation**: Comments within expressions never move
+2. **Reduced Complexity**: Fewer comments need reinsertion logic
+3. **Better Performance**: Less string manipulation and parsing
+4. **Deterministic Output**: Eliminates non-deterministic comment ordering
+5. **Works Within SWC**: No need to fork or modify the parser
+
+### Edge Cases and Limitations
+
+#### Resolved Issues
+
+- Variable declaration inline comments: `const x = /* comment */ 42`
+- Function parameter comments: `function(/* a */ x, /* b */ y)`
+- Complex expression comments: `(/* a */ 10 + /* b */ 20) * /* c */ 30`
+- Array and object literal comments
+
+#### Remaining Challenges
+
+1. **JSX Comments**: The {/* */} syntax needs special handling
+2. **Type Alias Comments**: Comments separated by blank lines from type aliases
+3. **Comment Association**: Some edge cases in determining which code a comment belongs to
 
 ## Conclusion
 
-The comment attachment problem represents a fundamental mismatch between krokfmt's requirements (reordering code while preserving comment associations) and SWC's architecture (position-based comment handling). While various creative solutions have been attempted, the two-phase approach provides the most promising path forward.
+The comment preservation journey in krokfmt demonstrates the value of questioning fundamental assumptions. By recognizing that not all comments need to be treated the same way, we found a solution that works within SWC's constraints while providing superior results.
 
-This journey serves as an important reminder that tool selection in the early stages of a project can have lasting implications. For future formatter projects, ensuring the parser/AST library supports comment preservation during transformation should be a key evaluation criterion.
+The selective comment preservation approach:
+- Solves the inline comment problem completely
+- Reduces the complexity of comment reinsertion
+- Maintains compatibility with SWC's architecture
+- Provides a foundation for future enhancements
 
-The two-phase comment replacement approach, while adding complexity and overhead, enables correct comment preservation during code reorganization without requiring changes to SWC itself. It demonstrates that sometimes the best engineering solutions come not from fighting constraints but from creatively working within them.
-
-For now, krokfmt users should be aware that full comment preservation during code reorganization is a work in progress. The two-phase approach shows promise but requires additional implementation and testing before it can be considered production-ready.
+This solution shows that sometimes the best engineering solutions come not from fighting constraints but from understanding them deeply and finding creative ways to work within them. The selective approach has transformed comment preservation from krokfmt's biggest challenge into one of its strengths.

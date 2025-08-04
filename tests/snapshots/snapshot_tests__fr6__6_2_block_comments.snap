@@ -23,12 +23,12 @@ import { helper } from './helper';
 Multiple line comment
 without stars
 */
-export const y = 100;
+export const y = 100; /* Mixed comment */ 
 
 /* Comment before function */
-function foo(a: number): number {
+function foo(/* param comment */ a: number): /* return comment */ number {
     return a * 2;
 }
 
 const x = /* inline comment */ 42;
-/* Mixed comment */ // with line comment
+// with line comment

@@ -87,10 +87,13 @@ If any of these commands fail:
 The formatter follows a pipeline architecture:
 
 1. **File Discovery** (`file_handler.rs`): Finds TypeScript files based on CLI args
-2. **Parsing** (`parser.rs`): Uses SWC to parse TypeScript into AST
-3. **Analysis** (`transformer.rs`): Analyzes imports and categorizes them
-4. **Transformation** (`formatter.rs`): Applies formatting rules to AST
-5. **Code Generation** (`codegen.rs`): Converts AST back to formatted code
+2. **Parsing** (`parser.rs`): Uses SWC to parse TypeScript into AST with comments
+3. **Comment Classification** (`comment_classifier.rs`): Identifies inline vs non-inline comments
+4. **Selective Comment Handling** (`selective_comment_handler.rs`): Separates inline from non-inline comments
+5. **Analysis** (`transformer.rs`): Analyzes imports and categorizes them
+6. **Transformation** (`formatter.rs`): Applies formatting rules to AST (with inline comments preserved)
+7. **Code Generation** (`codegen.rs`): Converts AST back to formatted code
+8. **Comment Reinsertion** (`comment_reinserter.rs`): Reinserts non-inline comments at correct positions
 
 ### Key Design Decisions
 
@@ -98,6 +101,8 @@ The formatter follows a pipeline architecture:
 - **Zero Configuration**: No config files or options - formatting rules are hardcoded
 - **AST-based**: Manipulates the AST directly rather than string manipulation
 - **Import Categories**: External (node_modules), Absolute (@/~), Relative (./)
+- **Selective Comment Preservation**: Inline comments stay in AST, others are extracted/reinserted
+- **Two-Phase Formatting**: When source is available, uses selective preservation for better results
 
 ## Code Comment Style Guidelines
 
@@ -142,7 +147,15 @@ This codebase emphasizes high-quality comments that focus on **intent and contex
 ### Module Interactions
 
 ```
-main.rs → file_handler.rs → (parallel) → parser.rs → transformer.rs → formatter.rs → codegen.rs
+main.rs → file_handler.rs → (parallel) → parser.rs → two_phase_formatter.rs
+                                              ↓
+                                    selective_comment_handler.rs
+                                              ↓
+                                    comment_classifier.rs
+                                              ↓
+                                    transformer.rs → formatter.rs → codegen.rs
+                                              ↓
+                                    comment_reinserter.rs
 ```
 
 ### Critical Implementation Details
@@ -157,6 +170,14 @@ main.rs → file_handler.rs → (parallel) → parser.rs → transformer.rs → 
 3. **Import Group Spacing** (codegen.rs): Custom emitter adds empty lines between import categories
 
 4. **Source Map Sharing** (parser.rs): Arc-wrapped SourceMap is shared between parser and codegen
+
+5. **Comment Classification** (comment_classifier.rs): 
+   - Inline: Within expressions (e.g., `/* comment */ value`)
+   - Leading: Before declarations
+   - Trailing: End of line
+   - Standalone: Separated by blank lines
+
+6. **Selective Two-Phase Formatting** (selective_two_phase_formatter.rs): Preserves inline comments naturally while handling others separately
 
 ## Testing Strategy
 

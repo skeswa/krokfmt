@@ -98,7 +98,12 @@ impl CommentReinserter {
         let mut insertion_points = Vec::new();
         let mut missing_positions = Vec::new();
 
-        for (hash, comments) in &self.extracted_comments.node_comments {
+        // Sort by hash to ensure deterministic iteration order
+        let mut sorted_node_comments: Vec<_> =
+            self.extracted_comments.node_comments.iter().collect();
+        sorted_node_comments.sort_by_key(|(hash, _)| *hash);
+
+        for (hash, comments) in sorted_node_comments {
             if let Some(node_pos) = self.node_positions.get(hash) {
                 for comment in comments {
                     let point = match comment.comment_type {
@@ -134,14 +139,12 @@ impl CommentReinserter {
                             comment: CommentWithType::Regular(comment.clone()),
                             indentation: String::new(),
                         },
-                        CommentType::Inline => {
-                            InsertionPoint {
-                                line: node_pos.start_line,
-                                column: 0,
-                                comment: CommentWithType::Regular(comment.clone()),
-                                indentation: node_pos.indentation.clone(),
-                            }
-                        }
+                        CommentType::Inline => InsertionPoint {
+                            line: node_pos.start_line,
+                            column: 0,
+                            comment: CommentWithType::Regular(comment.clone()),
+                            indentation: node_pos.indentation.clone(),
+                        },
                     };
                     insertion_points.push(point);
                 }
@@ -167,7 +170,11 @@ impl CommentReinserter {
         }
 
         // Add standalone comments, combining those that were on the same line
-        for (original_line, mut comments) in standalone_by_line {
+        // Sort the lines to ensure deterministic ordering
+        let mut sorted_lines: Vec<_> = standalone_by_line.into_iter().collect();
+        sorted_lines.sort_by_key(|(line, _)| *line);
+
+        for (original_line, mut comments) in sorted_lines {
             // Sort comments by their position within the line (using span.lo)
             comments.sort_by_key(|c| c.comment.span.lo);
 
@@ -351,8 +358,7 @@ impl CommentReinserter {
                                                     }
                                                 }
 
-                                                if !found {
-                                                }
+                                                if !found {}
                                             }
                                             _ => {
                                                 // Other inline position types not yet implemented

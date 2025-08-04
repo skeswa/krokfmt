@@ -625,6 +625,8 @@ type Status = "error" | "pending" | "success";
 
 ### FR6: Comment Handling
 
+**Implementation Note**: krokfmt uses an innovative selective comment preservation system that distinguishes between inline comments (which remain in the AST) and non-inline comments (which are extracted and reinserted). This ensures perfect positioning for inline comments while maintaining flexibility for code reorganization.
+
 #### FR6.1: Line Comment Preservation
 
 **Description**: The system shall preserve all single-line comments (`//`) in their correct positions.
@@ -759,7 +761,33 @@ function c() {}
 - File-level directives stay at appropriate file position
 - Region markers maintain their pairing
 
-#### FR6.7: Standalone Comment Preservation
+#### FR6.7: Inline Comment Preservation
+
+**Description**: The system shall preserve inline comments (comments within expressions, parameters, arrays, objects, etc.) in their exact positions.
+
+**Definition**: A comment is considered "inline" when it appears:
+- Within function parameters: `function foo(/* comment */ x: number)`
+- Within expressions: `const value = /* comment */ 42`
+- Between operators: `a + /* comment */ b`
+- Within array elements: `[/* first */ 1, /* second */ 2]`
+- Within object properties: `{ key: /* comment */ value }`
+- Within type annotations: `let x: /* comment */ string`
+
+**Preservation Mechanism**:
+
+1. **Natural Preservation**: Inline comments remain in the AST during all transformations
+2. **No Extraction**: Unlike other comments, inline comments are never extracted
+3. **Perfect Positioning**: Since they stay in the AST, their positions are always correct
+4. **Code Generation**: The code generator emits inline comments naturally with the code
+
+**Benefits**:
+
+- Eliminates the most problematic cases of comment misplacement
+- Reduces complexity of comment reinsertion
+- Ensures comments that require precise positioning are never moved
+- Improves performance by reducing string manipulation
+
+#### FR6.8: Standalone Comment Preservation
 
 **Description**: The system shall preserve standalone comments that serve as section headers or provide contextual information not directly attached to code.
 
@@ -767,19 +795,18 @@ function c() {}
 
 **Placement Strategy**:
 
-1. **Module Level** - Standalone comments are placed at the beginning of the formatted output, preserving their original order
-2. **Within Classes** - Standalone comments at the beginning of a class body remain at the top after member reordering
-3. **Within Functions** - Section comments maintain their position relative to the code blocks they describe
+1. **Module Level** - Standalone comments are extracted and reinserted at appropriate positions
+2. **Classification**: Uses the comment classification system to identify standalone comments
+3. **Reinsertion**: Placed at logical boundaries in the formatted output
 
 **Rules**:
 
 - Comments separated from code by blank lines on both sides are considered standalone
-- Comments directly preceding code (no blank line after) are attached to that code and move with it
+- Comments directly preceding code (no blank line after) are leading comments
 - Comments directly following code (no blank line before) are trailing comments
 - At file start/end, a single blank line boundary is sufficient for standalone classification
-- Standalone comments are placed at the beginning of the file without additional blank lines
 
-**Implementation Note**: Due to code reordering for visibility-based organization (FR2.4), standalone comments cannot maintain their original line positions. They are placed at the beginning of the file to ensure they remain visible and maintain their role as section headers or contextual documentation.
+**Implementation Note**: Standalone comments are part of the non-inline comment category and are handled by the selective comment preservation system.
 
 **Example**:
 
@@ -1043,14 +1070,29 @@ export function parseConfig(json: string): AppConfig {
 
 #### NFR2.2: Comment Preservation
 
-**Description**: The system shall preserve all comments and their associations.
+**Description**: The system shall preserve all comments and their associations using a selective preservation approach.
 
 **Types**:
 
-- Line comments
-- Block comments
-- JSDoc comments
-- TS pragma comments
+- **Inline comments** (preserved naturally in AST):
+  - Function parameter comments: `function foo(/* param */ x: number)`
+  - Expression comments: `const result = /* start */ 10 + /* end */ 20`
+  - Array element comments: `[/* first */ 1, /* second */ 2]`
+  - Object property comments: `{ key: /* value */ "hello" }`
+  - Type annotation comments: `let x: /* nullable */ string | null`
+
+- **Non-inline comments** (extracted and reinserted):
+  - Line comments (`//`)
+  - Block comments (`/* */`) on their own lines
+  - JSDoc comments (`/** */`)
+  - TS pragma comments (`// @ts-ignore`, etc.)
+
+**Preservation Strategy**:
+
+1. **Classification**: Comments are classified as inline or non-inline based on position
+2. **Selective Extraction**: Only non-inline comments are extracted from the AST
+3. **Natural Preservation**: Inline comments remain in the AST during transformation
+4. **Intelligent Reinsertion**: Non-inline comments are reinserted at correct positions
 
 #### NFR2.3: Syntax Support
 

@@ -35,12 +35,19 @@ impl TwoPhaseFormatter {
 
     /// Format a module using the two-phase approach with source code for smart comment extraction
     pub fn format_with_source(&self, module: Module, source: String) -> Result<String> {
+        // Use the new selective formatter if we have source code
+        if !source.is_empty() {
+            let selective_formatter =
+                crate::selective_two_phase_formatter::SelectiveTwoPhaseFormatter::new(
+                    self.source_map.clone(),
+                    self.comments.clone(),
+                );
+            return selective_formatter.format(module, &source);
+        }
+
+        // Fall back to old approach if no source
         // Phase 1: Extract comments with semantic hashes
-        let extractor = if source.is_empty() {
-            CommentExtractor::new(&self.comments)
-        } else {
-            CommentExtractor::with_source(&self.comments, source)
-        };
+        let extractor = CommentExtractor::new(&self.comments);
         let extracted_comments = extractor.extract(&module);
 
         // Phase 2: Format the AST using the regular formatter
