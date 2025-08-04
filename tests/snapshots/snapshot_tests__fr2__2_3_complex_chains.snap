@@ -20,11 +20,14 @@ const extended = {
 const overrides = {
     size: 20
 };
+
 export const FINAL = ADJUSTED * 2;
 export const RESULT = BASE * MULTIPLIER;
+
 export function calculate(x: number) {
     return multiply(add(x, 5), 2);
 }
+
 export const config = {
     ...defaults,
     ...overrides
@@ -33,9 +36,11 @@ export const finalConfig = {
     ...extended,
     id: 1
 };
+
 export function safeCalculate(x: number) {
     return validate(x) ? calculate(x) : 0;
 }
+
 // Chain 2: Function composition
 function add(a: number, b: number) {
     return a + b;

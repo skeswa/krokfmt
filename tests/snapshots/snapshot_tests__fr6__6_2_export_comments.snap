@@ -8,12 +8,15 @@ expression: output
 export function publicApi() {
     return 'public';
 }
+
 // Secondary export
 export const secondaryApi = ()=>{
     return 'secondary';
 };
+
 // Another helper
 const helper2 = ()=>'helper2';
+
 // Non-exported helper
 function internalHelper() {
     return 'internal';

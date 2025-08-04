@@ -24,24 +24,30 @@ const values = [
     2,
     3
 ];
+
 export function createClient({ retries, timeout }: Options = defaultOptions) {
     return {
         retries,
         timeout
     };
 }
+
 export const sum = first + second;
 export const username = name;
+
 // Function parameter destructuring
 interface Options {
     timeout: number;
     retries: number;
 }
+
 const extendedConfig = {
     ...baseConfig,
     ssl: true
 };
+
 export const { host, port } = extendedConfig;
+
 // Object with dependencies
 const baseConfig = {
     host: 'localhost',

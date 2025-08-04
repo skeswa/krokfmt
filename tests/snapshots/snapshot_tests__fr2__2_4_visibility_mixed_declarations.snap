@@ -11,19 +11,23 @@ export type AppAction = {
     type: 'SET_LOADING';
     payload: boolean;
 };
+
 // Exported state management
 export interface AppState {
     user: null | string;
     loading: boolean;
 }
+
 // Exported Error class and utilities  
 export class PublicError extends Error {
     constructor(public statusCode: number, message: string){
         super(message);
     }
 }
+
 // Exported validation utilities
 export type Validator<T> = (value: unknown) => value is T;
+
 export function appReducer(state: AppState, action: AppAction): AppState {
     switch(action.type){
         case 'SET_USER':
@@ -44,6 +48,7 @@ export function createPublicError(statusCode: number, message: string): PublicEr
 export async function fetchPublic(endpoint: string): Promise<Response> {
     return new Response();
 }
+
 export const initialAppState: AppState = {
     loading: false,
     user: null
@@ -51,25 +56,31 @@ export const initialAppState: AppState = {
 export const isNumber: Validator<number> = (value): value is number =>{
     return typeof value === 'number';
 };
+
 export function isPublicError(error: unknown): error is PublicError {
     return error instanceof PublicError;
 }
+
 export const isString: Validator<string> = (value): value is string =>{
     return typeof value === 'string';
 };
+
 // Internal Error class and utilities
 class InternalError extends Error {
     constructor(public code: string){
         super(`Internal error: ${code}`);
     }
 }
+
 // Internal validation utilities
 type InternalValidator<T> = (value: T) => boolean;
+
 // Internal state management
 interface PrivateState {
     counter: number;
     cache: Map<string, unknown>;
 }
+
 // Mixed async utilities
 async function fetchInternal(path: string): Promise<unknown> {
     return {};
@@ -77,6 +88,7 @@ async function fetchInternal(path: string): Promise<unknown> {
 function isInternalError(error: unknown): error is InternalError {
     return error instanceof InternalError;
 }
+
 const isNonEmpty: InternalValidator<string> = (value)=>value.length > 0;
 const isPositive: InternalValidator<number> = (value)=>value > 0;
 const privateInitialState: PrivateState = {

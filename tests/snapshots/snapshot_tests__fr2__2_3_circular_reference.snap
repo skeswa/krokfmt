@@ -8,13 +8,17 @@ expression: output
 class Node {
     next: Node | null = null;
 }
+
 export type Combined = A & B;
+
 export class LinkedList {
     head = new Node();
 }
+
 export function main() {
     return helper1();
 }
+
 // Pattern 1: Mutual type references
 type A = {
     b: B;
@@ -22,6 +26,7 @@ type A = {
 type B = {
     a: A;
 };
+
 // Pattern 2: Function references
 function helper1(): string {
     return helper2();

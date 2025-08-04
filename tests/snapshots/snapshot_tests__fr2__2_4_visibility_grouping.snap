@@ -7,15 +7,20 @@ expression: output
 export interface ExternalInterface {
     name: string;
 }
+
 export const PUBLIC_CONSTANT = 200;
+
 export class PublicClass {
     name = 'public';
 }
+
 export enum PublicEnum {
     ALPHA,
     BETA
 }
+
 export type PublicType = 'A' | 'B' | 'C';
+
 // Another export
 export function anotherPublicApi() {
     return 'another api';
@@ -23,18 +28,24 @@ export function anotherPublicApi() {
 export function publicApi() {
     return 'api';
 }
+
 const INTERNAL_CONSTANT = 100;
+
 enum InternalEnum {
     ONE,
     TWO
 }
+
 interface InternalInterface {
     id: number;
 }
+
 class PrivateClass {
     value = 42;
 }
+
 type PrivateType = number | string;
+
 // Another internal function
 function anotherHelper() {
     return 'another';

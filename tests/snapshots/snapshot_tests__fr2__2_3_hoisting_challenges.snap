@@ -7,18 +7,23 @@ expression: output
 class MyClass {
     value = 42;
 }
+
 // Mixed declarations
 var hoistedVar = initialValue();
+
 // Const temporal dead zone
 export const earlyUse = computeValue();
 export const exportedConst = hoistedVar;
 // Class hoisting (not hoisted, should fail if reordered incorrectly)
 export const instance = new MyClass();
+
 // Function hoisting - exported function uses hoisted function
 export function publicApi() {
     return helperFunction();
 }
+
 const base = 10;
+
 function computeValue() {
     return base * 2;
 }

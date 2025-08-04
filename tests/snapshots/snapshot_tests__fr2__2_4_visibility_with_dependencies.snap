@@ -8,11 +8,13 @@ expression: output
 class BaseService {
     protected name = 'base';
 }
+
 // Internal config used by exported class
 const DATABASE_CONFIG = {
     host: 'localhost',
     port: 5432
 };
+
 // Exported class extending internal base
 export class ApiService extends BaseService {
     getName() {
@@ -27,11 +29,13 @@ export class DatabaseConnection {
         return `Connecting to ${this.config.host}:${this.config.port}`;
     }
 }
+
 // Exported interface using internal type
 export interface User {
     id: UserId;
     name: string;
 }
+
 // Exported function that depends on internal helpers
 export function processData(input: unknown): string {
     if (!validateInput(input)) {
@@ -43,8 +47,10 @@ export function processData(input: unknown): string {
 export function standaloneExport() {
     return 'exported standalone';
 }
+
 // Internal type used by exported interface
 type UserId = string;
+
 // Another internal helper used by exported function
 function formatOutput(data: string): string {
     return data.toUpperCase();

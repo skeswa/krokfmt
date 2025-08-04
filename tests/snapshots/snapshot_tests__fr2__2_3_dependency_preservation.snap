@@ -7,10 +7,12 @@ const API_VERSION = 'v1';
 // This tests RUNTIME dependencies that must maintain order
 // Base values that exported values depend on (runtime dependency)
 const BASE_URL = 'https://api.example.com';
+
 // Base class (can be reordered due to hoisting)
 class BaseHandler {
     protected name = 'base';
 }
+
 // Arrow function dependency (must appear after config)
 const config = {
     timeout: 5000
@@ -25,14 +27,17 @@ const settings = {
 const step1 = 1;
 const step2 = step1 + 1;
 const step4 = step3 + 1;
+
 // Exported value that depends on non-exported values
 export const API_ENDPOINT = `${BASE_URL}/${API_VERSION}`;
+
 // Exported class that extends base
 export class ApiHandler extends BaseHandler {
     handle() {
         return this.name;
     }
 }
+
 export const double = (n: number)=>multiply(n, 2);
 export const fetchData = async ()=>{
     return fetch('/api', {
@@ -40,6 +45,7 @@ export const fetchData = async ()=>{
     });
 };
 export const isDebugMode = settings.debug;
+
 // Exported function that depends on helper
 export function processInput(input: string): string {
     if (!validateInput(input)) {
@@ -47,8 +53,10 @@ export function processInput(input: string): string {
     }
     return input.toUpperCase();
 }
+
 export const step3 = step2 + 1;
 export const step5 = step4 + 1;
+
 // Helper function used by exported function (function hoisting allows reordering)
 function validateInput(input: string): boolean {
     return input.length > 0;

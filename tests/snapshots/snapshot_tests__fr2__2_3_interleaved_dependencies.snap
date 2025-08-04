@@ -12,6 +12,7 @@ export interface SuperAdmin extends AdminUser {
 export interface User extends BaseUser {
     name: string;
 }
+
 export function checkAdmin(user: User): boolean {
     const admin = user as AdminUser;
     return validateAdmin(admin);
@@ -19,6 +20,7 @@ export function checkAdmin(user: User): boolean {
 export function getUsername(user: User): string {
     return processUser(user);
 }
+
 // Non-export depends on export
 interface AdminUser extends User {
     permissions: string[];
@@ -27,6 +29,7 @@ interface AdminUser extends User {
 interface BaseUser {
     id: string;
 }
+
 // Function pattern
 function processUser(user: User): string {
     return user.name;

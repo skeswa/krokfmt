@@ -19,6 +19,7 @@ class EventEmitter {
 class Logger {
     log(message: string) {}
 }
+
 export class ApiClient {
     timeout = Config.DEFAULT_TIMEOUT;
 }

@@ -9,10 +9,12 @@ const MODES = [
     'dev',
     'prod'
 ] as const;
+
 export type Middleware = {
     before: Handler;
     after: AsyncHandler;
 };
+
 export const currentMode: Mode = MODES[0];
 namespace Internal {
     export interface Config {
@@ -31,6 +33,7 @@ export namespace Api {
         retries: 3
     };
 }
+
 type AsyncHandler = (data: any) => Promise<void>;
 // Type dependencies
 type Handler = (data: any) => void;

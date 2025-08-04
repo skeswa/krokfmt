@@ -273,8 +273,29 @@ impl CodeGenerator {
                     first_non_import_re_export_found = true;
                     in_imports_re_exports_section = false;
                 }
+
+                // Handle the case where there are no imports/re-exports at all
+                // We need to exit the imports/re-exports section on the first non-empty, non-comment line
+                if in_imports_re_exports_section
+                    && !trimmed.is_empty()
+                    && !trimmed.starts_with("//")
+                    && !trimmed.starts_with("/*")
+                {
+                    in_imports_re_exports_section = false;
+                }
+
                 last_was_import = false;
                 last_was_re_export = false;
+
+                // Handle the case where there are no imports/re-exports at all
+                // We need to exit the imports/re-exports section on the first non-empty, non-comment line
+                if in_imports_re_exports_section
+                    && !trimmed.is_empty()
+                    && !trimmed.starts_with("//")
+                    && !trimmed.starts_with("/*")
+                {
+                    in_imports_re_exports_section = false;
+                }
 
                 // Check for visibility transitions in non-import declarations
                 // Only consider top-level declarations (brace_depth == 0)
@@ -339,7 +360,6 @@ impl CodeGenerator {
                         if need_separator {
                             result.push("");
                         }
-
                         last_was_exported = Some(is_exported);
                         last_declaration_type = Some(current_type);
                     }

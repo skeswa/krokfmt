@@ -12,13 +12,16 @@ class BaseService {
         this.logger = createLogger(config.logLevel);
     }
 }
+
 // Final integration
 const serviceInstance = createDataService();
+
 // Exported config depending on base
 export interface AppConfig extends BaseConfig {
     logLevel: LogLevel;
     apiUrl: string;
 }
+
 export class DataService extends BaseService {
     async fetchData(id: string): Promise<unknown> {
         if (!internalValidate(id)) {
@@ -40,11 +43,13 @@ export class Logger {
         }
     }
 }
+
 export const defaultConfig: AppConfig = {
     apiUrl: 'https://api.example.com',
     debug: false,
     logLevel: 'info'
 };
+
 export function createDataService(config: AppConfig = defaultConfig): DataService {
     return new DataService(config);
 }
@@ -58,11 +63,14 @@ export function isAppConfig(value: unknown): value is AppConfig {
 export async function performDataOperation(id: string) {
     return serviceInstance.fetchData(id);
 }
+
 // Base types used by exports
 interface BaseConfig {
     debug: boolean;
 }
+
 type LogLevel = 'error' | 'info' | 'warn';
+
 // Internal utilities
 function internalLog(message: string) {
     console.log(`[Internal] ${message}`);

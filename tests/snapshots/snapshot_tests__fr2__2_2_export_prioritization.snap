@@ -7,12 +7,15 @@ expression: output
 class InternalService {
     name = 'internal';
 }
+
 export interface PublicOptions extends PrivateOptions {
     external: boolean;
 }
+
 export class PublicService {
     service = new InternalService();
 }
+
 // Multiple exports should all be prioritized
 export const constant1 = 1;
 export const constant2 = 3;
@@ -20,18 +23,22 @@ export const constant3 = 5;
 export const publicConfig = {
     api: 'https://api.example.com'
 };
+
 export function publicHelper() {
     return 'public';
 }
+
 interface PrivateOptions {
     internal: boolean;
 }
+
 const anotherPrivate = 4;
 // Mix of exported and non-exported members
 const privateConfig = {
     debug: false
 };
 const privateConstant = 2;
+
 function privateHelper() {
     return 'private';
 }

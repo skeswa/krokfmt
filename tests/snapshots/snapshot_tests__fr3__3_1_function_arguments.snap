@@ -8,10 +8,12 @@ expression: output
 function add(b: number, a: number) {
     return a + b;
 }
+
 // Arrow function with destructured params
 const handleConfig = ({ baseURL, headers, retries, timeout }: Config)=>{
     console.log(baseURL, headers, retries, timeout);
 };
+
 // Mixed parameters - only destructured should be sorted
 function mixedParams(first: number, { apple, zebra }: Options, last: string) {
     return `${first} ${apple} ${zebra} ${last}`;

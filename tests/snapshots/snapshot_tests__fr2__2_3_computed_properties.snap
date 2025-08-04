@@ -9,6 +9,7 @@ class DataService {
         return 'data';
     }
 }
+
 // Base values for computed properties
 const PREFIX = 'api';
 const VERSION = 'v1';
@@ -25,8 +26,11 @@ const obj = {
 };
 // Symbol-based properties
 const privateKey = Symbol('private');
+
 export const apiEndpoints = endpoints;
+
 export function getPrivate() {
     return obj[privateKey];
 }
+
 export const service = new DataService();
