@@ -688,18 +688,18 @@ mod tests {
         let comments = parser.comments.clone();
         let module = parser.parse(source, "test.ts").unwrap();
 
-        // Extract comments
-        #[allow(deprecated)]
-        let extractor = CommentExtractor::new(&comments);
+        // Extract comments with source
+        let extractor = CommentExtractor::with_source(&comments, source.to_string());
         let extracted = extractor.extract(&module);
 
         // Format without comments
         let formatter = KrokFormatter::new();
         let formatted = formatter.format(module).unwrap();
 
-        // Generate code without comments
-        let generator = CodeGenerator::new(source_map);
-        let generated = generator.generate_without_comments(&formatted).unwrap();
+        // Generate code without comments (using empty comments container)
+        let empty_comments = swc_common::comments::SingleThreadedComments::default();
+        let generator = CodeGenerator::with_comments(source_map, empty_comments);
+        let generated = generator.generate(&formatted).unwrap();
 
         // Reinsert comments
         let mut reinserter = CommentReinserter::new(extracted);
@@ -798,7 +798,6 @@ import { helper } from './helper';";
             let reinserter = CommentReinserter::new(CommentExtractionResult {
                 node_comments: HashMap::new(),
                 standalone_comments: Vec::new(),
-                floating_comments: Vec::new(),
             });
 
             let comment = Comment {
@@ -818,7 +817,6 @@ import { helper } from './helper';";
             let reinserter = CommentReinserter::new(CommentExtractionResult {
                 node_comments: HashMap::new(),
                 standalone_comments: Vec::new(),
-                floating_comments: Vec::new(),
             });
 
             let comment = Comment {
@@ -838,7 +836,6 @@ import { helper } from './helper';";
             let reinserter = CommentReinserter::new(CommentExtractionResult {
                 node_comments: HashMap::new(),
                 standalone_comments: Vec::new(),
-                floating_comments: Vec::new(),
             });
 
             let comment = Comment {
@@ -875,7 +872,6 @@ import { helper } from './helper';";
             let reinserter = CommentReinserter::new(CommentExtractionResult {
                 node_comments,
                 standalone_comments: Vec::new(),
-                floating_comments: Vec::new(),
             });
 
             // Should fail because no positions were collected
@@ -947,10 +943,10 @@ const App = () => "Hello";"#;
 
         // Step 4: Generate code without comments
         println!("\n=== Step 4: Generate Code Without Comments ===");
-        let generator = crate::codegen::CodeGenerator::new(parser.source_map.clone());
-        let code_without_comments = generator
-            .generate_without_comments(&formatted_module)
-            .unwrap();
+        let empty_comments = swc_common::comments::SingleThreadedComments::default();
+        let generator =
+            crate::codegen::CodeGenerator::with_comments(parser.source_map.clone(), empty_comments);
+        let code_without_comments = generator.generate(&formatted_module).unwrap();
         println!("Generated code:");
         for (i, line) in code_without_comments.lines().enumerate() {
             println!("{}: {}", i + 1, line);
@@ -1012,7 +1008,6 @@ const App = () => "Hello";"#;
             let mut reinserter = CommentReinserter::new(CommentExtractionResult {
                 node_comments,
                 standalone_comments: Vec::new(),
-                floating_comments: Vec::new(),
             });
 
             // Add positions
@@ -1053,7 +1048,6 @@ const App = () => "Hello";"#;
             let reinserter = CommentReinserter::new(CommentExtractionResult {
                 node_comments: HashMap::new(),
                 standalone_comments: Vec::new(),
-                floating_comments: Vec::new(),
             });
 
             let code = "function foo() {\n    return 42;\n}";
@@ -1163,7 +1157,8 @@ import React from 'react';
 // Main function
 export function main() {
     return 42;
-} // Footer comment";
+}
+// Footer comment";
 
         let result = test_reinsertion(source);
         assert_eq!(result, expected);

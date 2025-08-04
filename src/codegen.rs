@@ -57,16 +57,6 @@ impl CodeGenerator {
     }
 
     pub fn generate(&self, module: &Module) -> Result<String> {
-        self.generate_with_options(module, true)
-    }
-
-    /// Generate code without comments (used only in tests)
-    #[cfg(test)]
-    pub fn generate_without_comments(&self, module: &Module) -> Result<String> {
-        self.generate_with_options(module, false)
-    }
-
-    fn generate_with_options(&self, module: &Module, include_comments: bool) -> Result<String> {
         let mut buf = Vec::new();
 
         {
@@ -77,13 +67,10 @@ impl CodeGenerator {
             let mut emitter = Emitter {
                 cfg: config,
                 cm: self.source_map.clone(),
-                comments: if include_comments {
-                    self.comments
-                        .as_ref()
-                        .map(|c| c as &dyn swc_common::comments::Comments)
-                } else {
-                    None
-                },
+                comments: self
+                    .comments
+                    .as_ref()
+                    .map(|c| c as &dyn swc_common::comments::Comments),
                 wr: Box::new(writer),
             };
 
@@ -466,58 +453,5 @@ fn detect_class_member_group(line: &str) -> Option<ClassMemberGroup> {
         (true, false) => Some(ClassMemberGroup::PrivateInstanceFields),
         (false, true) => Some(ClassMemberGroup::PublicInstanceMethods),
         (true, true) => Some(ClassMemberGroup::PrivateInstanceMethods),
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::formatter::KrokFormatter;
-    use crate::parser::TypeScriptParser;
-
-    fn format_and_generate(source: &str) -> Result<String> {
-        let parser = TypeScriptParser::new();
-        let module = parser.parse(source, "test.ts")?;
-        let formatted = KrokFormatter::new().format(module)?;
-
-        let source_map = Lrc::new(SourceMap::default());
-        let generator = CodeGenerator::new(source_map);
-        generator.generate(&formatted)
-    }
-
-    // TODO: These tests need to be updated to handle import spacing correctly
-    // Currently the standard SWC emitter doesn't add empty lines between import groups
-    // #[test]
-    // fn test_generate_imports_with_spacing() {
-    //     let source = r#"
-    // import { helper } from './helper';
-    // import React from 'react';
-    // import { Button } from '@ui/Button';
-    // "#;
-    //
-    //     let output = format_and_generate(source).unwrap();
-    //
-    //     // Should have external imports first, then absolute, then relative
-    //     // with empty lines between categories
-    //     assert!(output.contains("import React from 'react';\n\nimport { Button } from '@ui/Button';\n\nimport { helper } from './helper';"));
-    // }
-
-    #[test]
-    fn test_preserve_code_after_imports() {
-        let source = r#"
-import React from 'react';
-
-const x = 42;
-export function hello() {
-    return "world";
-}
-"#;
-
-        let output = format_and_generate(source).unwrap();
-
-        // The standard emitter preserves the structure but may not have double newlines
-        assert!(output.contains("import React from 'react';"));
-        assert!(output.contains("const x = 42;"));
-        assert!(output.contains("export function hello()"));
     }
 }

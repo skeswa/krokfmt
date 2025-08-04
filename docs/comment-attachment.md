@@ -316,7 +316,6 @@ The complexity was prohibitive and would likely introduce more bugs than it solv
 ```rust
 pub struct CommentAttacher {
     node_comments: HashMap<NodeIdentity, Vec<AttachedComment>>,
-    floating_comments: Vec<Comment>,
 }
 
 pub struct NodeIdentity {

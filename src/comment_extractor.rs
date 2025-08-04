@@ -73,8 +73,6 @@ pub struct CommentExtractor<'a> {
     extracted: HashMap<u64, Vec<ExtractedComment>>,
     /// Standalone comments that should maintain their position
     standalone_comments: Vec<StandaloneComment>,
-    /// Comments that couldn't be associated with any node
-    floating_comments: Vec<Comment>,
     /// Original source code for line analysis
     source: String,
     /// Source lines for analyzing blank lines
@@ -86,31 +84,12 @@ pub struct CommentExtractor<'a> {
 }
 
 impl<'a> CommentExtractor<'a> {
-    /// Creates a new comment extractor without source code
-    ///
-    /// This method is deprecated and only used in tests. Use `with_source` instead
-    /// for proper comment extraction with source context.
-    #[deprecated(note = "Use CommentExtractor::with_source for better comment handling")]
-    pub fn new(comments: &'a SingleThreadedComments) -> Self {
-        Self {
-            comments,
-            extracted: HashMap::new(),
-            standalone_comments: Vec::new(),
-            floating_comments: Vec::new(),
-            source: String::new(),
-            source_lines: Vec::new(),
-            context_depth: 0,
-            current_var_decl_hash: None,
-        }
-    }
-
     pub fn with_source(comments: &'a SingleThreadedComments, source: String) -> Self {
         let source_lines = source.lines().map(|s| s.to_string()).collect();
         Self {
             comments,
             extracted: HashMap::new(),
             standalone_comments: Vec::new(),
-            floating_comments: Vec::new(),
             source,
             source_lines,
             context_depth: 0,
@@ -130,7 +109,6 @@ impl<'a> CommentExtractor<'a> {
         CommentExtractionResult {
             node_comments: self.extracted,
             standalone_comments: self.standalone_comments,
-            floating_comments: self.floating_comments,
         }
     }
 
@@ -475,9 +453,8 @@ impl<'a> Visit for CommentExtractor<'a> {
                             line: comment_line,
                             context_depth: self.context_depth,
                         });
-                    } else {
-                        self.floating_comments.push(comment.clone());
                     }
+                    // Silently drop comments that aren't standalone or attached to nodes
                 }
             }
         }
@@ -723,8 +700,6 @@ pub struct CommentExtractionResult {
     pub node_comments: HashMap<u64, Vec<ExtractedComment>>,
     /// Standalone comments that should maintain their position
     pub standalone_comments: Vec<StandaloneComment>,
-    /// Comments that couldn't be associated with any node (deprecated, kept for compatibility)
-    pub floating_comments: Vec<Comment>,
 }
 
 impl CommentExtractionResult {
@@ -1092,7 +1067,7 @@ const x = 1; // Trailing comment
     }
 
     #[test]
-    fn test_floating_comments() {
+    fn test_file_level_comments() {
         let source = r#"
 // This comment is at the file level
 // Before any code
@@ -1102,9 +1077,13 @@ import React from 'react';
 
         let result = extract_comments(source);
 
-        // Currently floating comments are tracked separately
-        // This test documents the current behavior
-        assert_eq!(result.floating_comments.len(), 0); // Current implementation doesn't detect floating comments
+        // These file-level comments should be attached to the import as leading comments
+        // since they don't have blank line separation from the import
+        assert!(!result.node_comments.is_empty());
+        let all_comments = result.all_comments_sorted();
+        assert!(all_comments
+            .iter()
+            .any(|c| c.comment.text.contains("This comment is at the file level")));
     }
 
     #[test]
@@ -1158,24 +1137,7 @@ import { api } from '@services/api';
 import { helper } from '../utils/helper'; // Utility functions
 import { config } from './config'; // Local configuration"#;
 
-        // First test without source (original behavior)
-        let parser = TypeScriptParser::new();
-        let module = parser.parse(source, "test.ts").unwrap();
-        #[allow(deprecated)]
-        let extractor_no_source = CommentExtractor::new(&parser.comments);
-        let result_no_source = extractor_no_source.extract(&module);
-
-        println!("WITHOUT source-based reassignment:");
-        for (hash, comments) in &result_no_source.node_comments {
-            for comment in comments {
-                println!(
-                    "  Hash: {:x}, Type: {:?}, Text: {}",
-                    hash, comment.comment_type, comment.comment.text
-                );
-            }
-        }
-
-        // Then test with source (smart reassignment)
+        // Test with source-based comment extraction
         let result = extract_comments(source);
 
         println!("\nWITH source-based reassignment:");

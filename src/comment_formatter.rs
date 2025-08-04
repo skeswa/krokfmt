@@ -72,10 +72,6 @@ impl CommentFormatter {
             .standalone_comments
             .retain(|c| !inline_positions.contains(&c.comment.span.lo));
 
-        extracted_comments
-            .floating_comments
-            .retain(|c| !inline_positions.contains(&c.span.lo));
-
         // Phase 3: Format the AST using the regular formatter
         let formatter = KrokFormatter::new();
         let formatted_module = formatter.format(module)?;
