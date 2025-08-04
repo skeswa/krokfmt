@@ -147,7 +147,7 @@ This codebase emphasizes high-quality comments that focus on **intent and contex
 ### Module Interactions
 
 ```
-main.rs → file_handler.rs → (parallel) → parser.rs → two_phase_formatter.rs
+main.rs → file_handler.rs → (parallel) → parser.rs → comment_formatter.rs
                                               ↓
                                     selective_comment_handler.rs
                                               ↓
@@ -177,7 +177,7 @@ main.rs → file_handler.rs → (parallel) → parser.rs → two_phase_formatter
    - Trailing: End of line
    - Standalone: Separated by blank lines
 
-6. **Selective Two-Phase Formatting** (selective_two_phase_formatter.rs): Preserves inline comments naturally while handling others separately
+6. **Comment Formatting** (comment_formatter.rs): Main entry point for selective comment preservation
 
 ## Testing Strategy
 

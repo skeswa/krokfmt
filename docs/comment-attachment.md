@@ -18,8 +18,6 @@
 
 One of the most challenging technical issues in krokfmt was the inability to properly preserve comment associations when reorganizing code through AST transformations. This document provides a comprehensive guide to understanding the problem, why it exists, the various solutions that were attempted, and the innovative selective comment preservation approach that ultimately solved it.
 
-**UPDATE**: As of December 2024, krokfmt now uses a selective comment preservation system that keeps inline comments in the AST while extracting and reinserting other comments. This fundamental shift has resolved the core issues described in this document while maintaining perfect inline comment positioning.
-
 ## The Problem
 
 When krokfmt reorganizes code (e.g., sorting imports, reordering exports, alphabetizing class members), comments that should logically move with their associated code remain at their original positions. This results in comments appearing in the wrong places or being associated with the wrong code elements.
@@ -757,6 +755,18 @@ graph TD
     style F fill:#9f9,stroke:#333,stroke-width:2px
     style E fill:#f99,stroke:#333,stroke-width:2px
 ```
+
+### Simplified Architecture
+
+After proving the selective preservation approach, we simplified the architecture:
+
+1. **Removed**: `two_phase_formatter.rs` and `selective_two_phase_formatter.rs`
+2. **Created**: `comment_formatter.rs` as the single entry point
+3. **Benefits**:
+   - Cleaner code structure
+   - Single responsibility principle
+   - Easier to understand and maintain
+   - No redundant delegation between formatters
 
 ### Implementation Details
 

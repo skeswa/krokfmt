@@ -1,5 +1,5 @@
 use insta::assert_snapshot;
-use krokfmt::{parser::TypeScriptParser, two_phase_formatter::TwoPhaseFormatter};
+use krokfmt::{comment_formatter::CommentFormatter, parser::TypeScriptParser};
 use std::fs;
 
 fn format_code(input: &str) -> String {
@@ -12,10 +12,8 @@ fn format_code(input: &str) -> String {
         "test.ts"
     };
     let module = parser.parse(input, filename).unwrap();
-    let formatter = TwoPhaseFormatter::new(source_map, comments);
-    formatter
-        .format_with_source(module, input.to_string())
-        .unwrap()
+    let formatter = CommentFormatter::new(source_map, comments);
+    formatter.format(module, input).unwrap()
 }
 
 fn test_fixture(fixture_path: &str) {

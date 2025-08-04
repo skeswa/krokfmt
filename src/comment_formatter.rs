@@ -8,20 +8,16 @@ use crate::{
     formatter::KrokFormatter, selective_comment_handler::SelectiveCommentHandler,
 };
 
-/// Two-phase formatter that preserves inline comments naturally while reinserting others
+/// Main comment-aware formatter for krokfmt
 ///
-/// This improved formatter:
-/// 1. Classifies comments as inline vs non-inline
-/// 2. Extracts only non-inline comments
-/// 3. Formats the AST normally
-/// 4. Generates code WITH inline comments (they stay in place)
-/// 5. Reininserts only non-inline comments at correct positions
-pub struct SelectiveTwoPhaseFormatter {
+/// This formatter uses selective comment preservation to maintain inline comments
+/// in the AST while extracting and reinserting other comments.
+pub struct CommentFormatter {
     source_map: Lrc<SourceMap>,
     comments: SingleThreadedComments,
 }
 
-impl SelectiveTwoPhaseFormatter {
+impl CommentFormatter {
     pub fn new(source_map: Lrc<SourceMap>, comments: SingleThreadedComments) -> Self {
         Self {
             source_map,
@@ -29,7 +25,7 @@ impl SelectiveTwoPhaseFormatter {
         }
     }
 
-    /// Format a module using selective comment preservation
+    /// Format a module with selective comment preservation
     pub fn format(&self, module: Module, source: &str) -> Result<String> {
         // Phase 1: Separate inline from non-inline comments
         let (inline_only_comments, _non_inline_comments) =
@@ -101,12 +97,11 @@ mod tests {
     use super::*;
     use crate::parser::TypeScriptParser;
 
-    fn format_with_selective_two_phase(source: &str) -> Result<String> {
+    fn format_with_comments(source: &str) -> Result<String> {
         let parser = TypeScriptParser::new();
         let module = parser.parse(source, "test.ts")?;
 
-        let formatter =
-            SelectiveTwoPhaseFormatter::new(parser.source_map.clone(), parser.comments.clone());
+        let formatter = CommentFormatter::new(parser.source_map.clone(), parser.comments.clone());
 
         formatter.format(module, source)
     }
@@ -118,7 +113,7 @@ const x = /* inline comment */ 42;
 let y = /* another inline */ "hello";
 "#;
 
-        let result = format_with_selective_two_phase(source).unwrap();
+        let result = format_with_comments(source).unwrap();
         // Inline comments should be preserved in their exact positions
         assert!(result.contains("const x = /* inline comment */ 42"));
         assert!(result.contains("let y = /* another inline */ \"hello\""));
@@ -131,7 +126,7 @@ let y = /* another inline */ "hello";
 const x = 42; // Trailing comment
 "#;
 
-        let result = format_with_selective_two_phase(source).unwrap();
+        let result = format_with_comments(source).unwrap();
 
         // Non-inline comments should still be preserved
         assert!(result.contains("// Leading comment"));
@@ -148,12 +143,9 @@ function foo(/* param comment */ x: number) {
 }
 "#;
 
-        let result = format_with_selective_two_phase(source).unwrap();
+        let result = format_with_comments(source).unwrap();
         // All comment types should be preserved
         assert!(result.contains("// This is a leading comment"));
         assert!(result.contains("/* param comment */"));
-        // TODO: Trailing comments on return statements are not yet properly preserved
-        // This is a limitation of the current comment extraction system
-        // assert!(result.contains("// multiply by two"));
     }
 }

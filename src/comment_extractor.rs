@@ -86,6 +86,11 @@ pub struct CommentExtractor<'a> {
 }
 
 impl<'a> CommentExtractor<'a> {
+    /// Creates a new comment extractor without source code
+    ///
+    /// This method is deprecated and only used in tests. Use `with_source` instead
+    /// for proper comment extraction with source context.
+    #[deprecated(note = "Use CommentExtractor::with_source for better comment handling")]
     pub fn new(comments: &'a SingleThreadedComments) -> Self {
         Self {
             comments,
@@ -1156,6 +1161,7 @@ import { config } from './config'; // Local configuration"#;
         // First test without source (original behavior)
         let parser = TypeScriptParser::new();
         let module = parser.parse(source, "test.ts").unwrap();
+        #[allow(deprecated)]
         let extractor_no_source = CommentExtractor::new(&parser.comments);
         let result_no_source = extractor_no_source.extract(&module);
 

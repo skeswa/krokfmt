@@ -1,12 +1,11 @@
 pub mod codegen;
 pub mod comment_classifier;
 pub mod comment_extractor;
+pub mod comment_formatter;
 pub mod comment_reinserter;
 pub mod file_handler;
 pub mod formatter;
 pub mod parser;
 pub mod selective_comment_handler;
-pub mod selective_two_phase_formatter;
 pub mod semantic_hash;
 pub mod transformer;
-pub mod two_phase_formatter;

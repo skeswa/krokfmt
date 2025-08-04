@@ -60,7 +60,8 @@ impl CodeGenerator {
         self.generate_with_options(module, true)
     }
 
-    /// Generate code without comments (for two-phase comment replacement)
+    /// Generate code without comments (used only in tests)
+    #[cfg(test)]
     pub fn generate_without_comments(&self, module: &Module) -> Result<String> {
         self.generate_with_options(module, false)
     }

@@ -5,7 +5,7 @@ use rayon::prelude::*;
 use std::path::{Path, PathBuf};
 
 use krokfmt::{
-    file_handler::FileHandler, parser::TypeScriptParser, two_phase_formatter::TwoPhaseFormatter,
+    comment_formatter::CommentFormatter, file_handler::FileHandler, parser::TypeScriptParser,
 };
 
 /// Command-line interface for krokfmt.
@@ -133,10 +133,10 @@ fn process_file(file_handler: &FileHandler, path: &Path, cli: &Cli) -> Result<bo
         .parse(&content, path.to_str().unwrap_or("unknown.ts"))
         .context("Failed to parse file")?;
 
-    // Use two-phase formatting for better comment preservation
-    let formatter = TwoPhaseFormatter::new(source_map, comments);
+    // Use selective comment preservation for formatting
+    let formatter = CommentFormatter::new(source_map, comments);
     let formatted_content = formatter
-        .format_with_source(module, content.clone())
+        .format(module, &content)
         .context("Failed to format file")?;
 
     // Simple string comparison is sufficient here - we're not doing a semantic diff

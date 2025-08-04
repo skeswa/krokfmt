@@ -689,6 +689,7 @@ mod tests {
         let module = parser.parse(source, "test.ts").unwrap();
 
         // Extract comments
+        #[allow(deprecated)]
         let extractor = CommentExtractor::new(&comments);
         let extracted = extractor.extract(&module);
 
