@@ -51,7 +51,7 @@ swc_ecma_visit = "^14.0.0"
 anyhow = { workspace = true }
 glob = "0.3"
 rayon = "1.8"
-colored = "2.1"
+colored = "3.0"
 
 [dev-dependencies]
 tempfile = "3.9"
