@@ -2,7 +2,7 @@
 name = "krokfmt"
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.82.0"
+rust-version = "1.83.0"
 authors = ["krokorok"]
 description = "A highly opinionated TypeScript code formatter"
 license = "MIT"
