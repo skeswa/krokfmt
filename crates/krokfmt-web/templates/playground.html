@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}krokfmt Playground - Try it Online{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/editor/editor.main.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 style="text-align: center; margin: 2rem 0;">🐊 krokfmt Playground</h1>
+    
+    <div class="playground-container">
+        <div class="editor-panel">
+            <div class="editor-header">Input (TypeScript/TSX)</div>
+            <div id="input-editor" class="monaco-editor"></div>
+        </div>
+        
+        <div class="editor-panel">
+            <div class="editor-header">Output (Formatted)</div>
+            <div id="output-editor" class="monaco-editor"></div>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <button id="format-btn" class="format-btn">
+            <span id="loading-spinner" style="display: none;">⏳</span>
+            Format Code
+        </button>
+        <button id="copy-btn" class="btn btn-secondary">Copy Output</button>
+        <button id="clear-btn" class="btn btn-secondary">Clear</button>
+    </div>
+    
+    <div id="error-container" style="display: none; max-width: 800px; margin: 0 auto;"></div>
+    <div id="status-message" style="display: none; max-width: 800px; margin: 1rem auto; padding: 0.5rem; text-align: center; border-radius: 0.25rem;"></div>
+    
+    <div style="text-align: center; margin-top: 2rem; color: var(--text-light);">
+        <p>💡 Tip: Press <kbd>Cmd</kbd>+<kbd>Enter</kbd> (Mac) or <kbd>Ctrl</kbd>+<kbd>Enter</kbd> (Windows/Linux) to format</p>
+        <p style="margin-top: 0.5rem; font-size: 0.875em;">🚀 Formatting runs entirely in your browser using WebAssembly</p>
+    </div>
+</div>
+
+<style>
+    .monaco-editor {
+        height: 100%;
+        min-height: 400px;
+    }
+    
+    .editor-panel {
+        display: flex;
+        flex-direction: column;
+        height: 500px;
+    }
+    
+    .btn.success {
+        background-color: var(--secondary) !important;
+        color: white !important;
+    }
+    
+    kbd {
+        background: var(--dark);
+        color: white;
+        padding: 0.2rem 0.4rem;
+        border-radius: 0.25rem;
+        font-size: 0.875em;
+        font-family: var(--font-mono);
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    var require = { paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' } };
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/editor/editor.main.nls.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/editor/editor.main.js"></script>
+<script src="/static/js/playground.js"></script>
+{% endblock %}

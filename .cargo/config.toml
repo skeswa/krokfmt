@@ -1,0 +1,7 @@
+[alias]
+xtask = "run --manifest-path crates/xtask/Cargo.toml --"
+
+# Common shortcuts
+wasm = "xtask build-wasm"
+web = "xtask run-web"
+ci = "xtask ci"

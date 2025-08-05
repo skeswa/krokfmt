@@ -1,0 +1,48 @@
+# Build stage
+FROM rust:1.83 AS builder
+
+WORKDIR /app
+
+# Install wasm-pack for building WASM
+RUN curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+# Add wasm32 target for Rust
+RUN rustup target add wasm32-unknown-unknown
+
+# Copy workspace files
+COPY Cargo.toml Cargo.lock ./
+COPY crates/ ./crates/
+
+# Build WASM module first
+RUN cd crates/krokfmt-playground && \
+    wasm-pack build --target web --out-dir pkg --dev
+
+# Build the web application
+RUN cargo build --release -p krokfmt-web
+
+# Runtime stage
+FROM debian:bookworm-slim
+
+# Install runtime dependencies
+RUN apt-get update && \
+    apt-get install -y ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN useradd -m -u 1000 app
+
+WORKDIR /app
+
+# Copy the binary from builder
+COPY --from=builder /app/target/release/krokfmt-web /app/krokfmt-web
+
+# Copy static files and WASM
+COPY --from=builder /app/crates/krokfmt-web/static /app/crates/krokfmt-web/static
+COPY --from=builder /app/crates/krokfmt-web/templates /app/crates/krokfmt-web/templates
+COPY --from=builder /app/crates/krokfmt-playground/pkg /app/crates/krokfmt-playground/pkg
+
+USER app
+
+EXPOSE 3000
+
+CMD ["/app/krokfmt-web"]

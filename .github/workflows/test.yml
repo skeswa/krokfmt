@@ -33,14 +33,14 @@ jobs:
       uses: Swatinem/rust-cache@v2
 
     - name: Run tests
-      run: cargo test --all-features --verbose
+      run: cargo test --workspace --all-features --verbose
 
     - name: Run doc tests
-      run: cargo test --doc --verbose
+      run: cargo test --workspace --doc --verbose
 
     - name: Test examples
       run: |
-        cargo build --release
+        cargo build --release -p krokfmt
         ./target/release/krokfmt --help
         ./target/release/krokfmt --version
       shell: bash
@@ -54,7 +54,7 @@ jobs:
       with:
         components: rustfmt
     - name: Check formatting
-      run: cargo fmt --all -- --check
+      run: cargo xtask fmt --check
 
   clippy:
     name: Clippy
@@ -66,7 +66,7 @@ jobs:
         components: clippy
     - uses: Swatinem/rust-cache@v2
     - name: Run clippy
-      run: cargo clippy --all-targets --all-features -- -D warnings
+      run: cargo xtask clippy
 
   msrv:
     name: Minimum Supported Rust Version
@@ -83,4 +83,4 @@ jobs:
         toolchain: ${{ steps.msrv.outputs.msrv }}
     - uses: Swatinem/rust-cache@v2
     - name: Check MSRV
-      run: cargo check --all-features
+      run: cargo check --workspace --all-features

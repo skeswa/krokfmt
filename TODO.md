@@ -24,6 +24,28 @@ Tasks are ordered by priority. Always work on tasks from the top of this list fi
 
 ## Ready for Development
 
+### Immediate Tasks
+
+1. **Integrate krokfmt formatting into web API**
+   - Connect the actual krokfmt formatter to the web server's `/api/format` endpoint
+   - Handle errors gracefully and return meaningful error messages
+   - File: `crates/krokfmt-web/src/main.rs`
+
+2. **Complete WASM integration for playground**
+   - Integrate actual krokfmt formatting logic into WASM build
+   - Handle large files and edge cases in browser environment
+   - Optimize WASM bundle size
+   - File: `crates/krokfmt-playground/src/lib.rs`
+
+3. **Create proper web UI for krokfmt-web**
+   - Design and implement a professional landing page
+   - Create documentation pages with examples
+   - Build an interactive playground UI
+   - Add static assets and styling
+   - Files: Create in `crates/krokfmt-web/templates/` and `crates/krokfmt-web/static/`
+
+## Ready for Development
+
 ### High Priority
 
 1. **Fix failing comment preservation tests**
@@ -95,6 +117,20 @@ Tasks are ordered by priority. Always work on tasks from the top of this list fi
 
 ## Completed
 <!-- Move completed tasks here with completion date -->
+
+- ✅ Restructure repository as Rust monorepo (2025-08-05)
+  - Created workspace structure with three crates:
+    - `crates/krokfmt`: Main CLI tool (moved from root)
+    - `crates/krokfmt-web`: Web interface with Axum server
+    - `crates/krokfmt-playground`: WASM-based playground
+  - Updated all GitHub Actions workflows for workspace builds
+  - Created Kubernetes deployment manifests for Rhuidean cluster
+  - Added Docker build configuration for web deployment
+  - Created CI/CD workflows for Docker image building and WASM compilation
+  - Updated README.md and CLAUDE.md to reflect monorepo structure
+  - All tests passing, workspace builds successfully
+  - Files created: Multiple new crates, deployment configs, workflows
+  - Files modified: Cargo.toml, .github/workflows/*, README.md, CLAUDE.md
 
 - ✅ Fix Windows test failures due to CRLF line endings (2025-08-05)
   - **Issue**: Tests were failing on Windows CI due to CRLF vs LF line ending differences

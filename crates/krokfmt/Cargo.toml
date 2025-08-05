@@ -1,0 +1,68 @@
+[package]
+name = "krokfmt"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+description = "A highly opinionated TypeScript code formatter"
+license.workspace = true
+repository.workspace = true
+readme = "../../README.md"
+keywords = ["typescript", "formatter", "code-formatter", "tsx", "jsx"]
+categories = ["development-tools", "command-line-utilities"]
+
+[[bin]]
+name = "krokfmt"
+path = "src/main.rs"
+
+[dependencies]
+# NOTE: we have to resort to some tomfoolery to get biome deps working. This is
+# due mostly to the unwillingness of the maintainers to ensure their crates are
+# stable.
+#
+# I yanked these version pins from https://github.com/brioche-dev/brioche/pull/184.
+biome_console = "=0.5.7"
+biome_deserialize = "=0.5.7"
+biome_deserialize_macros = "=0.5.7"
+biome_diagnostics = "=0.5.7"
+biome_diagnostics_categories = "=0.5.7"
+biome_diagnostics_macros = "=0.5.7"
+biome_formatter = "=0.5.7"
+biome_js_factory = "=0.5.7"
+biome_js_formatter = "=0.5.7"
+biome_js_parser = "=0.5.7"
+biome_js_syntax = "=0.5.7"
+biome_json_factory = "=0.5.7"
+biome_json_parser = "=0.5.7"
+biome_json_syntax = "=0.5.7"
+biome_markup = "=0.5.7"
+biome_parser = "=0.5.7"
+biome_rowan = "=0.5.7"
+biome_text_edit = "=0.5.7"
+biome_text_size = "=0.5.7"
+biome_unicode_table = "=0.5.7"
+clap = { version = "4.5", features = ["derive"] }
+swc_atoms = "^7.0.0"
+swc_common = { version = "^14.0.0", features = ["tty-emitter"] }
+swc_ecma_ast = "^14.0.0"
+swc_ecma_codegen = "^16.0.0"
+swc_ecma_parser = "^22.0.3"
+swc_ecma_visit = "^14.0.0"
+anyhow = { workspace = true }
+glob = "0.3"
+rayon = "1.8"
+colored = "2.1"
+
+[dev-dependencies]
+tempfile = "3.9"
+insta = "1.34"
+pretty_assertions = "1.4"
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "formatting_bench"
+harness = false
+
+[[bench]]
+name = "real_world_bench"
+harness = false

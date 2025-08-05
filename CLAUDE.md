@@ -4,7 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-krokfmt is a highly opinionated, zero-configuration TypeScript code organizer and formatter written in Rust. It uses the SWC parser ecosystem for code organization and Biome for final formatting, enforcing strict rules with no configuration options.
+krokfmt is a highly opinionated, zero-configuration TypeScript code organizer and formatter written in Rust. This is a monorepo containing multiple crates:
+
+- **crates/krokfmt**: The main CLI tool that uses the SWC parser ecosystem for code organization and Biome for final formatting
+- **crates/krokfmt-web**: Web interface with documentation site and API endpoints
+- **crates/krokfmt-playground**: WebAssembly-based interactive playground for browser-based formatting
 
 ## IMPORTANT: Task-Based Workflow
 
@@ -19,57 +23,105 @@ krokfmt is a highly opinionated, zero-configuration TypeScript code organizer an
 
 ## Development Commands
 
+The project uses `cargo xtask` for build automation. All build tasks are implemented in `crates/xtask/`.
+
+### Common Commands
+
 ```bash
-# Run all tests
-cargo test
+# Show all available commands
+cargo xtask --help
+
+# Build everything (WASM + web)
+cargo xtask build
+
+# Run web interface with WASM playground
+cargo xtask run-web
+# Or: cargo web
+
+# Run all CI checks
+cargo xtask ci
+# Or: cargo ci
+
+# Build only WASM
+cargo xtask build-wasm
+# Or: cargo wasm
+
+# Clean all build artifacts
+cargo xtask clean
+
+# Install dependencies (wasm-pack, wasm32 target)
+cargo xtask install-deps
+```
+
+### Manual Commands
+
+```bash
+# Run all tests across workspace
+cargo test --workspace
+
+# Build specific crate
+cargo build -p krokfmt
+cargo build -p krokfmt-web
+
+# Run linter across workspace
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+# Format all Rust code
+cargo fmt --all
+```
+
+### krokfmt CLI Commands
+
+```bash
+# Run krokfmt tests
+cargo test -p krokfmt
 
 # Run snapshot tests only
-cargo test --test snapshot_tests
+cargo test -p krokfmt --test snapshot_tests
 
 # Run a specific snapshot test
-cargo test --test snapshot_tests test_fr1_1_default_imports
+cargo test -p krokfmt --test snapshot_tests test_fr1_1_default_imports
 
 # Run tests with output
-cargo test -- --nocapture
+cargo test -p krokfmt -- --nocapture
 
 # Review snapshot changes interactively
-cargo insta review
+cd crates/krokfmt && cargo insta review
 
 # Accept all snapshot changes
-cargo insta accept
-
-# Build debug version
-cargo build
+cd crates/krokfmt && cargo insta accept
 
 # Build release version
-cargo build --release
-
-# Run linter
-cargo clippy --all-targets --all-features -- -D warnings
-
-# Format Rust code
-cargo fmt
+cargo build --release -p krokfmt
 
 # Run benchmarks
-cargo bench
+cargo bench -p krokfmt
 
 # Run specific benchmark
-cargo bench --bench real_world_bench
+cargo bench -p krokfmt --bench real_world_bench
+```
 
-# Run benchmarks and save baseline
-cargo bench -- --save-baseline main
+### Web Development Commands
 
-# Compare benchmarks against baseline
-cargo bench -- --baseline main
+```bash
+# Run web server locally
+cargo run -p krokfmt-web
+
+# Build WASM playground
+cd crates/krokfmt-playground
+wasm-pack build --target web --out-dir pkg
+
+# Run web server with auto-reload (requires cargo-watch)
+cargo watch -x "run -p krokfmt-web"
 ```
 
 ## IMPORTANT: Post-Change Verification
 
 **After EVERY code change, you MUST run the following commands in order:**
 
-1. `cargo fmt` - Format the code according to Rust standards
-2. `cargo clippy --all-targets --all-features -- -D warnings` - Check for common mistakes and improve code quality
-3. `cargo test` - Ensure all tests pass
+1. `cargo fmt --all` - Format the code according to Rust standards
+2. `cargo clippy --workspace --all-targets --all-features -- -D warnings` - Check for common mistakes and improve code quality
+3. `cargo test --workspace` - Ensure all tests pass
 
 This is non-negotiable. These commands must be run after:
 - Adding new code
@@ -78,9 +130,9 @@ This is non-negotiable. These commands must be run after:
 - Adding or modifying tests
 
 If any of these commands fail:
-- `cargo fmt` - The changes will be applied automatically, commit them
-- `cargo clippy --all-targets --all-features -- -D warnings` - Fix all warnings before proceeding
-- `cargo test` - Fix failing tests before moving on
+- `cargo fmt --all` - The changes will be applied automatically, commit them
+- `cargo clippy --workspace --all-targets --all-features -- -D warnings` - Fix all warnings before proceeding
+- `cargo test --workspace` - Fix failing tests before moving on
 
 ## Architecture Overview
 
@@ -193,15 +245,17 @@ main.rs → file_handler.rs → (parallel) → parser.rs → comment_formatter.r
 ### Overview
 
 - Use a TDD workflow (write tests first)
-- Every requirement (see docs/requirements.md) must have snapshot tests
+- Every requirement (see crates/krokfmt/docs/requirements.md) must have snapshot tests
 - All tests use the snapshot testing approach with [insta](https://insta.rs/)
 - Test inputs are TypeScript files in `tests/fixtures/`
 - Expected outputs are automatically managed in `tests/snapshots/`
 
 ### Test Structure
 
+All test files are under `crates/krokfmt/tests/`:
+
 ```
-tests/
+crates/krokfmt/tests/
 ├── snapshot_tests.rs   # All requirement tests using snapshot approach
 ├── fixtures/          # Input TypeScript files
 │   ├── fr1/          # FR1: FR1.X fixtures
@@ -254,7 +308,7 @@ fn test_fr2_1_export_detection() {
 
 1. **Create the fixture file** following the naming convention:
    ```typescript
-   // tests/fixtures/fr1/1_x_new_feature.input.ts
+   // crates/krokfmt/tests/fixtures/fr1/1_x_new_feature.input.ts
    // FR1.x: Description of what this tests
    import { z } from './z';
    import { a } from './a';
@@ -270,12 +324,12 @@ fn test_fr2_1_export_detection() {
 
 3. **Generate the snapshot**:
    ```bash
-   cargo test --test snapshot_tests test_fr1_x_new_feature
+   cargo test -p krokfmt --test snapshot_tests test_fr1_x_new_feature
    ```
 
 4. **Review and accept**:
    ```bash
-   cargo insta review
+   cd crates/krokfmt && cargo insta review
    ```
 
 ### Test Guidelines
@@ -296,13 +350,13 @@ fn test_fr2_1_export_detection() {
 
 ### Manual Testing
 
-The `test_files/` directory contains sample TypeScript files for manual testing:
+The `crates/krokfmt/test_files/` directory contains sample TypeScript files for manual testing:
 ```bash
 # Test a single file manually
-cargo run -- test_files/sample.ts --stdout
+cargo run -p krokfmt -- crates/krokfmt/test_files/sample.ts --stdout
 
 # Test all sample files
-cargo run -- test_files/
+cargo run -p krokfmt -- crates/krokfmt/test_files/
 ```
 
 ## Performance Benchmarking
@@ -311,7 +365,7 @@ The project includes performance benchmarks to measure formatting speed across d
 
 ### Benchmark Structure
 
-Benchmarks are located in `benches/`:
+Benchmarks are located in `crates/krokfmt/benches/`:
 - `formatting_bench.rs` - Synthetic benchmarks with various file sizes
 - `real_world_bench.rs` - Benchmarks using actual test fixtures
 
@@ -319,16 +373,16 @@ Benchmarks are located in `benches/`:
 
 ```bash
 # Run all benchmarks
-cargo bench
+cargo bench -p krokfmt
 
 # Run specific benchmark suite
-cargo bench --bench real_world_bench
+cargo bench -p krokfmt --bench real_world_bench
 
 # Save baseline for comparison
-cargo bench -- --save-baseline my-baseline
+cargo bench -p krokfmt -- --save-baseline my-baseline
 
 # Compare against baseline
-cargo bench -- --baseline my-baseline
+cargo bench -p krokfmt -- --baseline my-baseline
 ```
 
 ### Benchmark Results
@@ -358,14 +412,21 @@ When implementing a task:
 1. Write snapshot tests first (TDD approach)
 2. Implement the minimum code to pass tests
 3. Refactor if needed
-4. Run `cargo test --test snapshot_tests` to verify
-5. Review snapshots with `cargo insta review`
+4. Run `cargo test -p krokfmt --test snapshot_tests` to verify
+5. Review snapshots with `cd crates/krokfmt && cargo insta review`
 6. Move task to Completed
 
 ## Adding New Tasks
 
 When you discover new work, add it to TODO.md with:
 - Clear description of what needs to be done
-- Reference to functional requirement (e.g., FR3.1)
+- Reference to functional requirement (e.g., FR3.1) from `crates/krokfmt/docs/requirements.md`
 - List of affected files
 - Any dependencies on other tasks
+
+## Documentation
+
+- `crates/krokfmt/docs/` - krokfmt-specific documentation
+  - `requirements.md` - Functional requirements for the formatter
+  - `design.md` - Design decisions and architecture
+  - `comment-attachment.md` - Comment handling strategy

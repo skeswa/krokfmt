@@ -1,9 +1,17 @@
-# krokfmt
+# 🐊 krokfmt
 
 [![Tests](https://github.com/skeswa/krokfmt/actions/workflows/test.yml/badge.svg)](https://github.com/skeswa/krokfmt/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A highly opinionated, zero-configuration code organizer written in Rust.
+A highly opinionated, zero-configuration TypeScript code formatter written in Rust.
+
+## Repository Structure
+
+This is a Rust monorepo containing multiple crates:
+
+- `crates/krokfmt` - The main CLI tool for formatting TypeScript/TSX files
+- `crates/krokfmt-web` - Web interface and documentation site
+- `crates/krokfmt-playground` - Interactive WebAssembly-based playground
 
 ## Goal
 
@@ -23,6 +31,33 @@ unnecessary "brain strain".
 
 ```bash
 cargo install krokfmt
+```
+
+## Development
+
+This project uses the `cargo xtask` pattern for build automation:
+
+```bash
+# Show all available commands
+cargo xtask --help
+
+# Build everything (WASM + web server)
+cargo xtask build
+
+# Run web interface locally
+cargo xtask run-web
+# Or use the shortcut:
+cargo web
+
+# Run CI checks (format, clippy, tests)
+cargo xtask ci
+# Or use the shortcut:
+cargo ci
+
+# Build WASM module only
+cargo xtask build-wasm
+# Or use the shortcut:
+cargo wasm
 ```
 
 ## Usage

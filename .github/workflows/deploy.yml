@@ -1,0 +1,83 @@
+name: Deploy Web
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'crates/krokfmt-web/**'
+      - 'crates/krokfmt-playground/**'
+      - 'deployment/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}-web
+
+jobs:
+  build-and-push:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+    
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./deployment/docker/Dockerfile.web
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to Kubernetes
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    # Note: You'll need to set up kubectl access to your cluster
+    # This is typically done through secrets containing kubeconfig
+    # - name: Configure kubectl
+    #   run: |
+    #     echo "${{ secrets.KUBECONFIG }}" | base64 -d > kubeconfig
+    #     export KUBECONFIG=kubeconfig
+    
+    # - name: Apply Kubernetes manifests
+    #   run: |
+    #     kubectl apply -f deployment/k8s/namespace.yaml
+    #     kubectl apply -f deployment/k8s/
+    #     kubectl rollout restart deployment/krokfmt-web -n krokfmt
+    
+    # - name: Wait for rollout
+    #   run: |
+    #     kubectl rollout status deployment/krokfmt-web -n krokfmt --timeout=5m
