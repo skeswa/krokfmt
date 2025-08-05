@@ -82,7 +82,12 @@ impl FileHandler {
     }
 
     pub fn read_file(&self, path: &Path) -> Result<String> {
-        fs::read_to_string(path).with_context(|| format!("Failed to read file: {}", path.display()))
+        let content = fs::read_to_string(path)
+            .with_context(|| format!("Failed to read file: {}", path.display()))?;
+
+        // Normalize line endings to LF for consistent processing across platforms
+        // This prevents issues with CRLF on Windows affecting comment position calculations
+        Ok(content.replace("\r\n", "\n").replace('\r', "\n"))
     }
 
     pub fn write_file(&self, path: &Path, content: &str) -> Result<()> {

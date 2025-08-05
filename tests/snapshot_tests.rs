@@ -23,7 +23,9 @@ fn test_fixture(fixture_path: &str) {
 fn test_fixture_with_extension(fixture_path: &str, extension: &str) {
     let input_path = format!("tests/fixtures/{fixture_path}.input.{extension}");
     let input = fs::read_to_string(&input_path)
-        .unwrap_or_else(|_| panic!("Failed to read fixture: {input_path}"));
+        .unwrap_or_else(|_| panic!("Failed to read fixture: {input_path}"))
+        .replace("\r\n", "\n") // Normalize CRLF to LF for consistent testing across platforms
+        .replace('\r', "\n"); // Also handle old Mac CR line endings
 
     let output = format_code(&input);
 

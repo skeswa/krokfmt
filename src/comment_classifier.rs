@@ -56,7 +56,7 @@ impl<'a> CommentClassifier<'a> {
         let mut current_pos = 0;
 
         for line in self.source.lines() {
-            let line_len = line.len() + 1; // +1 for newline
+            let line_len = line.len() + 1; // +1 for newline (always LF after normalization)
             if current_pos <= comment_start && comment_start < current_pos + line_len {
                 line_start = current_pos;
                 line_end = current_pos + line.len();

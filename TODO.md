@@ -96,6 +96,17 @@ Tasks are ordered by priority. Always work on tasks from the top of this list fi
 ## Completed
 <!-- Move completed tasks here with completion date -->
 
+- ✅ Fix Windows test failures due to CRLF line endings (2025-08-05)
+  - **Issue**: Tests were failing on Windows CI due to CRLF vs LF line ending differences
+  - **Root cause**: The `.lines()` method in Rust splits only by `\n`, leaving `\r` characters on Windows
+  - **Solution**: Normalize all line endings to LF when reading files
+  - **Changes made**:
+    - Updated `file_handler.rs` to normalize line endings in `read_file()` method
+    - Updated `snapshot_tests.rs` to normalize line endings in test fixtures
+    - This ensures consistent comment position calculations across all platforms
+  - **Result**: All tests now pass on Windows, Linux, and macOS
+  - Files modified: `src/file_handler.rs`, `tests/snapshot_tests.rs`, `src/comment_classifier.rs`
+
 - ✅ Implement selective comment preservation system (2025-08-04)
   - **Fundamental architecture shift**: Instead of extracting all comments, only extract non-inline comments
   - Created `comment_classifier.rs` to classify comments as Inline/Leading/Trailing/Standalone
