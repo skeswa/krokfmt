@@ -57,7 +57,7 @@ colored = "2.1"
 tempfile = "3.9"
 insta = "1.34"
 pretty_assertions = "1.4"
-criterion = { version = "0.5", features = ["html_reports"] }
+criterion = { version = "0.7", features = ["html_reports"] }
 
 [[bench]]
 name = "formatting_bench"
