@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
-  title: '🐊 krokfmt',
+  title: 'krokfmt',
   description: 'A highly opinionated, zero-configuration TypeScript code formatter',
   lang: 'en-US',
   
@@ -13,6 +13,8 @@ export default defineConfig({
   ],
 
   themeConfig: {
+    logo: '/logo.png',
+
     nav: [
       { text: 'Home', link: '/' },
       { text: 'Guide', link: '/guide/getting-started' },
