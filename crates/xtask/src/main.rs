@@ -241,19 +241,34 @@ fn is_dir_newer_than(dir: &Path, reference_time: &SystemTime) -> Result<bool> {
 }
 
 fn build_web(sh: &Shell, release: bool) -> Result<()> {
-    println!("Building web server...");
+    println!("Building web documentation...");
 
-    let args = if release {
-        vec!["build", "--release", "-p", "krokfmt-web"]
-    } else {
-        vec!["build", "-p", "krokfmt-web"]
-    };
+    // Check if npm is installed
+    if cmd!(sh, "which npm").run().is_err() {
+        anyhow::bail!("npm is required to build the web documentation. Please install Node.js.");
+    }
 
-    cmd!(sh, "cargo {args...}")
+    // Change to web directory
+    sh.change_dir("crates/krokfmt-web");
+
+    // Check if node_modules exists, if not run npm install
+    if !std::path::Path::new("node_modules").exists() {
+        println!("Installing npm dependencies...");
+        cmd!(sh, "npm install")
+            .run()
+            .context("Failed to install npm dependencies")?;
+    }
+
+    // Build VitePress site
+    println!("Building VitePress documentation...");
+    cmd!(sh, "npm run build")
         .run()
-        .context("Failed to build web server")?;
+        .context("Failed to build VitePress documentation")?;
 
-    println!("✅ Web server built successfully");
+    // Change back to root
+    sh.change_dir("../..");
+
+    println!("✅ Web documentation built successfully");
     Ok(())
 }
 
@@ -271,15 +286,29 @@ fn test(sh: &Shell) -> Result<()> {
 fn run_web(sh: &Shell, release: bool) -> Result<()> {
     println!("Starting web server on http://localhost:3000");
 
-    let args = if release {
-        vec!["run", "--release", "-p", "krokfmt-web"]
-    } else {
-        vec!["run", "-p", "krokfmt-web"]
-    };
+    // Check if npm is installed
+    if cmd!(sh, "which npm").run().is_err() {
+        anyhow::bail!("npm is required to run the web server. Please install Node.js.");
+    }
 
-    cmd!(sh, "cargo {args...}")
+    // Change to web directory
+    sh.change_dir("crates/krokfmt-web");
+
+    // Check if node_modules exists, if not run npm install
+    if !std::path::Path::new("node_modules").exists() {
+        println!("Installing npm dependencies...");
+        cmd!(sh, "npm install")
+            .run()
+            .context("Failed to install npm dependencies")?;
+    }
+
+    // Run the development server
+    cmd!(sh, "npm run dev")
         .run()
         .context("Failed to run web server")?;
+
+    // Change back to root (though this won't be reached due to server running)
+    sh.change_dir("../..");
 
     Ok(())
 }
@@ -292,6 +321,18 @@ fn clean(sh: &Shell) -> Result<()> {
     let wasm_pkg = "crates/krokfmt-playground/pkg";
     if std::path::Path::new(wasm_pkg).exists() {
         cmd!(sh, "rm -rf {wasm_pkg}").run()?;
+    }
+
+    // Clean VitePress build artifacts
+    let vitepress_dist = "crates/krokfmt-web/docs/.vitepress/dist";
+    if std::path::Path::new(vitepress_dist).exists() {
+        cmd!(sh, "rm -rf {vitepress_dist}").run()?;
+    }
+
+    // Clean node_modules if requested
+    let node_modules = "crates/krokfmt-web/node_modules";
+    if std::path::Path::new(node_modules).exists() {
+        println!("Note: Run 'rm -rf crates/krokfmt-web/node_modules' to also clean npm dependencies");
     }
 
     println!("✅ Clean complete");

@@ -1,15 +1,34 @@
-# krokfmt Web Deployment
+# krokfmt Deployment
 
-This directory contains deployment configurations for the krokfmt web interface.
+## Documentation Site
 
-## Quick Start
+The krokfmt documentation and playground is deployed as a static site to GitHub Pages.
+
+### Architecture
+
+```
+GitHub Pages (Static Hosting)
+    ├── VitePress Documentation (HTML/CSS/JS)
+    ├── Interactive Playground (Vue.js)
+    └── WASM Module (krokfmt compiled to WebAssembly)
+```
+
+### Automatic Deployment
+
+The site automatically deploys to GitHub Pages when changes are pushed to the main branch:
+
+1. **Trigger**: Push to `main` branch or manual workflow dispatch
+2. **Build**: 
+   - Compile krokfmt to WASM using wasm-pack
+   - Build VitePress documentation site
+   - Bundle everything as static files
+3. **Deploy**: Upload to GitHub Pages
+
+The site will be available at: `https://[username].github.io/krokfmt/`
 
 ### Local Development
 
 ```bash
-# Install dependencies (one-time)
-cargo xtask install-deps
-
 # Build and run locally
 cargo xtask run-web
 # Or use the shortcut:
@@ -18,82 +37,97 @@ cargo web
 # Visit http://localhost:3000
 ```
 
-### Docker Deployment
+### Manual Build
 
 ```bash
-# Build Docker image
-cargo xtask docker-build
+# Build WASM module
+cargo xtask build-wasm --release
 
-# Run Docker container
-cargo xtask docker-run
-# Visit http://localhost:3000
+# Build documentation site
+cd crates/krokfmt-web
+npm install
+npm run build
+
+# The built site is in docs/.vitepress/dist/
+# Upload this directory to any static hosting service
 ```
 
-### Kubernetes Deployment (Rhuidean)
+### Hosting Options
+
+Since it's a pure static site with client-side WASM, it can be hosted anywhere:
+
+- **GitHub Pages** (current) - Free, automatic deployments
+- **Netlify** - Free tier, automatic deploys from Git
+- **Vercel** - Free tier, great performance
+- **Cloudflare Pages** - Free tier, global CDN
+- **AWS S3 + CloudFront** - Scalable, pay-per-use
+- **Any static file server** - nginx, Apache, etc.
+
+## Docker Deployment (Optional)
+
+For self-hosting or development, a Docker image is available:
+
+### Build and Run
 
 ```bash
-# Build and push Docker image
-docker build -f deployment/docker/Dockerfile.web -t ghcr.io/skeswa/krokfmt-web:latest .
-docker push ghcr.io/skeswa/krokfmt-web:latest
+# Build the Docker image
+docker build -f deployment/docker/Dockerfile.web -t krokfmt-web .
 
-# Deploy to Kubernetes
-kubectl apply -f deployment/k8s/
+# Run the container
+docker run -p 8080:80 krokfmt-web
+
+# Access at http://localhost:8080
 ```
 
-## Architecture
+### Docker Compose
 
-The web deployment consists of:
+```yaml
+version: '3.8'
 
-1. **Web Server** (`krokfmt-web`): Axum-based Rust web server
-   - Serves static files and templates
-   - Hosts WASM modules for browser execution
-   - Provides fallback API endpoint for formatting
+services:
+  krokfmt-web:
+    build:
+      context: .
+      dockerfile: deployment/docker/Dockerfile.web
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+```
 
-2. **WASM Module** (`krokfmt-playground`): Client-side formatter
-   - Runs entirely in the browser
-   - No server round-trips for formatting
-   - Built with wasm-pack and wasm-bindgen
+### Pre-built Images
 
-3. **Static Assets**: CSS, JavaScript, and HTML templates
-   - Modern responsive design
-   - Interactive playground interface
-   - Documentation pages
+Pre-built Docker images are available from GitHub Container Registry:
 
-## Build Process
+```bash
+docker run -p 8080:80 ghcr.io/skeswa/krokfmt-web:latest
+```
 
-The build process is integrated:
+## Key Benefits
 
-1. **WASM Build**: Compiles Rust to WebAssembly
-   - Uses `wasm-pack` to generate JS bindings
-   - Optimized for size with `wee_alloc`
-   - Development builds skip wasm-opt due to compatibility
-
-2. **Web Server Build**: Standard Rust compilation
-   - Includes all static assets
-   - Serves WASM modules at `/wasm/*`
-   - API fallback at `/api/format`
-
-3. **Docker Build**: Multi-stage build
-   - Stage 1: Build WASM and server binary
-   - Stage 2: Minimal runtime image with assets
-
-## Endpoints
-
-- `/` - Home page with feature overview
-- `/docs` - Documentation
-- `/playground` - Interactive formatter (WASM-powered)
-- `/api/format` - Server-side formatting API (fallback)
-- `/health` - Health check endpoint
-- `/static/*` - Static assets (CSS, JS)
-- `/wasm/*` - WASM modules and bindings
+- **No Server Required** - Pure static files
+- **Client-Side Formatting** - WASM runs in the browser
+- **Privacy** - Code never leaves the user's machine
+- **Offline Capable** - Works without internet after initial load
+- **Infinitely Scalable** - CDN handles all traffic
+- **Zero Server Costs** - Use free static hosting
 
 ## Environment Variables
 
-- `RUST_LOG` - Log level (default: `krokfmt_web=info,tower_http=debug`)
-- Port is hardcoded to 3000 (can be changed in source)
+No environment variables are required since everything runs client-side.
 
-## Notes
+## Monitoring
 
-- WASM formatting is preferred for better performance
-- Server API exists as fallback for WASM-incompatible browsers
-- The playground automatically detects JSX and uses appropriate parsing
+Since it's a static site, monitoring is simple:
+
+- **Uptime**: GitHub Pages status or your CDN's monitoring
+- **Analytics**: Google Analytics, Plausible, or similar (optional)
+- **Errors**: Browser console errors (no server logs)
+
+## Security
+
+The static site architecture is inherently secure:
+
+- **No Server Vulnerabilities** - No backend to attack
+- **No Data Storage** - All processing happens client-side
+- **No API Keys** - No secrets needed
+- **HTTPS by Default** - GitHub Pages provides SSL

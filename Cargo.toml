@@ -2,7 +2,6 @@
 resolver = "2"
 members = [
     "crates/krokfmt",
-    "crates/krokfmt-web",
     "crates/krokfmt-playground",
 ]
 exclude = ["crates/xtask"]

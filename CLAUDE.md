@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 krokfmt is a highly opinionated, zero-configuration TypeScript code organizer and formatter written in Rust. This is a monorepo containing multiple crates:
 
 - **crates/krokfmt**: The main CLI tool that uses the SWC parser ecosystem for code organization and Biome for final formatting
-- **crates/krokfmt-web**: Web interface with documentation site and API endpoints
+- **crates/krokfmt-web**: VitePress-based documentation site with integrated playground and API endpoints
 - **crates/krokfmt-playground**: WebAssembly-based interactive playground for browser-based formatting
 
 ## IMPORTANT: Task-Based Workflow
@@ -104,15 +104,25 @@ cargo bench -p krokfmt --bench real_world_bench
 ### Web Development Commands
 
 ```bash
-# Run web server locally
-cargo run -p krokfmt-web
+# Run VitePress development server with WASM playground
+cargo xtask run-web
+# Or: cargo web
 
-# Build WASM playground
+# Install npm dependencies for web
+cd crates/krokfmt-web && npm install
+
+# Run VitePress dev server directly
+cd crates/krokfmt-web && npm run dev
+
+# Build VitePress site for production
+cd crates/krokfmt-web && npm run build
+
+# Preview production build
+cd crates/krokfmt-web && npm run preview
+
+# Build WASM playground only
 cd crates/krokfmt-playground
 wasm-pack build --target web --out-dir pkg
-
-# Run web server with auto-reload (requires cargo-watch)
-cargo watch -x "run -p krokfmt-web"
 ```
 
 ## IMPORTANT: Post-Change Verification

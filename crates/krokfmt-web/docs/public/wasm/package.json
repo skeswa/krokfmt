@@ -1,0 +1,24 @@
+{
+  "name": "krokfmt-playground",
+  "type": "module",
+  "collaborators": [
+    "krokorok"
+  ],
+  "description": "WebAssembly playground for krokfmt",
+  "version": "0.1.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/skeswa/krokfmt"
+  },
+  "files": [
+    "krokfmt_playground_bg.wasm",
+    "krokfmt_playground.js",
+    "krokfmt_playground.d.ts"
+  ],
+  "main": "krokfmt_playground.js",
+  "types": "krokfmt_playground.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
