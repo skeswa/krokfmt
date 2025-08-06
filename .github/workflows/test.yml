@@ -2,9 +2,13 @@ name: Tests
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main]
+    paths:
+      - 'crates/krokfmt/**'
   pull_request:
-    branches: [ main, master ]
+    branches: [main]
+    paths:
+      - 'crates/krokfmt/**'
 
 env:
   CARGO_TERM_COLOR: always
