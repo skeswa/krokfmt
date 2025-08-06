@@ -196,7 +196,8 @@ fn build_wasm(sh: &Shell, release: bool, force: bool) -> Result<()> {
     sh.change_dir("crates/krokfmt-playground");
 
     let profile = if release { "--release" } else { "--dev" };
-    cmd!(sh, "wasm-pack build --target web --out-dir pkg {profile}")
+    // Skip wasm-opt due to bulk memory operations compatibility issues
+    cmd!(sh, "wasm-pack build --target web --out-dir pkg --no-opt {profile}")
         .run()
         .context("Failed to build WASM module")?;
 
@@ -240,7 +241,7 @@ fn is_dir_newer_than(dir: &Path, reference_time: &SystemTime) -> Result<bool> {
     Ok(false)
 }
 
-fn build_web(sh: &Shell, release: bool) -> Result<()> {
+fn build_web(sh: &Shell, _release: bool) -> Result<()> {
     println!("Building web documentation...");
 
     // Check if npm is installed
@@ -283,7 +284,7 @@ fn test(sh: &Shell) -> Result<()> {
     Ok(())
 }
 
-fn run_web(sh: &Shell, release: bool) -> Result<()> {
+fn run_web(sh: &Shell, _release: bool) -> Result<()> {
     println!("Starting web server on http://localhost:3000");
 
     // Check if npm is installed
