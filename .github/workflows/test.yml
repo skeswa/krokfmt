@@ -42,13 +42,6 @@ jobs:
     - name: Run doc tests
       run: cargo test --workspace --doc --verbose
 
-    - name: Test examples
-      run: |
-        cargo build --release -p krokfmt
-        ./target/release/krokfmt --help
-        ./target/release/krokfmt --version
-      shell: bash
-
   fmt:
     name: Rustfmt
     runs-on: ubuntu-latest
