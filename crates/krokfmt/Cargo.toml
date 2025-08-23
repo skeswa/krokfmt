@@ -44,7 +44,7 @@ biome_unicode_table = "=0.5.7"
 clap = { version = "4.5", features = ["derive"] }
 swc_atoms = "^7.0.0"
 swc_common = { version = "^14.0.0", features = ["tty-emitter"] }
-swc_ecma_ast = "^14.0.0"
+swc_ecma_ast = "^15.0.0"
 swc_ecma_codegen = "^16.0.0"
 swc_ecma_parser = "^22.0.3"
 swc_ecma_visit = "^14.0.0"
